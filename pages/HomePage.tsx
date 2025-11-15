@@ -1,11 +1,11 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import MatchCard from '../components/MatchCard';
 import NewsCard from '../components/NewsCard';
-import type { Fixture, NewsArticle, GalleryItem } from '../types';
+import type { Fixture, NewsArticle, GalleryItem, HomePageHero } from '../types';
 
 interface HomePageProps {
+    heroContent: HomePageHero;
     fixtures: {
         u11: Fixture;
         u12: Fixture;
@@ -15,7 +15,7 @@ interface HomePageProps {
     siteLogo: string;
 }
 
-const HomePage: React.FC<HomePageProps> = ({ fixtures, news, gallery, siteLogo }) => {
+const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, news, gallery, siteLogo }) => {
     const upcomingMatchU11 = fixtures.u11.matches.find(m => m.score === '-');
     const upcomingMatchU12 = fixtures.u12.matches.find(m => m.score === '-');
     const recentNews = news.slice(0, 5);
@@ -24,14 +24,14 @@ const HomePage: React.FC<HomePageProps> = ({ fixtures, news, gallery, siteLogo }
     return (
         <div>
             {/* Hero Section */}
-            <div className="relative h-[60vh] bg-cover bg-center" style={{ backgroundImage: "url('https://picsum.photos/1920/1080?random=100')" }}>
+            <div className="relative h-[60vh] bg-cover bg-center" style={{ backgroundImage: `url('${heroContent.heroImage}')` }}>
                 <div className="absolute inset-0 bg-black/60"></div>
                 <div className="relative z-10 flex flex-col items-center justify-center h-full text-white text-center px-4">
                     <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-4">
-                        Çangücü SK: Geleceğin Yıldızları Burada Yetişiyor
+                        {heroContent.heroTitle}
                     </h1>
                     <p className="text-lg md:text-xl max-w-2xl">
-                        Tutku, Disiplin ve Takım Ruhuyla Zafere!
+                        {heroContent.heroSubtitle}
                     </p>
                 </div>
             </div>
@@ -110,4 +110,5 @@ const HomePage: React.FC<HomePageProps> = ({ fixtures, news, gallery, siteLogo }
     );
 };
 
+// FIX: Added default export to the HomePage component.
 export default HomePage;

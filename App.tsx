@@ -20,6 +20,7 @@ const App: React.FC = () => {
       try {
         const [
           settingsRes,
+          homepageRes,
           teamsRes,
           fixturesRes,
           newsRes,
@@ -28,6 +29,7 @@ const App: React.FC = () => {
           missionVisionRes,
         ] = await Promise.all([
           fetch('/content/settings.json'),
+          fetch('/content/homepage.json'),
           fetch('/content/teams.json'),
           fetch('/content/fixtures.json'),
           fetch('/content/newsData.json'),
@@ -36,11 +38,15 @@ const App: React.FC = () => {
           fetch('/content/missionVision.json'),
         ]);
 
-        if (!settingsRes.ok || !teamsRes.ok || !fixturesRes.ok || !newsRes.ok || !galleryRes.ok || !staffRes.ok || !missionVisionRes.ok) {
-          throw new Error('Failed to fetch content');
+        const allResponses = [settingsRes, homepageRes, teamsRes, fixturesRes, newsRes, galleryRes, staffRes, missionVisionRes];
+        for (const res of allResponses) {
+          if (!res.ok) {
+            throw new Error(`Failed to fetch content from ${res.url}`);
+          }
         }
 
         const siteSettings = await settingsRes.json();
+        const homePageHero = await homepageRes.json();
         const teamData = await teamsRes.json();
         const fixtures = await fixturesRes.json();
         const newsData = await newsRes.json();
@@ -50,6 +56,7 @@ const App: React.FC = () => {
 
         setCmsData({
           siteSettings,
+          homePageHero,
           teamData,
           fixtures,
           newsData: newsData.articles,
@@ -94,6 +101,7 @@ const Main: React.FC<MainProps> = ({ data }) => {
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<HomePage 
+              heroContent={data.homePageHero}
               fixtures={data.fixtures} 
               news={data.newsData} 
               gallery={data.galleryData} 

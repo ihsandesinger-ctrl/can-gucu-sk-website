@@ -10,6 +10,7 @@ export interface Player {
 export interface Coach {
   name: string;
   role: string;
+  imageUrl?: string;
 }
 
 export interface Team {
@@ -63,8 +64,15 @@ export interface SiteSettings {
   logo: string;
 }
 
+export interface HomePageHero {
+  heroImage: string;
+  heroTitle: string;
+  heroSubtitle: string;
+}
+
 export interface CMSData {
   siteSettings: SiteSettings;
+  homePageHero: HomePageHero;
   teamData: {
     u11: Team;
     u12: Team;

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { Team, Fixture } from '../types';
 import PlayerCard from '../components/PlayerCard';
@@ -24,9 +23,18 @@ const TeamPage: React.FC<TeamPageProps> = ({ team, fixtures }) => {
         {/* Teknik Kadro */}
         <section className="mb-12">
           <h2 className="text-3xl font-bold text-gray-800 mb-6">Teknik Kadro</h2>
-          <div className="inline-block bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-            <p className="font-bold text-lg text-gray-900">{team.coach.name}</p>
-            <p className="text-sm text-gray-600">{team.coach.role}</p>
+          <div className="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-6 max-w-sm">
+            {team.coach.imageUrl && (
+              <img 
+                className="h-24 w-24 rounded-full object-cover" 
+                src={team.coach.imageUrl} 
+                alt={team.coach.name} 
+              />
+            )}
+            <div>
+              <p className="font-bold text-xl text-gray-900">{team.coach.name}</p>
+              <p className="text-md text-gray-600">{team.coach.role}</p>
+            </div>
           </div>
         </section>
 

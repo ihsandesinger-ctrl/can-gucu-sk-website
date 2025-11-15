@@ -5,7 +5,8 @@
         "heroImage": "https://picsum.photos/1200/400?random=11",
         "coach": {
             "name": "Ahmet Yılmaz",
-            "role": "U-11 Baş Antrenörü"
+            "role": "U-11 Baş Antrenörü",
+            "imageUrl": "https://picsum.photos/200/200?random=43"
         },
         "players": [
             { "id": 1, "name": "Can Uzun", "position": "Kaleci", "number": 1, "imageUrl": "https://picsum.photos/300/400?random=1" },
@@ -24,7 +25,8 @@
         "heroImage": "https://picsum.photos/1200/400?random=12",
         "coach": {
             "name": "Mehmet Öztürk",
-            "role": "U-12 Baş Antrenörü"
+            "role": "U-12 Baş Antrenörü",
+            "imageUrl": "https://picsum.photos/200/200?random=44"
         },
         "players": [
             { "id": 1, "name": "Kenan Yıldız", "position": "Forvet", "number": 1, "imageUrl": "https://picsum.photos/300/400?random=9" },

@@ -6,6 +6,17 @@ media_folder: "public/uploads"
 public_folder: "/uploads"
 
 collections:
+  - name: "homepage"
+    label: "Ana Sayfa İçeriği"
+    files:
+      - file: "public/content/homepage.json"
+        label: "Ana Sayfa Karşılama Alanı"
+        name: "homepage_hero"
+        fields:
+          - { label: "Arkaplan Fotoğrafı", name: "heroImage", widget: "image" }
+          - { label: "Ana Başlık", name: "heroTitle", widget: "string" }
+          - { label: "Alt Başlık", name: "heroSubtitle", widget: "string" }
+
   - name: "settings"
     label: "Genel Ayarlar"
     files:
@@ -26,46 +37,46 @@ collections:
             label: "U-11 Takımı"
             widget: "object"
             fields:
-              - { name: "id", label: "ID", widget: "hidden", default: "u11" }
               - { name: "name", label: "Takım Adı", widget: "string" }
               - { name: "heroImage", label: "Kapak Fotoğrafı", widget: "image" }
               - name: "coach"
                 label: "Teknik Kadro"
                 widget: "object"
                 fields:
-                  - { name: "name", label: "İsim", widget: "string" }
-                  - { name: "role", label: "Görev", widget: "string" }
+                  - { name: "name", label: "İsim", widget: "string", required: true }
+                  - { name: "role", label: "Görev", widget: "string", required: true }
+                  - { name: "imageUrl", label: "Fotoğraf", widget: "image", required: false }
               - name: "players"
                 label: "Oyuncular"
                 widget: "list"
+                summary: "{{name}} - #{{number}}"
                 fields:
-                  - { name: "id", label: "ID", widget: "hidden", default: "" }
-                  - { name: "name", label: "İsim", widget: "string" }
-                  - { name: "position", label: "Pozisyon", widget: "string" }
-                  - { name: "number", label: "Numara", widget: "number" }
-                  - { name: "imageUrl", label: "Fotoğraf", widget: "image" }
+                  - { name: "name", label: "İsim", widget: "string", required: true }
+                  - { name: "position", label: "Pozisyon", widget: "string", required: true }
+                  - { name: "number", label: "Numara", widget: "number", required: true }
+                  - { name: "imageUrl", label: "Fotoğraf", widget: "image", required: true }
           - name: "u12"
             label: "U-12 Takımı"
             widget: "object"
             fields:
-              - { name: "id", label: "ID", widget: "hidden", default: "u12" }
               - { name: "name", label: "Takım Adı", widget: "string" }
               - { name: "heroImage", label: "Kapak Fotoğrafı", widget: "image" }
               - name: "coach"
                 label: "Teknik Kadro"
                 widget: "object"
                 fields:
-                  - { name: "name", label: "İsim", widget: "string" }
-                  - { name: "role", label: "Görev", widget: "string" }
+                  - { name: "name", label: "İsim", widget: "string", required: true }
+                  - { name: "role", label: "Görev", widget: "string", required: true }
+                  - { name: "imageUrl", label: "Fotoğraf", widget: "image", required: false }
               - name: "players"
                 label: "Oyuncular"
                 widget: "list"
+                summary: "{{name}} - #{{number}}"
                 fields:
-                  - { name: "id", label: "ID", widget: "hidden", default: "" }
-                  - { name: "name", label: "İsim", widget: "string" }
-                  - { name: "position", label: "Pozisyon", widget: "string" }
-                  - { name: "number", label: "Numara", widget: "number" }
-                  - { name: "imageUrl", label: "Fotoğraf", widget: "image" }
+                  - { name: "name", label: "İsim", widget: "string", required: true }
+                  - { name: "position", label: "Pozisyon", widget: "string", required: true }
+                  - { name: "number", label: "Numara", widget: "number", required: true }
+                  - { name: "imageUrl", label: "Fotoğraf", widget: "image", required: true }
 
   - name: "fixtures"
     label: "Fikstür ve Sonuçlar"
@@ -82,10 +93,11 @@ collections:
               - name: "matches"
                 label: "Maçlar"
                 widget: "list"
+                summary: "{{date}} vs {{opponent}}"
                 fields:
-                  - { name: "date", label: "Tarih", widget: "string" }
-                  - { name: "opponent", label: "Rakip", widget: "string" }
-                  - { name: "score", label: "Skor", widget: "string", default: "-" }
+                  - { name: "date", label: "Tarih", widget: "string", required: true }
+                  - { name: "opponent", label: "Rakip", widget: "string", required: true }
+                  - { name: "score", label: "Skor", widget: "string", default: "-", hint: "Maç oynanmadıysa '-' olarak bırakın." }
                   - name: "location"
                     label: "Konum"
                     widget: "select"
@@ -98,9 +110,10 @@ collections:
               - name: "matches"
                 label: "Maçlar"
                 widget: "list"
+                summary: "{{date}} vs {{opponent}}"
                 fields:
-                  - { name: "date", label: "Tarih", widget: "string" }
-                  - { name: "opponent", label: "Rakip", widget: "string" }
+                  - { name: "date", label: "Tarih", widget: "string", required: true }
+                  - { name: "opponent", label: "Rakip", widget: "string", required: true }
                   - { name: "score", label: "Skor", widget: "string", default: "-" }
                   - name: "location"
                     label: "Konum"
@@ -117,13 +130,13 @@ collections:
           - name: "articles"
             label: "Haberler"
             widget: "list"
+            summary: "{{title}}"
             fields:
-              - { name: "id", label: "ID", widget: "hidden", default: "" }
-              - { name: "title", label: "Başlık", widget: "string" }
-              - { name: "summary", label: "Özet", widget: "text" }
-              - { name: "content", label: "İçerik", widget: "markdown" }
-              - { name: "date", label: "Yayın Tarihi", widget: "datetime" }
-              - { name: "imageUrl", label: "Kapak Fotoğrafı", widget: "image" }
+              - { name: "title", label: "Başlık", widget: "string", required: true }
+              - { name: "summary", label: "Özet", widget: "text", required: true }
+              - { name: "content", label: "İçerik", widget: "markdown", required: false }
+              - { name: "date", label: "Yayın Tarihi", widget: "date", format: "DD.MM.YYYY", required: true }
+              - { name: "imageUrl", label: "Kapak Fotoğrafı", widget: "image", required: true }
 
   - name: "gallery"
     label: "Galeri"
@@ -135,9 +148,9 @@ collections:
           - name: "images"
             label: "Fotoğraflar"
             widget: "list"
+            summary: "{{title | default: 'Başlıksız Fotoğraf'}}"
             fields:
-              - { name: "id", label: "ID", widget: "hidden", default: "" }
-              - { name: "imageUrl", label: "Fotoğraf", widget: "image" }
+              - { name: "imageUrl", label: "Fotoğraf", widget: "image", required: true }
               - { name: "title", label: "Başlık (Opsiyonel)", widget: "string", required: false }
 
   - name: "staff"
@@ -150,11 +163,11 @@ collections:
           - name: "members"
             label: "Ekip Üyeleri"
             widget: "list"
+            summary: "{{name}} - {{role}}"
             fields:
-              - { name: "id", label: "ID", widget: "hidden", default: "" }
-              - { name: "name", label: "İsim", widget: "string" }
-              - { name: "role", label: "Görev", widget: "string" }
-              - { name: "imageUrl", label: "Fotoğraf", widget: "image" }
+              - { name: "name", label: "İsim", widget: "string", required: true }
+              - { name: "role", label: "Görev", widget: "string", required: true }
+              - { name: "imageUrl", label: "Fotoğraf", widget: "image", required: true }
   
   - name: "about"
     label: "Hakkımızda İçeriği"
