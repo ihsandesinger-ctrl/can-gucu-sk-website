@@ -1,43 +1,145 @@
 {
-    "teams": [
+  "teams": [
+    {
+      "id": "u11",
+      "name": "U-11 Takımı",
+      "slug": "u-11",
+      "heroImage": "https://picsum.photos/1200/400?random=11",
+      "coach": {
+        "name": "Ahmet Yılmaz",
+        "role": "U-11 Baş Antrenörü",
+        "imageUrl": "https://picsum.photos/200/200?random=43"
+      },
+      "players": [
         {
-            "id": "u11",
-            "name": "U-11 Takımı",
-            "slug": "u-11",
-            "heroImage": "https://picsum.photos/1200/400?random=11",
-            "coach": {
-                "name": "Ahmet Yılmaz",
-                "role": "U-11 Baş Antrenörü",
-                "imageUrl": "https://picsum.photos/200/200?random=43"
-            },
-            "players": [
-                { "id": 1, "name": "Can Uzun", "position": "Kaleci", "number": 1, "imageUrl": "https://picsum.photos/300/400?random=1" },
-                { "id": 2, "name": "Zeki Çelik", "position": "Defans", "number": 2, "imageUrl": "https://picsum.photos/300/400?random=2" },
-                { "id": 3, "name": "Emirhan Topçu", "position": "Defans", "number": 5, "imageUrl": "https://picsum.photos/300/400?random=3" },
-                { "id": 4, "name": "Kerem Aktürkoğlu", "position": "Orta Saha", "number": 7, "imageUrl": "https://picsum.photos/300/400?random=4" },
-                { "id": 5, "name": "Ozan Tufan", "position": "Orta Saha", "number": 8, "imageUrl": "https://picsum.photos/300/400?random=5" },
-                { "id": 6, "name": "Arda Güler", "position": "Forvet", "number": 10, "imageUrl": "https://picsum.photos/300/400?random=6" },
-                { "id": 7, "name": "Barış Alper Yılmaz", "position": "Forvet", "number": 11, "imageUrl": "https://picsum.photos/300/400?random=7" },
-                { "id": 8, "name": "Mert Günok", "position": "Kaleci", "number": 12, "imageUrl": "https://picsum.photos/300/400?random=8" }
-            ]
+          "id": 1,
+          "name": "Can Uzun",
+          "position": "Kaleci",
+          "number": 1,
+          "imageUrl": "https://picsum.photos/300/400?random=1"
         },
         {
-            "id": "u12",
-            "name": "U-12 Takımı",
-            "slug": "u-12",
-            "heroImage": "https://picsum.photos/1200/400?random=12",
-            "coach": {
-                "name": "Mehmet Öztürk",
-                "role": "U-12 Baş Antrenörü",
-                "imageUrl": "https://picsum.photos/200/200?random=44"
-            },
-            "players": [
-                { "id": 1, "name": "Kenan Yıldız", "position": "Forvet", "number": 1, "imageUrl": "https://picsum.photos/300/400?random=9" },
-                { "id": 2, "name": "Hakan Çalhanoğlu", "position": "Orta Saha", "number": 3, "imageUrl": "https://picsum.photos/300/400?random=10" },
-                { "id": 3, "name": "Cengiz Ünder", "position": "Forvet", "number": 4, "imageUrl": "https://picsum.photos/300/400?random=11" },
-                { "id": 4, "name": "Uğurcan Çakır", "position": "Kaleci", "number": 6, "imageUrl": "https://picsum.photos/300/400?random=12" },
-                { "id": 5, "name": "Merih Demiral", "position": "Defans", "number": 7, "imageUrl": "https://picsum.photos/300/400?random=13" }
-            ]
+          "id": 2,
+          "name": "Zeki Çelik",
+          "position": "Defans",
+          "number": 2,
+          "imageUrl": "https://picsum.photos/300/400?random=2"
+        },
+        {
+          "id": 3,
+          "name": "Emirhan Topçu",
+          "position": "Defans",
+          "number": 5,
+          "imageUrl": "https://picsum.photos/300/400?random=3"
+        },
+        {
+          "id": 4,
+          "name": "Kerem Aktürkoğlu",
+          "position": "Orta Saha",
+          "number": 7,
+          "imageUrl": "https://picsum.photos/300/400?random=4"
+        },
+        {
+          "id": 5,
+          "name": "Ozan Tufan",
+          "position": "Orta Saha",
+          "number": 8,
+          "imageUrl": "https://picsum.photos/300/400?random=5"
+        },
+        {
+          "id": 6,
+          "name": "Arda Güler",
+          "position": "Forvet",
+          "number": 10,
+          "imageUrl": "https://picsum.photos/300/400?random=6"
+        },
+        {
+          "id": 7,
+          "name": "Barış Alper Yılmaz",
+          "position": "Forvet",
+          "number": 11,
+          "imageUrl": "https://picsum.photos/300/400?random=7"
+        },
+        {
+          "id": 8,
+          "name": "Mert Günok",
+          "position": "Kaleci",
+          "number": 12,
+          "imageUrl": "https://picsum.photos/300/400?random=8"
         }
-    ]
+      ]
+    },
+    {
+      "id": "u12",
+      "name": "U-12 Takımı",
+      "slug": "u-12",
+      "heroImage": "https://picsum.photos/1200/400?random=12",
+      "coach": {
+        "name": "Mehmet Öztürk",
+        "role": "U-12 Baş Antrenörü",
+        "imageUrl": "https://picsum.photos/200/200?random=44"
+      },
+      "players": [
+        {
+          "id": 1,
+          "name": "Kenan Yıldız",
+          "position": "Forvet",
+          "number": 1,
+          "imageUrl": "https://picsum.photos/300/400?random=9"
+        },
+        {
+          "id": 2,
+          "name": "Hakan Çalhanoğlu",
+          "position": "Orta Saha",
+          "number": 3,
+          "imageUrl": "https://picsum.photos/300/400?random=10"
+        },
+        {
+          "id": 3,
+          "name": "Cengiz Ünder",
+          "position": "Forvet",
+          "number": 4,
+          "imageUrl": "https://picsum.photos/300/400?random=11"
+        },
+        {
+          "id": 4,
+          "name": "Uğurcan Çakır",
+          "position": "Kaleci",
+          "number": 6,
+          "imageUrl": "https://picsum.photos/300/400?random=12"
+        },
+        {
+          "id": 5,
+          "name": "Merih Demiral",
+          "position": "Defans",
+          "number": 7,
+          "imageUrl": "https://picsum.photos/300/400?random=13"
+        }
+      ]
+    },
+    {
+      "name": "U-13 Takımı",
+      "slug": "u-13",
+      "heroImage": "/uploads/img_8623.jpeg",
+      "coach": {
+        "name": "Musacan KUTLU",
+        "role": "Baş Antrenör",
+        "imageUrl": "/uploads/logo.jpeg"
+      },
+      "players": [
+        {
+          "name": "Ahmet Mehmet",
+          "position": "Kaleci",
+          "number": 1,
+          "imageUrl": "/uploads/img_8623.jpeg"
+        },
+        {
+          "name": "Alican Döşemeci",
+          "position": "Forvet",
+          "number": 5,
+          "imageUrl": "/uploads/img_8623.jpeg"
+        }
+      ]
+    }
+  ]
 }
