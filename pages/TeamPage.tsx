@@ -15,7 +15,8 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
   const team = teams.find(t => t.slug === teamSlug);
   const teamFixtures = fixtures.find(f => f.teamSlug === teamSlug);
 
-  if (!team || !teamFixtures) {
+  // FIX: Only check if the team exists. The fixture is optional.
+  if (!team) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <h1 className="text-2xl font-bold">Takım bulunamadı.</h1>
@@ -65,7 +66,14 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
         {/* Fikstür ve Sonuçlar */}
         <section>
           <h2 className="text-3xl font-bold text-gray-800 mb-6">Fikstür ve Sonuçlar</h2>
-          <FixtureTable data={teamFixtures} />
+          {/* FIX: Conditionally render the fixture table or a message. */}
+          {teamFixtures ? (
+            <FixtureTable data={teamFixtures} />
+          ) : (
+            <div className="bg-white p-6 rounded-xl shadow-lg text-center text-gray-600">
+                <p>Bu takım için henüz fikstür bilgisi girilmemiştir.</p>
+            </div>
+          )}
         </section>
       </div>
     </div>
