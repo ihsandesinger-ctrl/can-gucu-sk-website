@@ -8,7 +8,7 @@ import NewsPage from './pages/NewsPage';
 import GalleryPage from './pages/GalleryPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
-import type { CMSData } from './types';
+import type { CMSData, Team } from './types';
 
 const App: React.FC = () => {
   const [cmsData, setCmsData] = useState<CMSData | null>(null);
@@ -47,8 +47,8 @@ const App: React.FC = () => {
 
         const siteSettings = await settingsRes.json();
         const homePageHero = await homepageRes.json();
-        const teamData = await teamsRes.json();
-        const fixtures = await fixturesRes.json();
+        const teamsData = await teamsRes.json();
+        const fixturesData = await fixturesRes.json();
         const newsData = await newsRes.json();
         const galleryData = await galleryRes.json();
         const staffData = await staffRes.json();
@@ -57,8 +57,8 @@ const App: React.FC = () => {
         setCmsData({
           siteSettings,
           homePageHero,
-          teamData,
-          fixtures,
+          teamData: teamsData.teams,
+          fixtures: fixturesData.fixtures,
           newsData: newsData.articles,
           galleryData: galleryData.images,
           staffData: staffData.members,
@@ -97,26 +97,34 @@ interface MainProps {
 const Main: React.FC<MainProps> = ({ data }) => {
   return (
     <div className="flex flex-col min-h-screen">
-      <Header logo={data.siteSettings.logo} />
+      <Header logo={data.siteSettings.logo} teams={data.teamData} />
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<HomePage 
               heroContent={data.homePageHero}
               fixtures={data.fixtures} 
+              teams={data.teamData}
               news={data.newsData} 
               gallery={data.galleryData} 
               siteLogo={data.siteSettings.logo}
             />} 
           />
-          <Route path="/u-11" element={<TeamPage team={data.teamData.u11} fixtures={data.fixtures.u11} />} />
-          <Route path="/u-12" element={<TeamPage team={data.teamData.u12} fixtures={data.fixtures.u12} />} />
+          
+          {data.teamData.map((team: Team) => (
+            <Route 
+              key={team.slug}
+              path={`/takim/${team.slug}`} 
+              element={<TeamPage teams={data.teamData} fixtures={data.fixtures} />} 
+            />
+          ))}
+
           <Route path="/haberler" element={<NewsPage news={data.newsData} />} />
           <Route path="/galeri" element={<GalleryPage images={data.galleryData} />} />
           <Route path="/hakkimizda" element={<AboutPage staff={data.staffData} content={data.missionVision} />} />
-          <Route path="/iletisim" element={<ContactPage />} />
+          <Route path="/iletisim" element={<ContactPage siteSettings={data.siteSettings}/>} />
         </Routes>
       </main>
-      <Footer />
+      <Footer siteSettings={data.siteSettings} teams={data.teamData} />
     </div>
   );
 }

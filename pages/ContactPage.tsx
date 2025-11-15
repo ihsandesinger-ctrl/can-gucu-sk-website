@@ -1,7 +1,11 @@
-
 import React from 'react';
+import type { SiteSettings } from '../types';
 
-const ContactPage: React.FC = () => {
+interface ContactPageProps {
+    siteSettings: SiteSettings;
+}
+
+const ContactPage: React.FC<ContactPageProps> = ({ siteSettings }) => {
     return (
         <div className="bg-gray-50 py-16">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -15,27 +19,33 @@ const ContactPage: React.FC = () => {
                     <div className="bg-white p-8 rounded-xl shadow-lg">
                         <h2 className="text-2xl font-bold text-gray-800 mb-6">İletişim Bilgileri</h2>
                         <div className="space-y-4 text-gray-700">
-                            <div className="flex items-start">
-                                <i className="fas fa-map-marker-alt text-[#267d87] mt-1 mr-4"></i>
-                                <div>
-                                    <h3 className="font-semibold">Adres</h3>
-                                    <p>Çangücü SK Tesisleri, Futbol Sokak No:1, Çan / Çanakkale</p>
+                            {siteSettings.address && (
+                                <div className="flex items-start">
+                                    <i className="fas fa-map-marker-alt text-[#267d87] mt-1 mr-4"></i>
+                                    <div>
+                                        <h3 className="font-semibold">Adres</h3>
+                                        <p>{siteSettings.address}</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex items-start">
-                                <i className="fas fa-envelope text-[#267d87] mt-1 mr-4"></i>
-                                <div>
-                                    <h3 className="font-semibold">E-posta</h3>
-                                    <p>info@cangucusk.com</p>
+                            )}
+                             {siteSettings.email && (
+                                <div className="flex items-start">
+                                    <i className="fas fa-envelope text-[#267d87] mt-1 mr-4"></i>
+                                    <div>
+                                        <h3 className="font-semibold">E-posta</h3>
+                                        <p>{siteSettings.email}</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex items-start">
-                                <i className="fas fa-phone text-[#267d87] mt-1 mr-4"></i>
-                                <div>
-                                    <h3 className="font-semibold">Telefon</h3>
-                                    <p>+90 (555) 123 45 67</p>
+                             )}
+                            {siteSettings.phone && (
+                                <div className="flex items-start">
+                                    <i className="fas fa-phone text-[#267d87] mt-1 mr-4"></i>
+                                    <div>
+                                        <h3 className="font-semibold">Telefon</h3>
+                                        <p>{siteSettings.phone}</p>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </div>
 

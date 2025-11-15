@@ -1,8 +1,13 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
+import type { SiteSettings, Team } from '../types';
 
-const Footer: React.FC = () => {
+interface FooterProps {
+    siteSettings: SiteSettings;
+    teams: Team[];
+}
+
+const Footer: React.FC<FooterProps> = ({ siteSettings, teams }) => {
     return (
         <footer className="bg-[#267d87] text-white pt-12 pb-8">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -33,8 +38,9 @@ const Footer: React.FC = () => {
                  <div>
                     <h4 className="font-bold text-lg mb-4">TAKIMLAR</h4>
                     <ul className="space-y-2">
-                        <li><Link to="/u-11" className="text-gray-300 hover:text-white">U-11 Takımı</Link></li>
-                        <li><Link to="/u-12" className="text-gray-300 hover:text-white">U-12 Takımı</Link></li>
+                       {teams.map(team => (
+                         <li key={team.slug}><Link to={`/takim/${team.slug}`} className="text-gray-300 hover:text-white">{team.name}</Link></li>
+                       ))}
                     </ul>
                 </div>
                 
@@ -42,9 +48,9 @@ const Footer: React.FC = () => {
                 <div className="md:col-span-4 lg:col-span-1">
                      <h4 className="font-bold text-lg mb-4">İLETİŞİM</h4>
                     <address className="not-italic text-gray-300 space-y-2">
-                        <p>Adres: Çangücü SK Tesisleri, Futbol Sokak No:1, Çan / Çanakkale</p>
-                        <p>E-posta: info@cangucusk.com</p>
-                        <p>Telefon: +90 (555) 123 45 67</p>
+                        {siteSettings.address && <p>Adres: {siteSettings.address}</p>}
+                        {siteSettings.email && <p>E-posta: {siteSettings.email}</p>}
+                        {siteSettings.phone && <p>Telefon: {siteSettings.phone}</p>}
                     </address>
                 </div>
             </div>

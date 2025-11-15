@@ -2,22 +2,35 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import MatchCard from '../components/MatchCard';
 import NewsCard from '../components/NewsCard';
-import type { Fixture, NewsArticle, GalleryItem, HomePageHero } from '../types';
+import type { Fixture, NewsArticle, GalleryItem, HomePageHero, Team } from '../types';
 
 interface HomePageProps {
     heroContent: HomePageHero;
-    fixtures: {
-        u11: Fixture;
-        u12: Fixture;
-    };
+    fixtures: Fixture[];
+    teams: Team[];
     news: NewsArticle[];
     gallery: GalleryItem[];
     siteLogo: string;
 }
 
-const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, news, gallery, siteLogo }) => {
-    const upcomingMatchU11 = fixtures.u11.matches.find(m => m.score === '-');
-    const upcomingMatchU12 = fixtures.u12.matches.find(m => m.score === '-');
+const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news, gallery, siteLogo }) => {
+    
+    // Find the next upcoming match for the first two teams in the list
+    const getUpcomingMatches = () => {
+        const upcoming = [];
+        for(const team of teams.slice(0, 2)) {
+            const teamFixture = fixtures.find(f => f.teamSlug === team.slug);
+            if (teamFixture) {
+                const nextMatch = teamFixture.matches.find(m => m.score === '-');
+                if (nextMatch) {
+                    upcoming.push({ ...nextMatch, teamName: teamFixture.teamName });
+                }
+            }
+        }
+        return upcoming;
+    }
+
+    const upcomingMatches = getUpcomingMatches();
     const recentNews = news.slice(0, 5);
     const recentPhotos = gallery.slice(0, 6);
 
@@ -41,24 +54,16 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, news, galler
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                     <h2 className="text-3xl font-bold text-center text-white mb-10">SIRADAKİ MAÇLAR</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {upcomingMatchU11 && (
-                            <MatchCard 
-                                teamName={fixtures.u11.teamName}
-                                date={upcomingMatchU11.date}
+                        {upcomingMatches.map((match, index) => (
+                             <MatchCard 
+                                key={index}
+                                teamName={match.teamName}
+                                date={match.date}
                                 homeTeam="Çangücü SK"
-                                awayTeam={upcomingMatchU11.opponent}
+                                awayTeam={match.opponent}
                                 homeTeamLogo={siteLogo}
                             />
-                        )}
-                         {upcomingMatchU12 && (
-                            <MatchCard 
-                                teamName={fixtures.u12.teamName}
-                                date={upcomingMatchU12.date}
-                                homeTeam="Çangücü SK"
-                                awayTeam={upcomingMatchU12.opponent}
-                                homeTeamLogo={siteLogo}
-                            />
-                        )}
+                        ))}
                     </div>
                 </div>
             </section>
@@ -74,8 +79,8 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, news, galler
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                         {recentNews.length > 0 && <NewsCard article={recentNews[0]} large={true} />}
-                        {recentNews.slice(1).map(article => (
-                             <NewsCard key={article.id} article={article} />
+                        {recentNews.slice(1).map((article, index) => (
+                             <NewsCard key={index} article={article} />
                         ))}
                     </div>
                 </div>
@@ -91,8 +96,8 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, news, galler
                         </Link>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-                        {recentPhotos.map((photo) => (
-                             <Link to="/galeri" key={photo.id} className="block relative rounded-lg overflow-hidden shadow-md group h-48 cursor-pointer">
+                        {recentPhotos.map((photo, index) => (
+                             <Link to="/galeri" key={index} className="block relative rounded-lg overflow-hidden shadow-md group h-48 cursor-pointer">
                                 <img 
                                     src={photo.imageUrl} 
                                     alt={photo.title || 'Galeri Fotoğrafı'} 
@@ -110,5 +115,4 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, news, galler
     );
 };
 
-// FIX: Added default export to the HomePage component.
 export default HomePage;

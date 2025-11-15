@@ -1,14 +1,28 @@
 import React from 'react';
+import { useParams } from 'react-router-dom';
 import type { Team, Fixture } from '../types';
 import PlayerCard from '../components/PlayerCard';
 import FixtureTable from '../components/FixtureTable';
 
 interface TeamPageProps {
-  team: Team;
-  fixtures: Fixture;
+  teams: Team[];
+  fixtures: Fixture[];
 }
 
-const TeamPage: React.FC<TeamPageProps> = ({ team, fixtures }) => {
+const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
+  const { teamSlug } = useParams<{ teamSlug: string }>();
+
+  const team = teams.find(t => t.slug === teamSlug);
+  const teamFixtures = fixtures.find(f => f.teamSlug === teamSlug);
+
+  if (!team || !teamFixtures) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <h1 className="text-2xl font-bold">Takım bulunamadı.</h1>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-50">
       {/* Hero Image */}
@@ -42,8 +56,8 @@ const TeamPage: React.FC<TeamPageProps> = ({ team, fixtures }) => {
         <section className="mb-12">
           <h2 className="text-3xl font-bold text-gray-800 mb-6">Oyuncular Kadrosu</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            {team.players.map((player) => (
-              <PlayerCard key={player.id} player={player} />
+            {team.players.map((player, index) => (
+              <PlayerCard key={index} player={player} />
             ))}
           </div>
         </section>
@@ -51,7 +65,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ team, fixtures }) => {
         {/* Fikstür ve Sonuçlar */}
         <section>
           <h2 className="text-3xl font-bold text-gray-800 mb-6">Fikstür ve Sonuçlar</h2>
-          <FixtureTable data={fixtures} />
+          <FixtureTable data={teamFixtures} />
         </section>
       </div>
     </div>

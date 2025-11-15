@@ -16,6 +16,7 @@ export interface Coach {
 export interface Team {
   id: string;
   name: string;
+  slug: string;
   heroImage: string;
   coach: Coach;
   players: Player[];
@@ -30,6 +31,7 @@ export interface Match {
 
 export interface Fixture {
     teamName: string;
+    teamSlug: string;
     matches: Match[];
 }
 
@@ -62,6 +64,9 @@ export interface MissionVision {
 
 export interface SiteSettings {
   logo: string;
+  address: string;
+  email: string;
+  phone: string;
 }
 
 export interface HomePageHero {
@@ -73,14 +78,8 @@ export interface HomePageHero {
 export interface CMSData {
   siteSettings: SiteSettings;
   homePageHero: HomePageHero;
-  teamData: {
-    u11: Team;
-    u12: Team;
-  };
-  fixtures: {
-    u11: Fixture;
-    u12: Fixture;
-  };
+  teamData: Team[];
+  fixtures: Fixture[];
   newsData: NewsArticle[];
   galleryData: GalleryItem[];
   staffData: StaffMember[];

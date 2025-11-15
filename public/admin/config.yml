@@ -6,6 +6,18 @@ media_folder: "public/uploads"
 public_folder: "/uploads"
 
 collections:
+  - name: "settings"
+    label: "Genel Ayarlar"
+    files:
+      - file: "public/content/settings.json"
+        label: "Site Ayarları"
+        name: "site_settings"
+        fields:
+          - { label: "Site Logosu", name: "logo", widget: "image" }
+          - { label: "Adres", name: "address", widget: "string", required: false }
+          - { label: "E-posta", name: "email", widget: "string", required: false }
+          - { label: "Telefon", name: "phone", widget: "string", required: false }
+
   - name: "homepage"
     label: "Ana Sayfa İçeriği"
     files:
@@ -16,50 +28,21 @@ collections:
           - { label: "Arkaplan Fotoğrafı", name: "heroImage", widget: "image" }
           - { label: "Ana Başlık", name: "heroTitle", widget: "string" }
           - { label: "Alt Başlık", name: "heroSubtitle", widget: "string" }
-
-  - name: "settings"
-    label: "Genel Ayarlar"
-    files:
-      - file: "public/content/settings.json"
-        label: "Site Ayarları"
-        name: "site_settings"
-        fields:
-          - { label: "Site Logosu", name: "logo", widget: "image" }
-
+  
   - name: "teams"
     label: "Takımlar"
     files:
       - file: "public/content/teams.json"
-        label: "Takım Bilgileri"
-        name: "team_data"
+        label: "Takımlar"
+        name: "teams_collection"
         fields:
-          - name: "u11"
-            label: "U-11 Takımı"
-            widget: "object"
+          - name: "teams"
+            label: "Takım Listesi"
+            widget: "list"
+            summary: "{{name}}"
             fields:
-              - { name: "name", label: "Takım Adı", widget: "string" }
-              - { name: "heroImage", label: "Kapak Fotoğrafı", widget: "image" }
-              - name: "coach"
-                label: "Teknik Kadro"
-                widget: "object"
-                fields:
-                  - { name: "name", label: "İsim", widget: "string", required: true }
-                  - { name: "role", label: "Görev", widget: "string", required: true }
-                  - { name: "imageUrl", label: "Fotoğraf", widget: "image", required: false }
-              - name: "players"
-                label: "Oyuncular"
-                widget: "list"
-                summary: "{{name}} - #{{number}}"
-                fields:
-                  - { name: "name", label: "İsim", widget: "string", required: true }
-                  - { name: "position", label: "Pozisyon", widget: "string", required: true }
-                  - { name: "number", label: "Numara", widget: "number", required: true }
-                  - { name: "imageUrl", label: "Fotoğraf", widget: "image", required: true }
-          - name: "u12"
-            label: "U-12 Takımı"
-            widget: "object"
-            fields:
-              - { name: "name", label: "Takım Adı", widget: "string" }
+              - { name: "name", label: "Takım Adı", widget: "string", required: true }
+              - { name: "slug", label: "Takım Linki (Örn: u-13)", widget: "string", required: true, hint: "Adres çubuğunda görünecek kimlik. Sadece küçük harf, rakam ve tire kullanın." }
               - { name: "heroImage", label: "Kapak Fotoğrafı", widget: "image" }
               - name: "coach"
                 label: "Teknik Kadro"
@@ -85,11 +68,13 @@ collections:
         label: "Maç Fikstürleri"
         name: "fixture_data"
         fields:
-          - name: "u11"
-            label: "U-11 Fikstürü"
-            widget: "object"
+          - name: "fixtures"
+            label: "Fikstür Listesi"
+            widget: "list"
+            summary: "{{teamName}} Fikstürü"
             fields:
               - { name: "teamName", label: "Takım Adı", widget: "string" }
+              - { name: "teamSlug", label: "İlgili Takım Linki (örn: u-11)", widget: "string", required: true, hint: "Bu fikstürün hangi takıma ait olduğunu belirtir. Takımlar listesindeki 'Takım Linki' ile aynı olmalıdır." }
               - name: "matches"
                 label: "Maçlar"
                 widget: "list"
@@ -98,23 +83,6 @@ collections:
                   - { name: "date", label: "Tarih", widget: "string", required: true }
                   - { name: "opponent", label: "Rakip", widget: "string", required: true }
                   - { name: "score", label: "Skor", widget: "string", default: "-", hint: "Maç oynanmadıysa '-' olarak bırakın." }
-                  - name: "location"
-                    label: "Konum"
-                    widget: "select"
-                    options: ["Ev", "Deplasman"]
-          - name: "u12"
-            label: "U-12 Fikstürü"
-            widget: "object"
-            fields:
-              - { name: "teamName", label: "Takım Adı", widget: "string" }
-              - name: "matches"
-                label: "Maçlar"
-                widget: "list"
-                summary: "{{date}} vs {{opponent}}"
-                fields:
-                  - { name: "date", label: "Tarih", widget: "string", required: true }
-                  - { name: "opponent", label: "Rakip", widget: "string", required: true }
-                  - { name: "score", label: "Skor", widget: "string", default: "-" }
                   - name: "location"
                     label: "Konum"
                     widget: "select"
