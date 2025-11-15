@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
@@ -8,7 +8,7 @@ import NewsPage from './pages/NewsPage';
 import GalleryPage from './pages/GalleryPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
-import type { CMSData, Team } from './types';
+import type { CMSData } from './types';
 
 const App: React.FC = () => {
   const [cmsData, setCmsData] = useState<CMSData | null>(null);
@@ -110,13 +110,10 @@ const Main: React.FC<MainProps> = ({ data }) => {
             />} 
           />
           
-          {data.teamData.map((team: Team) => (
-            <Route 
-              key={team.slug}
-              path={`/takim/${team.slug}`} 
-              element={<TeamPage teams={data.teamData} fixtures={data.fixtures} />} 
-            />
-          ))}
+          <Route 
+            path="/takim/:teamSlug" 
+            element={<TeamPage teams={data.teamData} fixtures={data.fixtures} />} 
+          />
 
           <Route path="/haberler" element={<NewsPage news={data.newsData} />} />
           <Route path="/galeri" element={<GalleryPage images={data.galleryData} />} />
