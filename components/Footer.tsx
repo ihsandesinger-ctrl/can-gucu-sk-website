@@ -1,0 +1,58 @@
+
+import React from 'react';
+import { Link } from 'react-router-dom';
+
+const Footer: React.FC = () => {
+    return (
+        <footer className="bg-[#267d87] text-white pt-12 pb-8">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
+                {/* Column 1: Club Info */}
+                <div className="md:col-span-2">
+                    <h3 className="text-2xl font-bold mb-4">Çangücü SK</h3>
+                    <p className="text-gray-300 max-w-md">
+                        Geleceğin yıldızlarını yetiştiriyoruz. Tutku, disiplin ve takım ruhuyla zafere!
+                    </p>
+                    <div className="flex space-x-4 mt-4">
+                        <a href="#" className="text-gray-300 hover:text-white"><i className="fab fa-facebook-f"></i></a>
+                        <a href="#" className="text-gray-300 hover:text-white"><i className="fab fa-twitter"></i></a>
+                        <a href="#" className="text-gray-300 hover:text-white"><i className="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+
+                {/* Column 2: Kulüp */}
+                <div>
+                    <h4 className="font-bold text-lg mb-4">KULÜP</h4>
+                    <ul className="space-y-2">
+                        <li><Link to="/hakkimizda" className="text-gray-300 hover:text-white">Hakkımızda</Link></li>
+                        <li><Link to="/haberler" className="text-gray-300 hover:text-white">Haberler</Link></li>
+                        <li><Link to="/iletisim" className="text-gray-300 hover:text-white">İletişim</Link></li>
+                    </ul>
+                </div>
+
+                {/* Column 3: Takımlar */}
+                 <div>
+                    <h4 className="font-bold text-lg mb-4">TAKIMLAR</h4>
+                    <ul className="space-y-2">
+                        <li><Link to="/u-11" className="text-gray-300 hover:text-white">U-11 Takımı</Link></li>
+                        <li><Link to="/u-12" className="text-gray-300 hover:text-white">U-12 Takımı</Link></li>
+                    </ul>
+                </div>
+                
+                {/* Column 4: İletişim */}
+                <div className="md:col-span-4 lg:col-span-1">
+                     <h4 className="font-bold text-lg mb-4">İLETİŞİM</h4>
+                    <address className="not-italic text-gray-300 space-y-2">
+                        <p>Adres: Çangücü SK Tesisleri, Futbol Sokak No:1, Çan / Çanakkale</p>
+                        <p>E-posta: info@cangucusk.com</p>
+                        <p>Telefon: +90 (555) 123 45 67</p>
+                    </address>
+                </div>
+            </div>
+             <div className="container mx-auto px-4 sm:px-6 lg:px-8 mt-8 border-t border-gray-700 pt-6 text-center text-gray-400 text-sm">
+                &copy; {new Date().getFullYear()} Çangücü SK. Tüm hakları saklıdır.
+            </div>
+        </footer>
+    );
+};
+
+export default Footer;

@@ -1,0 +1,167 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "public/uploads"
+public_folder: "/uploads"
+
+collections:
+  - name: "settings"
+    label: "Genel Ayarlar"
+    files:
+      - file: "public/content/settings.json"
+        label: "Site Ayarları"
+        name: "site_settings"
+        fields:
+          - { label: "Site Logosu", name: "logo", widget: "image" }
+
+  - name: "teams"
+    label: "Takımlar"
+    files:
+      - file: "public/content/teams.json"
+        label: "Takım Bilgileri"
+        name: "team_data"
+        fields:
+          - name: "u11"
+            label: "U-11 Takımı"
+            widget: "object"
+            fields:
+              - { name: "id", label: "ID", widget: "hidden", default: "u11" }
+              - { name: "name", label: "Takım Adı", widget: "string" }
+              - { name: "heroImage", label: "Kapak Fotoğrafı", widget: "image" }
+              - name: "coach"
+                label: "Teknik Kadro"
+                widget: "object"
+                fields:
+                  - { name: "name", label: "İsim", widget: "string" }
+                  - { name: "role", label: "Görev", widget: "string" }
+              - name: "players"
+                label: "Oyuncular"
+                widget: "list"
+                fields:
+                  - { name: "id", label: "ID", widget: "hidden", default: "" }
+                  - { name: "name", label: "İsim", widget: "string" }
+                  - { name: "position", label: "Pozisyon", widget: "string" }
+                  - { name: "number", label: "Numara", widget: "number" }
+                  - { name: "imageUrl", label: "Fotoğraf", widget: "image" }
+          - name: "u12"
+            label: "U-12 Takımı"
+            widget: "object"
+            fields:
+              - { name: "id", label: "ID", widget: "hidden", default: "u12" }
+              - { name: "name", label: "Takım Adı", widget: "string" }
+              - { name: "heroImage", label: "Kapak Fotoğrafı", widget: "image" }
+              - name: "coach"
+                label: "Teknik Kadro"
+                widget: "object"
+                fields:
+                  - { name: "name", label: "İsim", widget: "string" }
+                  - { name: "role", label: "Görev", widget: "string" }
+              - name: "players"
+                label: "Oyuncular"
+                widget: "list"
+                fields:
+                  - { name: "id", label: "ID", widget: "hidden", default: "" }
+                  - { name: "name", label: "İsim", widget: "string" }
+                  - { name: "position", label: "Pozisyon", widget: "string" }
+                  - { name: "number", label: "Numara", widget: "number" }
+                  - { name: "imageUrl", label: "Fotoğraf", widget: "image" }
+
+  - name: "fixtures"
+    label: "Fikstür ve Sonuçlar"
+    files:
+      - file: "public/content/fixtures.json"
+        label: "Maç Fikstürleri"
+        name: "fixture_data"
+        fields:
+          - name: "u11"
+            label: "U-11 Fikstürü"
+            widget: "object"
+            fields:
+              - { name: "teamName", label: "Takım Adı", widget: "string" }
+              - name: "matches"
+                label: "Maçlar"
+                widget: "list"
+                fields:
+                  - { name: "date", label: "Tarih", widget: "string" }
+                  - { name: "opponent", label: "Rakip", widget: "string" }
+                  - { name: "score", label: "Skor", widget: "string", default: "-" }
+                  - name: "location"
+                    label: "Konum"
+                    widget: "select"
+                    options: ["Ev", "Deplasman"]
+          - name: "u12"
+            label: "U-12 Fikstürü"
+            widget: "object"
+            fields:
+              - { name: "teamName", label: "Takım Adı", widget: "string" }
+              - name: "matches"
+                label: "Maçlar"
+                widget: "list"
+                fields:
+                  - { name: "date", label: "Tarih", widget: "string" }
+                  - { name: "opponent", label: "Rakip", widget: "string" }
+                  - { name: "score", label: "Skor", widget: "string", default: "-" }
+                  - name: "location"
+                    label: "Konum"
+                    widget: "select"
+                    options: ["Ev", "Deplasman"]
+
+  - name: "news"
+    label: "Haberler"
+    files:
+      - file: "public/content/newsData.json"
+        label: "Haberler ve Duyurular"
+        name: "news_articles"
+        fields:
+          - name: "articles"
+            label: "Haberler"
+            widget: "list"
+            fields:
+              - { name: "id", label: "ID", widget: "hidden", default: "" }
+              - { name: "title", label: "Başlık", widget: "string" }
+              - { name: "summary", label: "Özet", widget: "text" }
+              - { name: "content", label: "İçerik", widget: "markdown" }
+              - { name: "date", label: "Yayın Tarihi", widget: "datetime" }
+              - { name: "imageUrl", label: "Kapak Fotoğrafı", widget: "image" }
+
+  - name: "gallery"
+    label: "Galeri"
+    files:
+      - file: "public/content/galleryData.json"
+        label: "Fotoğraf Galerisi"
+        name: "gallery_images"
+        fields:
+          - name: "images"
+            label: "Fotoğraflar"
+            widget: "list"
+            fields:
+              - { name: "id", label: "ID", widget: "hidden", default: "" }
+              - { name: "imageUrl", label: "Fotoğraf", widget: "image" }
+              - { name: "title", label: "Başlık (Opsiyonel)", widget: "string", required: false }
+
+  - name: "staff"
+    label: "Yönetim"
+    files:
+      - file: "public/content/staffData.json"
+        label: "Yönetim ve Teknik Ekip"
+        name: "staff_members"
+        fields:
+          - name: "members"
+            label: "Ekip Üyeleri"
+            widget: "list"
+            fields:
+              - { name: "id", label: "ID", widget: "hidden", default: "" }
+              - { name: "name", label: "İsim", widget: "string" }
+              - { name: "role", label: "Görev", widget: "string" }
+              - { name: "imageUrl", label: "Fotoğraf", widget: "image" }
+  
+  - name: "about"
+    label: "Hakkımızda İçeriği"
+    files:
+      - file: "public/content/missionVision.json"
+        label: "Misyon & Vizyon"
+        name: "mission_vision"
+        fields:
+          - { name: "mission", label: "Misyonumuz", widget: "text" }
+          - { name: "vision", label: "Vizyonumuz", widget: "text" }

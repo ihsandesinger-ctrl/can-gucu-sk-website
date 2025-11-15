@@ -1,0 +1,10 @@
+{
+    "images": [
+        { "id": 1, "imageUrl": "https://picsum.photos/600/400?random=31", "title": "Antrenmandan Bir Kare" },
+        { "id": 2, "imageUrl": "https://picsum.photos/600/400?random=32", "title": "Maç Günü Heyecanı" },
+        { "id": 3, "imageUrl": "https://picsum.photos/600/400?random=33", "title": "Takım Yemeği" },
+        { "id": 4, "imageUrl": "https://picsum.photos/600/400?random=34", "title": "Galibiyet Sevinci" },
+        { "id": 5, "imageUrl": "https://picsum.photos/600/400?random=35", "title": "Taraftar Desteği" },
+        { "id": 6, "imageUrl": "https://picsum.photos/600/400?random=36", "title": "Kupa Töreni" }
+    ]
+}

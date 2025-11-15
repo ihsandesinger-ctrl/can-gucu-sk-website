@@ -1,0 +1,44 @@
+{
+    "articles": [
+        {
+            "id": 1,
+            "title": "U-11 Takımımız Sezonu Galibiyetle Açtı!",
+            "summary": "Genç yeteneklerimiz, sezonun ilk maçında Rakip SK karşısında sahadan 3-1 galip ayrılarak harika bir başlangıç yaptı.",
+            "content": "Detaylı maç analizi ve oyuncu performansları yakında sitemizde olacak. Takımımızı tebrik eder, başarılarının devamını dileriz.",
+            "date": "2024-10-21T12:00:00.000Z",
+            "imageUrl": "https://picsum.photos/800/600?random=21"
+        },
+        {
+            "id": 2,
+            "title": "U-12 Takımından Gole Doyuran Performans",
+            "summary": "U-12 takımımız, evinde ağırladığı Aslanlar SK karşısında 4-0'lık net bir skorla galip geldi. Oyuncularımızın performansı göz doldurdu.",
+            "content": "Maç boyunca üstün bir oyun sergileyen takımımız, taraftarlarımıza keyifli bir hafta sonu yaşattı. Teknik ekibimizi ve oyuncularımızı kutluyoruz.",
+            "date": "2024-10-22T12:00:00.000Z",
+            "imageUrl": "https://picsum.photos/800/600?random=22"
+        },
+        {
+            "id": 3,
+            "title": "Yeni Sezon Formalarımız Tanıtıldı",
+            "summary": "Çangücü SK 2024-2025 sezonunda giyeceğimiz yeni formalarımız, düzenlenen bir etkinlikle tanıtıldı.",
+            "content": "Kulübümüzün renkleri olan turuncu ve turkuazın modern bir tasarımla buluştuğu yeni formalarımız, hem oyuncularımızın hem de taraftarlarımızın büyük beğenisini kazandı.",
+            "date": "2024-10-15T12:00:00.000Z",
+            "imageUrl": "https://picsum.photos/800/600?random=23"
+        },
+        {
+            "id": 4,
+            "title": "Altyapı Seçmeleri İçin Kayıtlar Başladı",
+            "summary": "Geleceğin yıldızlarını arıyoruz! Kulübümüzün altyapı seçmeleri için kayıtlar başladı. Detaylı bilgi için iletişim sayfamızı ziyaret edebilirsiniz.",
+            "content": "Her yıl düzenlediğimiz altyapı seçmeleriyle yeni yetenekleri kulübümüze kazandırmayı hedefliyoruz. Başvurularınızı bekliyoruz.",
+            "date": "2024-10-10T12:00:00.000Z",
+            "imageUrl": "https://picsum.photos/800/600?random=24"
+        },
+        {
+            "id": 5,
+            "title": "Kalecimizden harika bir kurtarış",
+            "summary": "Maçın kritik anında kalecimiz Can Uzun, yaptığı muhteşem kurtarışla takımımızı ayakta tuttu.",
+            "content": "Son dakika atağında rakibin net gol pozisyonunu engelleyen Can, haftanın en iyi kurtarışlarına aday oldu.",
+            "date": "2024-10-16T12:00:00.000Z",
+            "imageUrl": "https://picsum.photos/800/600?random=25"
+        }
+    ]
+}

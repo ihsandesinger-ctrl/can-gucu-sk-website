@@ -1,0 +1,8 @@
+{
+    "members": [
+        { "id": 1, "name": "Ali Veli", "role": "Kulüp Başkanı", "imageUrl": "https://picsum.photos/200/200?random=41" },
+        { "id": 2, "name": "Ayşe Fatma", "role": "Yönetim Kurulu Üyesi", "imageUrl": "https://picsum.photos/200/200?random=42" },
+        { "id": 3, "name": "Ahmet Yılmaz", "role": "U-11 Baş Antrenörü", "imageUrl": "https://picsum.photos/200/200?random=43" },
+        { "id": 4, "name": "Mehmet Öztürk", "role": "U-12 Baş Antrenörü", "imageUrl": "https://picsum.photos/200/200?random=44" }
+    ]
+}

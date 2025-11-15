@@ -1,0 +1,5 @@
+{
+  "name": "Çangücü SK Website",
+  "description": "A clone of the Çangücü SK football club website, featuring dynamic content sections for teams, news, fixtures, and more. Built with React and Tailwind CSS.",
+  "requestFramePermissions": []
+}
