@@ -62,11 +62,19 @@ export interface MissionVision {
   vision: string;
 }
 
+export interface SocialMediaLinks {
+  facebook?: string;
+  twitter?: string;
+  instagram?: string;
+  youtube?: string;
+}
+
 export interface SiteSettings {
   logo: string;
   address: string;
   email: string;
   phone: string;
+  socialMedia?: SocialMediaLinks;
 }
 
 export interface HomePageHero {

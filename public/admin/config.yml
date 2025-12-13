@@ -1,3 +1,4 @@
+
 backend:
   name: git-gateway
   branch: main
@@ -17,6 +18,15 @@ collections:
           - { label: "Adres", name: "address", widget: "string", required: false }
           - { label: "E-posta", name: "email", widget: "string", required: false }
           - { label: "Telefon", name: "phone", widget: "string", required: false }
+          - label: "Sosyal Medya Hesapları"
+            name: "socialMedia"
+            widget: "object"
+            collapsed: false
+            fields:
+              - { label: "Facebook URL", name: "facebook", widget: "string", required: false }
+              - { label: "Twitter (X) URL", name: "twitter", widget: "string", required: false }
+              - { label: "Instagram URL", name: "instagram", widget: "string", required: false }
+              - { label: "YouTube URL", name: "youtube", widget: "string", required: false }
 
   - name: "homepage"
     label: "Ana Sayfa İçeriği"

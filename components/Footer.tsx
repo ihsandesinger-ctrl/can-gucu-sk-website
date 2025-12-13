@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import type { SiteSettings, Team } from '../types';
@@ -18,9 +19,26 @@ const Footer: React.FC<FooterProps> = ({ siteSettings, teams }) => {
                         Geleceğin yıldızlarını yetiştiriyoruz. Tutku, disiplin ve takım ruhuyla zafere!
                     </p>
                     <div className="flex space-x-4 mt-4">
-                        <a href="#" className="text-gray-300 hover:text-white"><i className="fab fa-facebook-f"></i></a>
-                        <a href="#" className="text-gray-300 hover:text-white"><i className="fab fa-twitter"></i></a>
-                        <a href="#" className="text-gray-300 hover:text-white"><i className="fab fa-instagram"></i></a>
+                        {siteSettings.socialMedia?.facebook && (
+                            <a href={siteSettings.socialMedia.facebook} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition-colors">
+                                <i className="fab fa-facebook-f text-xl"></i>
+                            </a>
+                        )}
+                        {siteSettings.socialMedia?.twitter && (
+                            <a href={siteSettings.socialMedia.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition-colors">
+                                <i className="fab fa-twitter text-xl"></i>
+                            </a>
+                        )}
+                        {siteSettings.socialMedia?.instagram && (
+                            <a href={siteSettings.socialMedia.instagram} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition-colors">
+                                <i className="fab fa-instagram text-xl"></i>
+                            </a>
+                        )}
+                        {siteSettings.socialMedia?.youtube && (
+                            <a href={siteSettings.socialMedia.youtube} target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-white transition-colors">
+                                <i className="fab fa-youtube text-xl"></i>
+                            </a>
+                        )}
                     </div>
                 </div>
 
