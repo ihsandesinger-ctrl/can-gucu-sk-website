@@ -84,7 +84,7 @@
           "id": 1,
           "name": "Kenan Yıldız",
           "position": "Forvet",
-          "number": 1,
+          "number": 10,
           "imageUrl": "https://picsum.photos/300/400?random=9"
         },
         {
@@ -105,7 +105,7 @@
           "id": 4,
           "name": "Uğurcan Çakır",
           "position": "Kaleci",
-          "number": 6,
+          "number": 1,
           "imageUrl": "https://picsum.photos/300/400?random=12"
         },
         {
