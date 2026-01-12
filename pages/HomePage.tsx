@@ -59,7 +59,7 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news,
                                 key={index}
                                 teamName={match.teamName}
                                 date={match.date}
-                                homeTeam="Çangücü SK"
+                                homeTeam="ÇANGÜCÜ SK"
                                 awayTeam={match.opponent}
                                 homeTeamLogo={siteLogo}
                             />

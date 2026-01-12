@@ -57,12 +57,11 @@ const Header: React.FC<HeaderProps> = ({ logo, teams }) => {
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-20">
                         <Link to="/" className="flex items-center space-x-4" onClick={handleLinkClick}>
-                            <img src={logo} alt="Çangücü SK Logo" className="h-14 w-auto" />
-                            <span className="text-2xl font-bold">Çangücü SK</span>
+                            <img src={logo} alt="ÇANGÜCÜ SK Logo" className="h-14 w-auto" />
+                            <span className="text-2xl font-bold">ÇANGÜCÜ SK</span>
                         </Link>
                         
                         <nav className="hidden md:flex space-x-2 items-center">
-                            {/* FIX: Map over the navItems array to render NavLink components instead of trying to render an object directly. */}
                             {navItems.slice(0, 1).map((item) => (
                                 <NavLink
                                     key={item.name}

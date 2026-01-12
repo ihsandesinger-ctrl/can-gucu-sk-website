@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import type { SiteSettings, Team } from '../types';
@@ -73,7 +72,7 @@ const Footer: React.FC<FooterProps> = ({ siteSettings, teams }) => {
                 </div>
             </div>
              <div className="container mx-auto px-4 sm:px-6 lg:px-8 mt-8 border-t border-gray-700 pt-6 text-center text-gray-400 text-sm">
-                &copy; {new Date().getFullYear()} Çangücü SK. Tüm hakları saklıdır.
+                &copy; {new Date().getFullYear()} ÇANGÜCÜ SK. Tüm hakları saklıdır.
             </div>
         </footer>
     );

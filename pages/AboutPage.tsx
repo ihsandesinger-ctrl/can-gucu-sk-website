@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { StaffMember, MissionVision } from '../types';
 
@@ -13,7 +12,7 @@ const AboutPage: React.FC<AboutPageProps> = ({ staff, content }) => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold text-gray-800">Hakkımızda</h1>
-          <p className="text-lg text-gray-600 mt-2">Çangücü SK: Bir Kulüpten Daha Fazlası</p>
+          <p className="text-lg text-gray-600 mt-2">ÇANGÜCÜ SK: Bir Kulüpten Daha Fazlası</p>
         </div>
 
         {/* Misyon & Vizyon */}
