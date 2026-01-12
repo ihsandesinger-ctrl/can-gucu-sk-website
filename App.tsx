@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
@@ -74,6 +75,16 @@ const App: React.FC = () => {
 
     fetchContent();
   }, []);
+
+  // Update favicon dynamically when logo is available
+  useEffect(() => {
+    if (cmsData?.siteSettings.logo) {
+      const favicon = document.getElementById('favicon') as HTMLLinkElement;
+      if (favicon) {
+        favicon.href = cmsData.siteSettings.logo;
+      }
+    }
+  }, [cmsData]);
   
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Yükleniyor...</div>;
