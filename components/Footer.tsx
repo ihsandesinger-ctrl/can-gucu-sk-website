@@ -14,7 +14,7 @@ const Footer: React.FC<FooterProps> = ({ siteSettings, teams }) => {
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
                 {/* Column 1: Club Info */}
                 <div className="md:col-span-2">
-                    <h3 className="text-2xl font-bold mb-4">Çangücü SK</h3>
+                    <h3 className="text-2xl font-bold mb-4">ÇANGÜCÜ SK</h3>
                     <p className="text-gray-300 max-w-md">
                         Geleceğin yıldızlarını yetiştiriyoruz. Tutku, disiplin ve takım ruhuyla zafere!
                     </p>
