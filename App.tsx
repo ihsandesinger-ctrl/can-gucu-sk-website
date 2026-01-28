@@ -9,6 +9,7 @@ import NewsPage from './pages/NewsPage';
 import GalleryPage from './pages/GalleryPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
+import ScrollToTop from './components/ScrollToTop';
 import type { CMSData } from './types';
 
 const App: React.FC = () => {
@@ -96,6 +97,7 @@ const App: React.FC = () => {
 
   return (
     <HashRouter>
+      <ScrollToTop />
       <Main data={cmsData} />
     </HashRouter>
   );
