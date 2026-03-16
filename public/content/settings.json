@@ -9,7 +9,7 @@
     "instagram": "https://instagram.com",
     "youtube": ""
   },
-  "maintenanceMode": true,
+  "maintenanceMode": false,
   "navigation": [
     {
       "name": "Ana Sayfa",
