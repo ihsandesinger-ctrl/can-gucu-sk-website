@@ -22,22 +22,36 @@
       "isDropdown": true,
       "items": [
         {
-          "name": "U-11",
+          "name": "U-11 Futbol Takımı",
           "path": "/takim/u-11",
           "isDropdown": false,
           "items": []
         },
         {
-          "name": "U-13",
+          "name": "U-13 Futbol takımı",
           "path": "/takim/u-13",
           "isDropdown": false,
           "items": []
         },
         {
-          "name": "U-15",
+          "name": "U-15 Futbol Takımı",
           "path": "/takim/u-15",
           "isDropdown": false,
           "items": []
+        }
+      ]
+    },
+    {
+      "isDropdown": true,
+      "name": "Branşlarımız",
+      "items": [
+        {
+          "isDropdown": false,
+          "name": "Tenis"
+        },
+        {
+          "isDropdown": false,
+          "name": "Voleybol"
         }
       ]
     },
@@ -64,20 +78,6 @@
       "path": "/iletisim",
       "isDropdown": false,
       "items": []
-    },
-    {
-      "isDropdown": true,
-      "name": "Branşlarımız",
-      "items": [
-        {
-          "isDropdown": false,
-          "name": "Tenis"
-        },
-        {
-          "isDropdown": false,
-          "name": "Voleybol"
-        }
-      ]
     }
   ],
   "globalStyles": {
