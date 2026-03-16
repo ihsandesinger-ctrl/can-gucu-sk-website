@@ -5,7 +5,6 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import TeamPage from './pages/TeamPage';
-import BranchPage from './pages/BranchPage';
 import NewsPage from './pages/NewsPage';
 import GalleryPage from './pages/GalleryPage';
 import AboutPage from './pages/AboutPage';
@@ -30,7 +29,6 @@ const App: React.FC = () => {
           galleryRes,
           staffRes,
           missionVisionRes,
-          branchesRes,
         ] = await Promise.all([
           fetch('/content/settings.json'),
           fetch('/content/homepage.json'),
@@ -40,10 +38,9 @@ const App: React.FC = () => {
           fetch('/content/galleryData.json'),
           fetch('/content/staffData.json'),
           fetch('/content/missionVision.json'),
-          fetch('/content/branches.json'),
         ]);
 
-        const allResponses = [settingsRes, homepageRes, teamsRes, fixturesRes, newsRes, galleryRes, staffRes, missionVisionRes, branchesRes];
+        const allResponses = [settingsRes, homepageRes, teamsRes, fixturesRes, newsRes, galleryRes, staffRes, missionVisionRes];
         for (const res of allResponses) {
           if (!res.ok) {
             throw new Error(`Failed to fetch content from ${res.url}`);
@@ -58,13 +55,11 @@ const App: React.FC = () => {
         const galleryData = await galleryRes.json();
         const staffData = await staffRes.json();
         const missionVision = await missionVisionRes.json();
-        const branchesData = await branchesRes.json();
 
         setCmsData({
           siteSettings,
           homePageHero,
           teamData: teamsData.teams,
-          branchData: branchesData.branches,
           fixtures: fixturesData.fixtures,
           newsData: newsData.articles,
           galleryData: galleryData.images,
@@ -138,7 +133,6 @@ const Main: React.FC<MainProps> = ({ data }) => {
       <Header 
         logo={data.siteSettings.logo} 
         teams={data.teamData} 
-        branches={data.branchData}
         settings={data.siteSettings} 
       />
       <main className="flex-grow">
@@ -158,18 +152,13 @@ const Main: React.FC<MainProps> = ({ data }) => {
             element={<TeamPage teams={data.teamData} fixtures={data.fixtures} />} 
           />
 
-          <Route 
-            path="/brans/:branchSlug" 
-            element={<BranchPage branches={data.branchData} />} 
-          />
-
           <Route path="/haberler" element={<NewsPage news={data.newsData} />} />
           <Route path="/galeri" element={<GalleryPage images={data.galleryData} />} />
           <Route path="/hakkimizda" element={<AboutPage staff={data.staffData} content={data.missionVision} />} />
           <Route path="/iletisim" element={<ContactPage siteSettings={data.siteSettings}/>} />
         </Routes>
       </main>
-      <Footer siteSettings={data.siteSettings} teams={data.teamData} branches={data.branchData} />
+      <Footer siteSettings={data.siteSettings} teams={data.teamData} />
     </div>
   );
 }

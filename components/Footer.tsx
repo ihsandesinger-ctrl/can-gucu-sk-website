@@ -1,14 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import type { SiteSettings, Team, Branch } from '../types';
+import type { SiteSettings, Team } from '../types';
 
 interface FooterProps {
     siteSettings: SiteSettings;
     teams: Team[];
-    branches: Branch[];
 }
 
-const Footer: React.FC<FooterProps> = ({ siteSettings, teams, branches }) => {
+const Footer: React.FC<FooterProps> = ({ siteSettings, teams }) => {
     return (
         <footer className="bg-[var(--primary-color)] text-white pt-12 pb-8">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-8">
@@ -64,19 +63,7 @@ const Footer: React.FC<FooterProps> = ({ siteSettings, teams, branches }) => {
                     </div>
                  )}
 
-                {/* Column 4: Branşlar */}
-                {siteSettings.navigation.find(item => item.name === 'Branşlarımız')?.visible !== false && (
-                    <div>
-                        <h4 className="font-bold text-lg mb-4">BRANŞLAR</h4>
-                        <ul className="space-y-2">
-                           {branches.map(branch => (
-                             <li key={branch.slug}><Link to={`/brans/${branch.slug}`} className="text-gray-300 hover:text-white">{branch.name}</Link></li>
-                           ))}
-                        </ul>
-                    </div>
-                )}
-                
-                {/* Column 5: İletişim */}
+                {/* Column 4: İletişim */}
                 <div className="md:col-span-4 lg:col-span-1">
                      <h4 className="font-bold text-lg mb-4">İLETİŞİM</h4>
                     <address className="not-italic text-gray-300 space-y-2">

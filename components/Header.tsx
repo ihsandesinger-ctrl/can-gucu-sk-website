@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import type { Team, Branch, NavigationItem, SiteSettings } from '../types';
+import type { Team, NavigationItem, SiteSettings } from '../types';
 
 interface HeaderProps {
     logo: string;
     teams: Team[];
-    branches: Branch[];
     settings: SiteSettings;
 }
 
@@ -145,7 +144,7 @@ const MobileNavItem: React.FC<{ item: NavigationItem; onClick: () => void }> = (
     );
 };
 
-const Header: React.FC<HeaderProps> = ({ logo, teams, branches, settings }) => {
+const Header: React.FC<HeaderProps> = ({ logo, teams, settings }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
@@ -164,16 +163,6 @@ const Header: React.FC<HeaderProps> = ({ logo, teams, branches, settings }) => {
     };
 
     const enrichedNavigation = settings.navigation.map(item => {
-        if (item.name === 'Branşlarımız' && item.isDropdown) {
-            return {
-                ...item,
-                items: branches.map(b => ({
-                    name: b.name,
-                    path: `/brans/${b.slug}`,
-                    isDropdown: false
-                }))
-            };
-        }
         if (item.name === 'Takımlarımız' && item.isDropdown) {
             return {
                 ...item,

@@ -19,12 +19,6 @@
       "items": []
     },
     { "name": "Haberler", "path": "/haberler", "visible": true, "isDropdown": false, "items": [] },
-    { 
-      "name": "Branşlarımız", 
-      "visible": true,
-      "isDropdown": true,
-      "items": []
-    },
     { "name": "Galeri", "path": "/galeri", "visible": true, "isDropdown": false, "items": [] },
     { "name": "Hakkımızda", "path": "/hakkimizda", "visible": true, "isDropdown": false, "items": [] },
     { "name": "İletişim", "path": "/iletisim", "visible": true, "isDropdown": false, "items": [] }
