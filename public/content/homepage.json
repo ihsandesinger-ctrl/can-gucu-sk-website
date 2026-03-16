@@ -4,12 +4,6 @@
   "heroSubtitle": "Tutku, Disiplin ve Takım Ruhuyla Zafere!",
   "sections": [
     {
-      "id": "matches",
-      "name": "Sıradaki Maçlar",
-      "visible": false,
-      "order": 1
-    },
-    {
       "id": "news",
       "name": "Haberler ve Duyurular",
       "visible": true,
@@ -20,6 +14,12 @@
       "name": "Galeri",
       "visible": true,
       "order": 3
+    },
+    {
+      "id": "matches",
+      "name": "Sıradaki Maçlar",
+      "visible": false,
+      "order": 1
     }
   ]
 }
