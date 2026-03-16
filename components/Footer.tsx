@@ -9,7 +9,7 @@ interface FooterProps {
 
 const Footer: React.FC<FooterProps> = ({ siteSettings, teams }) => {
     return (
-        <footer className="bg-[#267d87] text-white pt-12 pb-8">
+        <footer className="bg-[var(--primary-color)] text-white pt-12 pb-8">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8">
                 {/* Column 1: Club Info */}
                 <div className="md:col-span-2">

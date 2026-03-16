@@ -12,7 +12,7 @@ interface MatchCardProps {
 const MatchCard: React.FC<MatchCardProps> = ({ teamName, date, homeTeam, awayTeam, homeTeamLogo }) => {
     return (
         <div className="bg-white/10 backdrop-blur-sm p-6 rounded-2xl shadow-lg text-white w-full max-w-md mx-auto">
-            <p className="text-center font-semibold text-orange-400 mb-2">{teamName}</p>
+            <p className="text-center font-semibold text-[var(--secondary-color)] mb-2">{teamName}</p>
             <p className="text-center text-sm mb-4">{date}</p>
             <div className="flex items-center justify-between">
                 <div className="flex flex-col items-center w-1/3">

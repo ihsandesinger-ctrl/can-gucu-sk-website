@@ -1,3 +1,4 @@
+
 import React from 'react';
 import type { SiteSettings } from '../types';
 
@@ -6,6 +7,11 @@ interface ContactPageProps {
 }
 
 const ContactPage: React.FC<ContactPageProps> = ({ siteSettings }) => {
+    // Construct map query from address or fallback
+    const mapQuery = siteSettings.address 
+        ? encodeURIComponent(siteSettings.address) 
+        : encodeURIComponent("Çan, Çanakkale");
+
     return (
         <div className="bg-gray-50 py-16">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -21,7 +27,7 @@ const ContactPage: React.FC<ContactPageProps> = ({ siteSettings }) => {
                         <div className="space-y-4 text-gray-700">
                             {siteSettings.address && (
                                 <div className="flex items-start">
-                                    <i className="fas fa-map-marker-alt text-[#267d87] mt-1 mr-4"></i>
+                                    <i className="fas fa-map-marker-alt text-[var(--primary-color)] mt-1 mr-4"></i>
                                     <div>
                                         <h3 className="font-semibold">Adres</h3>
                                         <p>{siteSettings.address}</p>
@@ -30,7 +36,7 @@ const ContactPage: React.FC<ContactPageProps> = ({ siteSettings }) => {
                             )}
                              {siteSettings.email && (
                                 <div className="flex items-start">
-                                    <i className="fas fa-envelope text-[#267d87] mt-1 mr-4"></i>
+                                    <i className="fas fa-envelope text-[var(--primary-color)] mt-1 mr-4"></i>
                                     <div>
                                         <h3 className="font-semibold">E-posta</h3>
                                         <p>{siteSettings.email}</p>
@@ -39,7 +45,7 @@ const ContactPage: React.FC<ContactPageProps> = ({ siteSettings }) => {
                              )}
                             {siteSettings.phone && (
                                 <div className="flex items-start">
-                                    <i className="fas fa-phone text-[#267d87] mt-1 mr-4"></i>
+                                    <i className="fas fa-phone text-[var(--primary-color)] mt-1 mr-4"></i>
                                     <div>
                                         <h3 className="font-semibold">Telefon</h3>
                                         <p>{siteSettings.phone}</p>
@@ -49,9 +55,17 @@ const ContactPage: React.FC<ContactPageProps> = ({ siteSettings }) => {
                         </div>
                     </div>
 
-                    {/* Map Placeholder */}
-                    <div className="bg-gray-300 h-96 rounded-xl shadow-lg flex items-center justify-center">
-                        <p className="text-gray-600">Harita Yüklenecek</p>
+                    {/* Google Map */}
+                    <div className="bg-white rounded-xl shadow-lg overflow-hidden h-96">
+                        <iframe 
+                            width="100%" 
+                            height="100%" 
+                            frameBorder="0" 
+                            style={{ border: 0 }}
+                            src={`https://maps.google.com/maps?q=${mapQuery}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                            allowFullScreen
+                            title="Konum Haritası"
+                        ></iframe>
                     </div>
                 </div>
             </div>

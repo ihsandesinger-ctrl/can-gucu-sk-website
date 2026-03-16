@@ -77,13 +77,23 @@ const App: React.FC = () => {
     fetchContent();
   }, []);
 
-  // Update favicon dynamically when logo is available
+  // Update favicon and global styles dynamically
   useEffect(() => {
-    if (cmsData?.siteSettings.logo) {
-      const favicon = document.getElementById('favicon') as HTMLLinkElement;
-      if (favicon) {
-        favicon.href = cmsData.siteSettings.logo;
+    if (cmsData) {
+      // Favicon
+      if (cmsData.siteSettings.logo) {
+        const favicon = document.getElementById('favicon') as HTMLLinkElement;
+        if (favicon) {
+          favicon.href = cmsData.siteSettings.logo;
+        }
       }
+
+      // Global Styles
+      const { globalStyles } = cmsData.siteSettings;
+      document.body.style.fontFamily = globalStyles.fontFamily;
+      document.body.style.fontSize = globalStyles.baseFontSize;
+      document.documentElement.style.setProperty('--primary-color', globalStyles.primaryColor);
+      document.documentElement.style.setProperty('--secondary-color', globalStyles.secondaryColor);
     }
   }, [cmsData]);
   
@@ -93,6 +103,16 @@ const App: React.FC = () => {
 
   if (error || !cmsData) {
     return <div className="flex items-center justify-center min-h-screen">İçerik yüklenemedi: {error}</div>;
+  }
+
+  if (cmsData.siteSettings.maintenanceMode) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4 text-center">
+        <img src={cmsData.siteSettings.logo} alt="Logo" className="h-24 mb-8" />
+        <h1 className="text-4xl font-bold text-gray-800 mb-4">Site Bakımdadır</h1>
+        <p className="text-xl text-gray-600">Size daha iyi hizmet verebilmek için çalışıyoruz. Lütfen daha sonra tekrar deneyiniz.</p>
+      </div>
+    );
   }
 
   return (
@@ -110,7 +130,7 @@ interface MainProps {
 const Main: React.FC<MainProps> = ({ data }) => {
   return (
     <div className="flex flex-col min-h-screen">
-      <Header logo={data.siteSettings.logo} teams={data.teamData} />
+      <Header logo={data.siteSettings.logo} teams={data.teamData} settings={data.siteSettings} />
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<HomePage 

@@ -18,11 +18,11 @@ const AboutPage: React.FC<AboutPageProps> = ({ staff, content }) => {
         {/* Misyon & Vizyon */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-16">
           <div>
-            <h2 className="text-3xl font-bold text-orange-600 mb-4">Misyonumuz</h2>
+            <h2 className="text-3xl font-bold text-[var(--secondary-color)] mb-4">Misyonumuz</h2>
             <p className="text-gray-700 leading-relaxed">{content.mission}</p>
           </div>
           <div>
-            <h2 className="text-3xl font-bold text-[#267d87] mb-4">Vizyonumuz</h2>
+            <h2 className="text-3xl font-bold text-[var(--primary-color)] mb-4">Vizyonumuz</h2>
             <p className="text-gray-700 leading-relaxed">{content.vision}</p>
           </div>
         </section>
@@ -35,7 +35,7 @@ const AboutPage: React.FC<AboutPageProps> = ({ staff, content }) => {
           <div className="flex flex-wrap justify-center gap-8">
             {staff.map((member) => (
               <div key={member.id} className="text-center">
-                <img src={member.imageUrl} alt={member.name} className="w-32 h-32 rounded-full mx-auto mb-4 object-cover shadow-lg" />
+                <img src={member.imageUrl} alt={member.name} className="w-32 h-32 rounded-lg mx-auto mb-4 object-cover shadow-lg" />
                 <h3 className="font-bold text-lg text-gray-900">{member.name}</h3>
                 <p className="text-gray-600">{member.role}</p>
               </div>

@@ -18,26 +18,63 @@ collections:
           - { label: "Adres", name: "address", widget: "string", required: false }
           - { label: "E-posta", name: "email", widget: "string", required: false }
           - { label: "Telefon", name: "phone", widget: "string", required: false }
-          - label: "Sosyal Medya Hesapları"
-            name: "socialMedia"
-            widget: "object"
-            collapsed: false
-            fields:
-              - { label: "Facebook URL", name: "facebook", widget: "string", required: false }
-              - { label: "Twitter (X) URL", name: "twitter", widget: "string", required: false }
-              - { label: "Instagram URL", name: "instagram", widget: "string", required: false }
+          - { label: "Sosyal Medya Hesapları", name: "socialMedia", widget: "object", collapsed: false, fields: [
+              - { label: "Facebook URL", name: "facebook", widget: "string", required: false },
+              - { label: "Twitter (X) URL", name: "twitter", widget: "string", required: false },
+              - { label: "Instagram URL", name: "instagram", widget: "string", required: false },
               - { label: "YouTube URL", name: "youtube", widget: "string", required: false }
+            ]}
+          - { label: "Bakım Modu", name: "maintenanceMode", widget: "boolean", default: false }
+          - label: "Navigasyon Menüsü"
+            name: "navigation"
+            widget: "list"
+            summary: "{{name}}"
+            fields:
+              - { label: "Menü Adı", name: "name", widget: "string" }
+              - { label: "Link (Opsiyonel)", name: "path", widget: "string", required: false }
+              - { label: "Açılır Menü mü?", name: "isDropdown", widget: "boolean", default: false }
+              - label: "Alt Menü Öğeleri"
+                name: "items"
+                widget: "list"
+                required: false
+                fields:
+                  - { label: "Alt Menü Adı", name: "name", widget: "string" }
+                  - { label: "Alt Menü Linki (Opsiyonel)", name: "path", widget: "string", required: false }
+                  - { label: "Açılır Menü mü?", name: "isDropdown", widget: "boolean", default: false }
+                  - label: "Alt-Alt Menü Öğeleri"
+                    name: "items"
+                    widget: "list"
+                    required: false
+                    fields:
+                      - { label: "Adı", name: "name", widget: "string" }
+                      - { label: "Linki", name: "path", widget: "string" }
+          - label: "Global Stiller"
+            name: "globalStyles"
+            widget: "object"
+            fields:
+              - { label: "Yazı Tipi (Font Family)", name: "fontFamily", widget: "string", default: "'Inter', sans-serif" }
+              - { label: "Temel Yazı Boyutu", name: "baseFontSize", widget: "string", default: "16px" }
+              - { label: "Birincil Renk (Primary Color)", name: "primaryColor", widget: "color", default: "#267d87" }
+              - { label: "İkincil Renk (Secondary Color)", name: "secondaryColor", widget: "color", default: "#f97316" }
 
   - name: "homepage"
     label: "Ana Sayfa İçeriği"
     files:
       - file: "public/content/homepage.json"
-        label: "Ana Sayfa Karşılama Alanı"
+        label: "Ana Sayfa Ayarları"
         name: "homepage_hero"
         fields:
           - { label: "Arkaplan Fotoğrafı", name: "heroImage", widget: "image" }
           - { label: "Ana Başlık", name: "heroTitle", widget: "string" }
           - { label: "Alt Başlık", name: "heroSubtitle", widget: "string" }
+          - label: "Bölüm Kontrolleri"
+            name: "sections"
+            widget: "list"
+            fields:
+              - { label: "Bölüm ID", name: "id", widget: "hidden" }
+              - { label: "Bölüm Adı", name: "name", widget: "string" }
+              - { label: "Görünür mü?", name: "visible", widget: "boolean" }
+              - { label: "Sıralama", name: "order", widget: "number" }
   
   - name: "teams"
     label: "Takımlar"
