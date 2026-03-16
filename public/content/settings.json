@@ -1,12 +1,12 @@
 {
   "logo": "/uploads/logo.png",
   "address": "ÇANGÜCÜ SK Tesisleri, Futbol Sokak No:1, Çan / Çanakkale",
-  "email": "info@cangucusk.com",
+  "email": "info@cangucu.com",
   "phone": "+90 (555) 123 45 67",
   "socialMedia": {
     "facebook": "https://facebook.com",
     "twitter": "https://twitter.com",
-    "instagram": "https://instagram.com",
+    "instagram": "https://www.instagram.com/cangucusk/",
     "youtube": ""
   },
   "maintenanceMode": true,
@@ -64,6 +64,20 @@
       "path": "/iletisim",
       "isDropdown": false,
       "items": []
+    },
+    {
+      "isDropdown": true,
+      "name": "Branşlarımız",
+      "items": [
+        {
+          "isDropdown": false,
+          "name": "Tenis"
+        },
+        {
+          "isDropdown": false,
+          "name": "Voleybol"
+        }
+      ]
     }
   ],
   "globalStyles": {
