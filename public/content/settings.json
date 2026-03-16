@@ -11,20 +11,20 @@
   },
   "maintenanceMode": false,
   "navigation": [
-    { "name": "Ana Sayfa", "path": "/" },
+    { "name": "Ana Sayfa", "path": "/", "isDropdown": false, "items": [] },
     { 
       "name": "Takımlarımız", 
       "isDropdown": true,
       "items": [
-        { "name": "U-11", "path": "/takim/u-11" },
-        { "name": "U-13", "path": "/takim/u-13" },
-        { "name": "U-15", "path": "/takim/u-15" }
+        { "name": "U-11", "path": "/takim/u-11", "isDropdown": false, "items": [] },
+        { "name": "U-13", "path": "/takim/u-13", "isDropdown": false, "items": [] },
+        { "name": "U-15", "path": "/takim/u-15", "isDropdown": false, "items": [] }
       ]
     },
-    { "name": "Haberler", "path": "/haberler" },
-    { "name": "Galeri", "path": "/galeri" },
-    { "name": "Hakkımızda", "path": "/hakkimizda" },
-    { "name": "İletişim", "path": "/iletisim" }
+    { "name": "Haberler", "path": "/haberler", "isDropdown": false, "items": [] },
+    { "name": "Galeri", "path": "/galeri", "isDropdown": false, "items": [] },
+    { "name": "Hakkımızda", "path": "/hakkimizda", "isDropdown": false, "items": [] },
+    { "name": "İletişim", "path": "/iletisim", "isDropdown": false, "items": [] }
   ],
   "globalStyles": {
     "fontFamily": "'Inter', sans-serif",

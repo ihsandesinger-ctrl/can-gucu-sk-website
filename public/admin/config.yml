@@ -35,7 +35,7 @@ collections:
             fields:
               - { label: "Menü Adı", name: "name", widget: "string" }
               - { label: "Link (Opsiyonel)", name: "path", widget: "string", required: false }
-              - { label: "Açılır Menü mü?", name: "isDropdown", widget: "boolean", default: false }
+              - { label: "Açılır Menü mü?", name: "isDropdown", widget: "boolean", default: false, required: false }
               - label: "Alt Menü Öğeleri"
                 name: "items"
                 widget: "list"
@@ -43,7 +43,7 @@ collections:
                 fields:
                   - { label: "Alt Menü Adı", name: "name", widget: "string" }
                   - { label: "Alt Menü Linki (Opsiyonel)", name: "path", widget: "string", required: false }
-                  - { label: "Açılır Menü mü?", name: "isDropdown", widget: "boolean", default: false }
+                  - { label: "Açılır Menü mü?", name: "isDropdown", widget: "boolean", default: false, required: false }
                   - label: "Alt-Alt Menü Öğeleri"
                     name: "items"
                     widget: "list"
