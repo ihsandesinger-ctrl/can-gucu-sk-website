@@ -42,20 +42,6 @@
       ]
     },
     {
-      "isDropdown": true,
-      "name": "Branşlarımız",
-      "items": [
-        {
-          "isDropdown": false,
-          "name": "Tenis"
-        },
-        {
-          "isDropdown": false,
-          "name": "Voleybol"
-        }
-      ]
-    },
-    {
       "name": "Haberler",
       "path": "/haberler",
       "isDropdown": false,
