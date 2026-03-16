@@ -9,22 +9,62 @@
     "instagram": "https://instagram.com",
     "youtube": ""
   },
-  "maintenanceMode": false,
+  "maintenanceMode": true,
   "navigation": [
-    { "name": "Ana Sayfa", "path": "/", "isDropdown": false, "items": [] },
-    { 
-      "name": "Takımlarımız", 
+    {
+      "name": "Ana Sayfa",
+      "path": "/",
+      "isDropdown": false,
+      "items": []
+    },
+    {
+      "name": "Takımlarımız",
       "isDropdown": true,
       "items": [
-        { "name": "U-11", "path": "/takim/u-11", "isDropdown": false, "items": [] },
-        { "name": "U-13", "path": "/takim/u-13", "isDropdown": false, "items": [] },
-        { "name": "U-15", "path": "/takim/u-15", "isDropdown": false, "items": [] }
+        {
+          "name": "U-11",
+          "path": "/takim/u-11",
+          "isDropdown": false,
+          "items": []
+        },
+        {
+          "name": "U-13",
+          "path": "/takim/u-13",
+          "isDropdown": false,
+          "items": []
+        },
+        {
+          "name": "U-15",
+          "path": "/takim/u-15",
+          "isDropdown": false,
+          "items": []
+        }
       ]
     },
-    { "name": "Haberler", "path": "/haberler", "isDropdown": false, "items": [] },
-    { "name": "Galeri", "path": "/galeri", "isDropdown": false, "items": [] },
-    { "name": "Hakkımızda", "path": "/hakkimizda", "isDropdown": false, "items": [] },
-    { "name": "İletişim", "path": "/iletisim", "isDropdown": false, "items": [] }
+    {
+      "name": "Haberler",
+      "path": "/haberler",
+      "isDropdown": false,
+      "items": []
+    },
+    {
+      "name": "Galeri",
+      "path": "/galeri",
+      "isDropdown": false,
+      "items": []
+    },
+    {
+      "name": "Hakkımızda",
+      "path": "/hakkimizda",
+      "isDropdown": false,
+      "items": []
+    },
+    {
+      "name": "İletişim",
+      "path": "/iletisim",
+      "isDropdown": false,
+      "items": []
+    }
   ],
   "globalStyles": {
     "fontFamily": "'Inter', sans-serif",
