@@ -1,0 +1,90 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: settings
+    // Fields: logo, address, email, phone, socialMedia, maintenanceMode, navigation, globalStyles
+    //
+    // Collection: homepage
+    // Fields: heroImage, heroTitle, heroSubtitle, sections
+    //
+    // Collection: news
+    // Fields: title, summary, content, date, imageUrl
+    //
+    // Collection: teams
+    // Fields: name, slug, heroImage, coach, players
+    //
+    // Collection: fixtures
+    // Fields: teamName, teamSlug, matches
+    //
+    // Collection: gallery
+    // Fields: imageUrl, title
+    //
+    // Collection: staff
+    // Fields: name, role, imageUrl
+    //
+    // Collection: missionVision
+    // Fields: mission, vision
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "ihsandurgut1@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Publicly readable collections
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /homepage/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /news/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /teams/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /fixtures/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /gallery/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /staff/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /missionVision/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow write: if isAdmin();
+    }
+  }
+}

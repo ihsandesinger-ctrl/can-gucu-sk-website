@@ -34,6 +34,8 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news,
     const recentNews = news.slice(0, 5);
     const recentPhotos = gallery.slice(0, 6);
 
+    if (!heroContent) return null;
+
     const renderSection = (sectionId: string) => {
         switch (sectionId) {
             case 'matches':

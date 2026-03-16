@@ -92,6 +92,7 @@ export interface HomepageSection {
 }
 
 export interface SiteSettings {
+  siteTitle?: string;
   logo: string;
   address: string;
   email: string;

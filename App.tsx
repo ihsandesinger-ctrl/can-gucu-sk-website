@@ -9,8 +9,12 @@ import NewsPage from './pages/NewsPage';
 import GalleryPage from './pages/GalleryPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
+import AdminPage from './pages/AdminPage';
 import ScrollToTop from './components/ScrollToTop';
 import type { CMSData } from './types';
+import { subscribeToCMSData, migrateDataToFirestore } from './firebaseService';
+import { db } from './firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 const App: React.FC = () => {
   const [cmsData, setCmsData] = useState<CMSData | null>(null);
@@ -18,63 +22,70 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchContent = async () => {
+    const initApp = async () => {
       try {
-        const [
-          settingsRes,
-          homepageRes,
-          teamsRes,
-          fixturesRes,
-          newsRes,
-          galleryRes,
-          staffRes,
-          missionVisionRes,
-        ] = await Promise.all([
-          fetch('/content/settings.json'),
-          fetch('/content/homepage.json'),
-          fetch('/content/teams.json'),
-          fetch('/content/fixtures.json'),
-          fetch('/content/newsData.json'),
-          fetch('/content/galleryData.json'),
-          fetch('/content/staffData.json'),
-          fetch('/content/missionVision.json'),
-        ]);
+        // Check if data exists in Firestore
+        const settingsDoc = await getDoc(doc(db, 'settings', 'site'));
+        
+        if (!settingsDoc.exists()) {
+          console.log('Firestore is empty, loading from local JSON...');
+          // Fetch from JSON
+          const [
+            settingsRes,
+            homepageRes,
+            teamsRes,
+            fixturesRes,
+            newsRes,
+            galleryRes,
+            staffRes,
+            missionVisionRes,
+          ] = await Promise.all([
+            fetch('/content/settings.json'),
+            fetch('/content/homepage.json'),
+            fetch('/content/teams.json'),
+            fetch('/content/fixtures.json'),
+            fetch('/content/newsData.json'),
+            fetch('/content/galleryData.json'),
+            fetch('/content/staffData.json'),
+            fetch('/content/missionVision.json'),
+          ]);
 
-        const allResponses = [settingsRes, homepageRes, teamsRes, fixturesRes, newsRes, galleryRes, staffRes, missionVisionRes];
-        for (const res of allResponses) {
-          if (!res.ok) {
-            throw new Error(`Failed to fetch content from ${res.url}`);
-          }
+          const siteSettings = await settingsRes.json();
+          const homePageHero = await homepageRes.json();
+          const teamsData = await teamsRes.json();
+          const fixturesData = await fixturesRes.json();
+          const newsData = await newsRes.json();
+          const galleryData = await galleryRes.json();
+          const staffData = await staffRes.json();
+          const missionVision = await missionVisionRes.json();
+
+          setCmsData({
+            siteSettings,
+            homePageHero,
+            teamData: teamsData.teams,
+            fixtures: fixturesData.fixtures,
+            newsData: newsData.articles,
+            galleryData: galleryData.images,
+            staffData: staffData.members,
+            missionVision,
+          });
+          setLoading(false);
+          return;
         }
 
-        const siteSettings = await settingsRes.json();
-        const homePageHero = await homepageRes.json();
-        const teamsData = await teamsRes.json();
-        const fixturesData = await fixturesRes.json();
-        const newsData = await newsRes.json();
-        const galleryData = await galleryRes.json();
-        const staffData = await staffRes.json();
-        const missionVision = await missionVisionRes.json();
-
-        setCmsData({
-          siteSettings,
-          homePageHero,
-          teamData: teamsData.teams,
-          fixtures: fixturesData.fixtures,
-          newsData: newsData.articles,
-          galleryData: galleryData.images,
-          staffData: staffData.members,
-          missionVision,
+        // Subscribe to real-time updates from Firestore
+        subscribeToCMSData((data) => {
+          setCmsData(data);
+          setLoading(false);
         });
 
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      } finally {
         setLoading(false);
       }
     };
 
-    fetchContent();
+    initApp();
   }, []);
 
   // Update favicon and global styles dynamically
@@ -86,6 +97,11 @@ const App: React.FC = () => {
         if (favicon) {
           favicon.href = cmsData.siteSettings.logo;
         }
+      }
+
+      // Document Title
+      if (cmsData.siteSettings.siteTitle) {
+        document.title = cmsData.siteSettings.siteTitle;
       }
 
       // Global Styles
@@ -107,18 +123,28 @@ const App: React.FC = () => {
 
   if (cmsData.siteSettings.maintenanceMode) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4 text-center">
-        <img src={cmsData.siteSettings.logo} alt="Logo" className="h-24 mb-8" />
-        <h1 className="text-4xl font-bold text-gray-800 mb-4">Site Bakımdadır</h1>
-        <p className="text-xl text-gray-600">Size daha iyi hizmet verebilmek için çalışıyoruz. Lütfen daha sonra tekrar deneyiniz.</p>
-      </div>
+      <HashRouter>
+        <Routes>
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="*" element={
+            <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4 text-center">
+              <img src={cmsData.siteSettings.logo} alt="Logo" className="h-24 mb-8" />
+              <h1 className="text-4xl font-bold text-gray-800 mb-4">Site Bakımdadır</h1>
+              <p className="text-xl text-gray-600">Size daha iyi hizmet verebilmek için çalışıyoruz. Lütfen daha sonra tekrar deneyiniz.</p>
+            </div>
+          } />
+        </Routes>
+      </HashRouter>
     );
   }
 
   return (
     <HashRouter>
       <ScrollToTop />
-      <Main data={cmsData} />
+      <Routes>
+        <Route path="/admin" element={<AdminPage />} />
+        <Route path="*" element={<Main data={cmsData} />} />
+      </Routes>
     </HashRouter>
   );
 };

@@ -1,0 +1,172 @@
+{
+  "entities": {
+    "SiteSettings": {
+      "title": "Site Ayarları",
+      "description": "Sitenin genel ayarları, logo, iletişim bilgileri ve navigasyon.",
+      "type": "object",
+      "properties": {
+        "logo": { "type": "string", "description": "Logo URL veya base64" },
+        "address": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "socialMedia": {
+          "type": "object",
+          "properties": {
+            "facebook": { "type": "string" },
+            "twitter": { "type": "string" },
+            "instagram": { "type": "string" },
+            "youtube": { "type": "string" }
+          }
+        },
+        "maintenanceMode": { "type": "boolean" },
+        "navigation": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "path": { "type": "string" },
+              "visible": { "type": "boolean" },
+              "isDropdown": { "type": "boolean" },
+              "items": { "type": "array", "items": { "type": "object" } }
+            }
+          }
+        },
+        "globalStyles": {
+          "type": "object",
+          "properties": {
+            "fontFamily": { "type": "string" },
+            "baseFontSize": { "type": "string" },
+            "primaryColor": { "type": "string" },
+            "secondaryColor": { "type": "string" }
+          }
+        }
+      }
+    },
+    "HomePageHero": {
+      "title": "Ana Sayfa Hero",
+      "description": "Ana sayfa kapak görseli ve başlıkları.",
+      "type": "object",
+      "properties": {
+        "heroImage": { "type": "string" },
+        "heroTitle": { "type": "string" },
+        "heroSubtitle": { "type": "string" },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "visible": { "type": "boolean" },
+              "order": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "NewsArticle": {
+      "title": "Haber",
+      "description": "Haber veya duyuru içeriği.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "summary": { "type": "string" },
+        "content": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "imageUrl": { "type": "string" }
+      },
+      "required": ["title", "date", "imageUrl"]
+    },
+    "Team": {
+      "title": "Takım",
+      "description": "Yaş grubu takımı bilgileri.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "slug": { "type": "string" },
+        "heroImage": { "type": "string" },
+        "coach": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "role": { "type": "string" },
+            "imageUrl": { "type": "string" }
+          }
+        },
+        "players": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "number" },
+              "name": { "type": "string" },
+              "position": { "type": "string" },
+              "number": { "type": "number" },
+              "imageUrl": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "Fixture": {
+      "title": "Fikstür",
+      "description": "Takım bazlı maç fikstürü.",
+      "type": "object",
+      "properties": {
+        "teamName": { "type": "string" },
+        "teamSlug": { "type": "string" },
+        "matches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": { "type": "string" },
+              "opponent": { "type": "string" },
+              "score": { "type": "string" },
+              "location": { "type": "string", "enum": ["Ev", "Deplasman"] }
+            }
+          }
+        }
+      }
+    },
+    "GalleryImage": {
+      "title": "Galeri Görseli",
+      "description": "Fotoğraf galerisi öğesi.",
+      "type": "object",
+      "properties": {
+        "imageUrl": { "type": "string" },
+        "title": { "type": "string" }
+      }
+    },
+    "StaffMember": {
+      "title": "Personel",
+      "description": "Yönetim veya teknik kadro üyesi.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "imageUrl": { "type": "string" }
+      }
+    },
+    "MissionVision": {
+      "title": "Misyon ve Vizyon",
+      "description": "Kulübün misyon ve vizyon metinleri.",
+      "type": "object",
+      "properties": {
+        "mission": { "type": "string" },
+        "vision": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/settings": { "schema": "SiteSettings", "description": "Site genel ayarları" },
+    "/homepage": { "schema": "HomePageHero", "description": "Ana sayfa hero ve bölüm ayarları" },
+    "/news": { "schema": "NewsArticle", "description": "Haberler koleksiyonu" },
+    "/teams": { "schema": "Team", "description": "Takımlar koleksiyonu" },
+    "/fixtures": { "schema": "Fixture", "description": "Fikstürler koleksiyonu" },
+    "/gallery": { "schema": "GalleryImage", "description": "Galeri koleksiyonu" },
+    "/staff": { "schema": "StaffMember", "description": "Personel koleksiyonu" },
+    "/missionVision": { "schema": "MissionVision", "description": "Misyon ve vizyon metinleri" }
+  }
+}

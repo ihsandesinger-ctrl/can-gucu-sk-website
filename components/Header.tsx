@@ -162,6 +162,8 @@ const Header: React.FC<HeaderProps> = ({ logo, teams, settings }) => {
         setIsMobileMenuOpen(false);
     };
 
+    if (!settings || !settings.navigation) return null;
+
     const enrichedNavigation = settings.navigation.map(item => {
         if (item.name === 'Takımlarımız' && item.isDropdown) {
             return {
