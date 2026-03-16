@@ -53,20 +53,6 @@
     { "name": "İletişim", "path": "/iletisim", "isDropdown": false, "items": [] }
 =======
     {
-      "isDropdown": true,
-      "name": "Branşlarımız",
-      "items": [
-        {
-          "isDropdown": false,
-          "name": "Tenis"
-        },
-        {
-          "isDropdown": false,
-          "name": "Voleybol"
-        }
-      ]
-    },
-    {
       "name": "Haberler",
       "path": "/haberler",
       "isDropdown": false,
