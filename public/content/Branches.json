@@ -1,0 +1,20 @@
+{
+  "branches": [
+    {
+      "name": "Voleybol",
+      "slug": "voleybol",
+      "heroImage": "https://picsum.photos/seed/volleyball/1200/600",
+      "description": "Çangücü SK Voleybol branşı, genç yetenekleri keşfetmek ve voleybol kültürünü yaygınlaştırmak amacıyla faaliyet göstermektedir.",
+      "content": "### Voleybol Okulumuz Açıldı!\n\nYeni dönem kayıtlarımız başlamıştır. 8-16 yaş arası tüm gençlerimizi bekliyoruz.\n\n*   Haftada 3 gün antrenman\n*   Uzman antrenör kadrosu\n*   Modern tesisler",
+      "coach": {
+        "name": "Ayşe Yılmaz",
+        "role": "Baş Antrenör",
+        "imageUrl": "https://picsum.photos/seed/coach1/200/200"
+      },
+      "players": [
+        { "name": "Zeynep Demir", "position": "Pasör", "imageUrl": "https://picsum.photos/seed/p1/200/200" },
+        { "name": "Elif Kaya", "position": "Smaçör", "imageUrl": "https://picsum.photos/seed/p2/200/200" }
+      ]
+    }
+  ]
+}

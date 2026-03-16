@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import type { Team, NavigationItem, SiteSettings } from '../types';
+import type { Team, Branch, NavigationItem, SiteSettings } from '../types';
 
 interface HeaderProps {
     logo: string;
     teams: Team[];
+    branches: Branch[];
     settings: SiteSettings;
 }
 
@@ -24,15 +25,39 @@ const NavItem: React.FC<{ item: NavigationItem; onClick: () => void }> = ({ item
 
     if (item.isDropdown) {
         return (
-            <div ref={dropdownRef} className="relative group">
-                <button
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="px-4 py-2 rounded-md text-sm font-medium transition-colors hover:bg-[var(--secondary-color)] flex items-center"
-                >
-                    {item.name} <i className={`fas fa-chevron-down ml-2 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}></i>
-                </button>
+            <div 
+                ref={dropdownRef} 
+                className="relative group"
+                onMouseEnter={() => setIsOpen(true)}
+                onMouseLeave={() => setIsOpen(false)}
+            >
+                <div className="flex items-center">
+                    {item.path ? (
+                        <NavLink
+                            to={item.path}
+                            onClick={onClick}
+                            className={({ isActive }) =>
+                                `px-4 py-2 rounded-l-md text-sm font-medium transition-colors hover:bg-[var(--secondary-color)] ${isActive ? 'bg-[var(--secondary-color)]' : ''}`
+                            }
+                        >
+                            {item.name}
+                        </NavLink>
+                    ) : (
+                        <button
+                            className="px-4 py-2 rounded-l-md text-sm font-medium transition-colors hover:bg-[var(--secondary-color)]"
+                        >
+                            {item.name}
+                        </button>
+                    )}
+                    <button
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="px-2 py-2 rounded-r-md text-sm font-medium transition-colors hover:bg-[var(--secondary-color)] border-l border-white/20"
+                    >
+                        <i className={`fas fa-chevron-down transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}></i>
+                    </button>
+                </div>
                 {isOpen && (
-                    <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                    <div className="absolute left-0 mt-0 w-48 bg-white rounded-md shadow-lg py-1 z-50">
                         {item.items?.map((subItem, idx) => (
                             <div key={idx} className="relative group/sub">
                                 {subItem.isDropdown ? (
@@ -120,7 +145,7 @@ const MobileNavItem: React.FC<{ item: NavigationItem; onClick: () => void }> = (
     );
 };
 
-const Header: React.FC<HeaderProps> = ({ logo, teams, settings }) => {
+const Header: React.FC<HeaderProps> = ({ logo, teams, branches, settings }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
@@ -138,6 +163,30 @@ const Header: React.FC<HeaderProps> = ({ logo, teams, settings }) => {
         setIsMobileMenuOpen(false);
     };
 
+    const enrichedNavigation = settings.navigation.map(item => {
+        if (item.name === 'Branşlarımız' && item.isDropdown) {
+            return {
+                ...item,
+                items: branches.map(b => ({
+                    name: b.name,
+                    path: `/brans/${b.slug}`,
+                    isDropdown: false
+                }))
+            };
+        }
+        if (item.name === 'Takımlarımız' && item.isDropdown) {
+            return {
+                ...item,
+                items: teams.map(t => ({
+                    name: t.name,
+                    path: `/takim/${t.slug}`,
+                    isDropdown: false
+                }))
+            };
+        }
+        return item;
+    });
+
     return (
         <>
             <header className="bg-[var(--primary-color)] text-white shadow-md sticky top-0 z-50">
@@ -149,7 +198,7 @@ const Header: React.FC<HeaderProps> = ({ logo, teams, settings }) => {
                         </Link>
                         
                         <nav className="hidden md:flex space-x-2 items-center">
-                            {settings.navigation.map((item, index) => (
+                            {enrichedNavigation.filter(item => item.visible !== false).map((item, index) => (
                                 <NavItem key={index} item={item} onClick={handleLinkClick} />
                             ))}
                         </nav>
@@ -173,7 +222,7 @@ const Header: React.FC<HeaderProps> = ({ logo, teams, settings }) => {
                     className={`absolute w-full bg-[var(--primary-color)] shadow-lg md:hidden overflow-y-auto transition-all duration-300 ease-in-out ${isMobileMenuOpen ? 'max-h-screen opacity-100' : 'max-h-0 opacity-0'}`}
                 >
                     <nav className="px-2 pt-2 pb-4 space-y-1 sm:px-3">
-                        {settings.navigation.map((item, index) => (
+                        {enrichedNavigation.filter(item => item.visible !== false).map((item, index) => (
                             <MobileNavItem key={index} item={item} onClick={handleLinkClick} />
                         ))}
                     </nav>

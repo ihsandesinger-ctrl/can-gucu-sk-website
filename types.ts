@@ -72,6 +72,7 @@ export interface SocialMediaLinks {
 export interface NavigationItem {
   name: string;
   path?: string;
+  visible?: boolean;
   isDropdown?: boolean;
   items?: NavigationItem[];
 }
@@ -108,10 +109,21 @@ export interface HomePageHero {
   sections: HomepageSection[];
 }
 
+export interface Branch {
+  name: string;
+  slug: string;
+  heroImage: string;
+  description: string;
+  content: string;
+  coach?: Coach;
+  players?: Player[];
+}
+
 export interface CMSData {
   siteSettings: SiteSettings;
   homePageHero: HomePageHero;
   teamData: Team[];
+  branchData: Branch[];
   fixtures: Fixture[];
   newsData: NewsArticle[];
   galleryData: GalleryItem[];

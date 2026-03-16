@@ -22,6 +22,11 @@
       ]
     },
     { "name": "Haberler", "path": "/haberler", "isDropdown": false, "items": [] },
+    { 
+      "name": "Branşlarımız", 
+      "isDropdown": true,
+      "items": []
+    },
     { "name": "Galeri", "path": "/galeri", "isDropdown": false, "items": [] },
     { "name": "Hakkımızda", "path": "/hakkimizda", "isDropdown": false, "items": [] },
     { "name": "İletişim", "path": "/iletisim", "isDropdown": false, "items": [] }
