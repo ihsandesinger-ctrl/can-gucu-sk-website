@@ -161,6 +161,7 @@ const Main: React.FC<MainProps> = ({ data }) => {
       <Header 
         logo={data.siteSettings.logo} 
         teams={data.teamData} 
+        pages={data.pagesData}
         settings={data.siteSettings} 
       />
       <main className="flex-grow">

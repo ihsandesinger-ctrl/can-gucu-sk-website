@@ -5,6 +5,7 @@ import type { Team, NavigationItem, SiteSettings } from '../types';
 interface HeaderProps {
     logo: string;
     teams: Team[];
+    pages: DynamicPage[];
     settings: SiteSettings;
 }
 
@@ -144,7 +145,7 @@ const MobileNavItem: React.FC<{ item: NavigationItem; onClick: () => void }> = (
     );
 };
 
-const Header: React.FC<HeaderProps> = ({ logo, teams, settings }) => {
+const Header: React.FC<HeaderProps> = ({ logo, teams, pages, settings }) => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     useEffect(() => {
@@ -171,6 +172,16 @@ const Header: React.FC<HeaderProps> = ({ logo, teams, settings }) => {
                 items: teams.map(t => ({
                     name: t.name,
                     path: `/takim/${t.slug}`,
+                    isDropdown: false
+                }))
+            };
+        }
+        if (item.name === 'Branşlarımız' && item.isDropdown) {
+            return {
+                ...item,
+                items: pages.map(p => ({
+                    name: p.title,
+                    path: `/sayfa/${p.slug}`,
                     isDropdown: false
                 }))
             };
