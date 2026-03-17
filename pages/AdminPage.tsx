@@ -155,13 +155,22 @@ const AdminPage: React.FC = () => {
   const handleFileUpload = async (file: File, path: string) => {
     if (!storage) {
       console.error('[STORAGE] Storage instance is not initialized');
-      showMessage('error', 'Depolama servisi başlatılamadı.');
-      return '';
+      return await convertToBase64(file);
     }
+
+    // Helper to convert file to base64
+    const convertToBase64 = (f: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(f);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = error => reject(error);
+      });
+    };
 
     try {
       // Basic validation
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit for news/gallery
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
         showMessage('error', 'Dosya boyutu 5MB\'dan küçük olmalıdır.');
         return '';
       }
@@ -170,31 +179,48 @@ const AdminPage: React.FC = () => {
         return '';
       }
 
-      // Sanitize filename: remove special characters and spaces
+      // Sanitize filename
       const sanitizedName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
       const fileName = `${Date.now()}_${sanitizedName}`;
       const storageRef = ref(storage, `${path}/${fileName}`);
       
-      console.log(`[STORAGE] Starting upload: ${file.name} -> ${path}/${fileName}`);
-      console.log(`[STORAGE] File size: ${file.size} bytes, Type: ${file.type}`);
-      
-      const uploadResult = await uploadBytes(storageRef, file);
-      console.log('[STORAGE] Upload successful:', uploadResult.metadata.fullPath);
-      
-      const url = await getDownloadURL(storageRef);
-      console.log('[STORAGE] Download URL obtained:', url);
-      return url;
+      console.log(`[STORAGE] Attempting upload: ${file.name} to ${path}`);
+
+      // Use a Promise with timeout for the upload
+      const uploadPromise = uploadBytes(storageRef, file);
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('timeout')), 8000)
+      );
+
+      try {
+        const uploadResult = await Promise.race([uploadPromise, timeoutPromise]);
+        console.log('[STORAGE] Upload successful:', uploadResult.metadata.fullPath);
+        const url = await getDownloadURL(storageRef);
+        return url;
+      } catch (uploadErr: any) {
+        console.warn('[STORAGE] Storage upload failed or timed out, trying Base64 fallback:', uploadErr.message);
+        
+        // Fallback to Base64 if file is small enough (< 800KB)
+        if (file.size < 800 * 1024) {
+          console.log('[STORAGE] File is small enough for Base64 fallback');
+          return await convertToBase64(file);
+        } else {
+          throw uploadErr; // Re-throw if too large for fallback
+        }
+      }
     } catch (err) {
-      console.error('[STORAGE] Upload failed:', err);
+      console.error('[STORAGE] All upload methods failed:', err);
       let errorMessage = 'Görsel yüklenemedi.';
       if (err instanceof Error) {
-        console.error('[STORAGE] Error details:', err.message);
-        if (err.message.includes('storage/unauthorized')) {
+        if (err.message === 'timeout') {
+          errorMessage = 'Yükleme zaman aşımına uğradı. Alternatif yöntem deneniyor...';
+          // If it timed out and we haven't tried base64 yet (because it was > 800KB), 
+          // we might still want to try it if it's not TOO large
+          if (file.size < 1.5 * 1024 * 1024) {
+             return await convertToBase64(file);
+          }
+        } else if (err.message.includes('storage/unauthorized')) {
           errorMessage = 'Yükleme yetkiniz yok. Lütfen oturumunuzu kontrol edin.';
-        } else if (err.message.includes('storage/quota-exceeded')) {
-          errorMessage = 'Depolama kotası doldu.';
-        } else if (err.message.includes('storage/retry-limit-exceeded')) {
-          errorMessage = 'Yükleme zaman aşımına uğradı. Lütfen tekrar deneyin.';
         }
       }
       showMessage('error', errorMessage);
@@ -215,8 +241,17 @@ const AdminPage: React.FC = () => {
           )}
           <label className="flex flex-col items-center justify-center w-32 h-20 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition-all">
             <div className="flex flex-col items-center justify-center pt-5 pb-6">
-              <ImageIcon className="w-6 h-6 text-gray-400 mb-1" />
-              <p className="text-[10px] text-gray-500">{uploading ? 'Yükleniyor...' : 'Seç'}</p>
+              {uploading ? (
+                <div className="flex flex-col items-center">
+                  <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                  <p className="text-[10px] text-gray-500">Yükleniyor...</p>
+                </div>
+              ) : (
+                <>
+                  <ImageIcon className="w-6 h-6 text-gray-400 mb-1" />
+                  <p className="text-[10px] text-gray-500">Görsel Seç</p>
+                </>
+              )}
             </div>
             <input 
               type="file" 
@@ -227,9 +262,16 @@ const AdminPage: React.FC = () => {
                 const file = e.target.files?.[0];
                 if (file) {
                   setUploading(true);
-                  const url = await handleFileUpload(file, path);
-                  if (url) onUpload(url);
-                  setUploading(false);
+                  try {
+                    const url = await handleFileUpload(file, path);
+                    if (url) {
+                      onUpload(url);
+                    }
+                  } catch (err) {
+                    console.error("Upload error in component:", err);
+                  } finally {
+                    setUploading(false);
+                  }
                 }
               }} 
             />
