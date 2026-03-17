@@ -28,6 +28,7 @@ const AdminPage: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [cmsData, setCmsData] = useState<CMSData | null>(null);
   const [admins, setAdmins] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState('settings');
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
