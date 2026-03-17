@@ -16,7 +16,20 @@ const MatchCard: React.FC<MatchCardProps> = ({ teamName, date, homeTeam, awayTea
             <p className="text-center text-sm mb-4">{date}</p>
             <div className="flex items-center justify-between">
                 <div className="flex flex-col items-center w-1/3">
-                    <img src={homeTeamLogo} alt={`${homeTeam} Logo`} className="w-20 h-20 object-contain mb-2" />
+                    {homeTeamLogo ? (
+                        <img 
+                            src={homeTeamLogo} 
+                            alt={`${homeTeam} Logo`} 
+                            className="w-20 h-20 object-contain mb-2" 
+                            onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                                (e.target as HTMLImageElement).parentElement?.querySelector('.logo-fallback')?.classList.remove('hidden');
+                            }}
+                        />
+                    ) : null}
+                    <div className={`logo-fallback ${homeTeamLogo ? 'hidden' : ''} w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mb-2`}>
+                        <i className="fas fa-shield-alt text-3xl"></i>
+                    </div>
                     <span className="font-bold text-center">{homeTeam}</span>
                 </div>
                 <div className="text-4xl font-bold">VS</div>

@@ -153,13 +153,51 @@ const AdminPage: React.FC = () => {
   };
 
   const handleFileUpload = async (file: File, path: string) => {
+    if (!storage) {
+      console.error('[STORAGE] Storage instance is not initialized');
+      showMessage('error', 'Depolama servisi başlatılamadı.');
+      return '';
+    }
+
     try {
-      const storageRef = ref(storage, `${path}/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      return await getDownloadURL(storageRef);
+      // Basic validation
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit for news/gallery
+        showMessage('error', 'Dosya boyutu 5MB\'dan küçük olmalıdır.');
+        return '';
+      }
+      if (!file.type.startsWith('image/')) {
+        showMessage('error', 'Lütfen geçerli bir görsel dosyası seçin.');
+        return '';
+      }
+
+      // Sanitize filename: remove special characters and spaces
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+      const fileName = `${Date.now()}_${sanitizedName}`;
+      const storageRef = ref(storage, `${path}/${fileName}`);
+      
+      console.log(`[STORAGE] Starting upload: ${file.name} -> ${path}/${fileName}`);
+      console.log(`[STORAGE] File size: ${file.size} bytes, Type: ${file.type}`);
+      
+      const uploadResult = await uploadBytes(storageRef, file);
+      console.log('[STORAGE] Upload successful:', uploadResult.metadata.fullPath);
+      
+      const url = await getDownloadURL(storageRef);
+      console.log('[STORAGE] Download URL obtained:', url);
+      return url;
     } catch (err) {
-      console.error('Upload failed:', err);
-      showMessage('error', 'Görsel yüklenemedi.');
+      console.error('[STORAGE] Upload failed:', err);
+      let errorMessage = 'Görsel yüklenemedi.';
+      if (err instanceof Error) {
+        console.error('[STORAGE] Error details:', err.message);
+        if (err.message.includes('storage/unauthorized')) {
+          errorMessage = 'Yükleme yetkiniz yok. Lütfen oturumunuzu kontrol edin.';
+        } else if (err.message.includes('storage/quota-exceeded')) {
+          errorMessage = 'Depolama kotası doldu.';
+        } else if (err.message.includes('storage/retry-limit-exceeded')) {
+          errorMessage = 'Yükleme zaman aşımına uğradı. Lütfen tekrar deneyin.';
+        }
+      }
+      showMessage('error', errorMessage);
       return '';
     }
   };
@@ -310,13 +348,13 @@ const AdminPage: React.FC = () => {
         )}
 
         <div className="max-w-4xl mx-auto">
-          {activeTab === 'settings' && <SettingsTab data={cmsData.siteSettings} onSave={async (d) => { try { await updateSettings(d); showMessage('success', 'Ayarlar kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onUpload={handleFileUpload} />}
-          {activeTab === 'homepage' && <HomepageTab data={cmsData.homePageHero} onSave={async (d) => { try { await updateHomepage(d); showMessage('success', 'Ana sayfa güncellendi'); } catch(e) { showMessage('error', 'Güncellenemedi'); } }} onUpload={handleFileUpload} />}
-          {activeTab === 'news' && <NewsTab data={cmsData.newsData} onSave={async (d, id) => { try { await saveNewsArticle(d, id); showMessage('success', 'Haber kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteNewsArticle(id); showMessage('success', 'Haber silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} />}
-          {activeTab === 'teams' && <TeamsTab data={cmsData.teamData} onSave={async (d, id) => { try { await saveTeam(d, id); showMessage('success', 'Takım kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteTeam(id); showMessage('success', 'Takım silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} />}
+          {activeTab === 'settings' && <SettingsTab data={cmsData.siteSettings} onSave={async (d) => { try { await updateSettings(d); showMessage('success', 'Ayarlar kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+          {activeTab === 'homepage' && <HomepageTab data={cmsData.homePageHero} onSave={async (d) => { try { await updateHomepage(d); showMessage('success', 'Ana sayfa güncellendi'); } catch(e) { showMessage('error', 'Güncellenemedi'); } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+          {activeTab === 'news' && <NewsTab data={cmsData.newsData} onSave={async (d, id) => { try { await saveNewsArticle(d, id); showMessage('success', 'Haber kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteNewsArticle(id); showMessage('success', 'Haber silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+          {activeTab === 'teams' && <TeamsTab data={cmsData.teamData} onSave={async (d, id) => { try { await saveTeam(d, id); showMessage('success', 'Takım kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteTeam(id); showMessage('success', 'Takım silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
           {activeTab === 'fixtures' && <FixturesTab data={cmsData.fixtures} teams={cmsData.teamData} onSave={async (d) => { try { await saveFixture(d); showMessage('success', 'Fikstür kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} />}
-          {activeTab === 'gallery' && <GalleryTab data={cmsData.galleryData} onSave={async (d) => { try { await saveGalleryImage(d); showMessage('success', 'Görsel eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteGalleryImage(id); showMessage('success', 'Görsel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} />}
-          {activeTab === 'staff' && <StaffTab data={cmsData.staffData} onSave={async (d, id) => { try { await saveStaffMember(d, id); showMessage('success', 'Personel kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteStaffMember(id); showMessage('success', 'Personel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} />}
+          {activeTab === 'gallery' && <GalleryTab data={cmsData.galleryData} onSave={async (d) => { try { await saveGalleryImage(d); showMessage('success', 'Görsel eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteGalleryImage(id); showMessage('success', 'Görsel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+          {activeTab === 'staff' && <StaffTab data={cmsData.staffData} onSave={async (d, id) => { try { await saveStaffMember(d, id); showMessage('success', 'Personel kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteStaffMember(id); showMessage('success', 'Personel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
           {activeTab === 'about' && <AboutTab data={cmsData.missionVision} onSave={async (d) => { try { await updateMissionVision(d); showMessage('success', 'Kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} />}
           {activeTab === 'users' && <UsersTab admins={admins} currentUser={user} onAdd={async (e, u) => { try { await addAdmin(e, u); showMessage('success', 'Yetkili eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); } }} onRemove={async (u) => { if(confirm('Bu yetkiliyi kaldırmak istediğinize emin misiniz?')) { try { await removeAdmin(u); showMessage('success', 'Yetkili kaldırıldı'); } catch(e) { showMessage('error', 'Kaldırılamadı'); } } }} />}
         </div>
@@ -337,7 +375,7 @@ const TabButton: React.FC<{ active: boolean, onClick: () => void, icon: React.Re
 
 // --- Tab Components (Simplified for brevity, but functional) ---
 
-const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => void, onUpload: (file: File, path: string) => Promise<string> }> = ({ data, onSave, onUpload }) => {
+const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onUpload, ImageUpload }) => {
   const [form, setForm] = useState(data || {
     address: '',
     email: '',
@@ -349,7 +387,7 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
     globalStyles: { primaryColor: '#f27d26', secondaryColor: '#1a1a1a', fontFamily: 'Inter', baseFontSize: '16px' }
   });
 
-  const [uploading, setUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (data) setForm(data);
@@ -357,24 +395,12 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
   
   if (!data && !form) return <div>Yükleniyor...</div>;
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setUploading(true);
-      try {
-        const url = await onUpload(file, 'settings');
-        if (url) {
-          setForm(prev => {
-            const updated = { ...prev, logo: url };
-            onSave(updated); // Save immediately
-            return updated;
-          });
-        }
-      } catch (err) {
-        console.error('Logo upload error:', err);
-      } finally {
-        setUploading(false);
-      }
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(form);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -383,40 +409,28 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Genel Ayarlar</h2>
         <button 
-          onClick={() => onSave(form)}
-          disabled={uploading}
-          className={`flex items-center gap-2 px-6 py-2 rounded-xl text-white font-bold transition-all ${uploading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[var(--primary-color)] hover:scale-105 shadow-lg'}`}
+          onClick={handleSave}
+          disabled={isSaving}
+          className={`flex items-center gap-2 px-6 py-2 rounded-xl text-white font-bold transition-all ${isSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-[var(--primary-color)] hover:scale-105 shadow-lg'}`}
         >
           <Save size={20} />
-          {uploading ? 'Yükleniyor...' : 'Ayarları Kaydet'}
+          {isSaving ? 'Kaydediliyor...' : 'Ayarları Kaydet'}
         </button>
       </div>
       
       <div className="bg-white p-6 rounded-2xl shadow-sm space-y-6">
         <div className="flex items-center gap-6 pb-6 border-b">
-          <div className="w-24 h-24 rounded-xl border-2 border-dashed flex items-center justify-center overflow-hidden bg-gray-50 relative">
-            {uploading ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
-                <div className="w-6 h-6 border-2 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin"></div>
-              </div>
-            ) : null}
-            {form.logo ? (
-              <img src={form.logo} alt="Logo" className="w-full h-full object-contain" />
-            ) : (
-              <ImageIcon className="text-gray-300" size={32} />
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Kulüp Logosu</label>
-            <input 
-              type="file" 
-              accept="image/*"
-              onChange={handleLogoUpload} 
-              disabled={uploading}
-              className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 disabled:opacity-50" 
-            />
-            <p className="text-xs text-gray-400 mt-1">Önerilen: 200x200px, PNG veya SVG</p>
-          </div>
+          <ImageUpload 
+            label="Kulüp Logosu"
+            currentUrl={form.logo}
+            path="settings"
+            onUpload={(url: string) => {
+              const updated = { ...form, logo: url };
+              setForm(updated);
+              onSave(updated); // Immediate save for logo
+            }}
+          />
+          <p className="text-xs text-gray-400 mt-1">Önerilen: 200x200px, PNG veya SVG</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -570,9 +584,21 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
   );
 };
 
-const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>, id?: string) => void, onDelete: (id: string) => void, onUpload: (f: File, p: string) => Promise<string> }> = ({ data, onSave, onDelete, onUpload }) => {
+const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>, id?: string) => void, onDelete: (id: string) => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onUpload, ImageUpload }) => {
   const [editing, setEditing] = useState<Partial<NewsArticle> | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const newsList = data || [];
+
+  const handleSave = async () => {
+    if (!editing) return;
+    setIsSaving(true);
+    try {
+      await onSave(editing, editing.id?.toString());
+      setEditing(null);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -590,22 +616,21 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
           <textarea placeholder="Özet" value={editing.summary} onChange={e => setEditing({...editing, summary: e.target.value})} className="w-full p-2 border rounded-lg" />
           <textarea placeholder="İçerik" value={editing.content} onChange={e => setEditing({...editing, content: e.target.value})} className="w-full p-2 border rounded-lg h-32" />
           
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Haber Görseli</label>
-            <div className="flex items-center gap-4">
-              {editing.imageUrl && <img src={editing.imageUrl} className="w-20 h-20 object-cover rounded" />}
-              <input type="file" onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  const url = await onUpload(file, 'news');
-                  setEditing({ ...editing, imageUrl: url });
-                }
-              }} className="text-xs" />
-            </div>
-          </div>
+          <ImageUpload 
+            label="Haber Görseli"
+            currentUrl={editing.imageUrl}
+            path="news"
+            onUpload={(url: string) => setEditing({ ...editing, imageUrl: url })}
+          />
 
           <div className="flex gap-2">
-            <button onClick={() => { onSave(editing, editing.id?.toString()); setEditing(null); }} className="bg-green-600 text-white px-6 py-2 rounded-lg">Kaydet</button>
+            <button 
+              onClick={handleSave} 
+              disabled={isSaving}
+              className="bg-green-600 text-white px-6 py-2 rounded-lg disabled:opacity-50"
+            >
+              {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
+            </button>
             <button onClick={() => setEditing(null)} className="bg-gray-200 px-6 py-2 rounded-lg">İptal</button>
           </div>
         </div>
@@ -631,18 +656,19 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
 
 // --- Other tabs follow similar pattern... I'll implement a few more key ones ---
 
-const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryItem>) => void, onDelete: (id: string) => void, onUpload: (f: File, p: string) => Promise<string> }> = ({ data, onSave, onDelete, onUpload }) => {
+const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryItem>) => void, onDelete: (id: string) => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onUpload, ImageUpload }) => {
   const [newImage, setNewImage] = useState({ imageUrl: '', title: '' });
-  const [uploading, setUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const galleryList = data || [];
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setUploading(true);
-      const url = await onUpload(file, 'gallery');
-      setNewImage({ ...newImage, imageUrl: url });
-      setUploading(false);
+  const handleSave = async () => {
+    if (!newImage.imageUrl) return;
+    setIsSaving(true);
+    try {
+      await onSave(newImage);
+      setNewImage({ imageUrl: '', title: '' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -651,24 +677,23 @@ const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryIte
       <h2 className="text-2xl font-bold">Galeri</h2>
       <div className="bg-white p-6 rounded-2xl shadow-sm space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Görsel Yükle</label>
-            <div className="flex items-center gap-4">
-              {newImage.imageUrl && <img src={newImage.imageUrl} className="w-20 h-20 object-cover rounded border" />}
-              <input type="file" onChange={handleUpload} className="text-sm" disabled={uploading} />
-            </div>
-          </div>
+          <ImageUpload 
+            label="Görsel Yükle"
+            currentUrl={newImage.imageUrl}
+            path="gallery"
+            onUpload={(url: string) => setNewImage({ ...newImage, imageUrl: url })}
+          />
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">Başlık (Opsiyonel)</label>
             <input type="text" placeholder="Görsel Başlığı" value={newImage.title} onChange={e => setNewImage({...newImage, title: e.target.value})} className="w-full p-2 border rounded-lg" />
           </div>
         </div>
         <button 
-          onClick={() => { if(newImage.imageUrl) { onSave(newImage); setNewImage({ imageUrl: '', title: '' }); } }} 
-          disabled={!newImage.imageUrl || uploading}
+          onClick={handleSave} 
+          disabled={!newImage.imageUrl || isSaving}
           className="bg-[var(--primary-color)] text-white px-8 py-2 rounded-xl font-bold disabled:opacity-50"
         >
-          {uploading ? 'Yükleniyor...' : 'Galeriye Ekle'}
+          {isSaving ? 'Ekleniyor...' : 'Galeriye Ekle'}
         </button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -688,19 +713,29 @@ const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryIte
   );
 };
 
-const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => void, onUpload: (f: File, p: string) => Promise<string> }> = ({ data, onSave, onUpload }) => {
+const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onUpload, ImageUpload }) => {
   const [form, setForm] = useState(data || {
     heroImage: '',
     heroTitle: '',
     heroSubtitle: '',
     sections: []
   });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (data) setForm(data);
   }, [data]);
   
   if (!data && !form) return <div>Yükleniyor...</div>;
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave(form);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const moveSection = (idx: number, direction: 'up' | 'down') => {
     const newSections = [...form.sections];
@@ -732,19 +767,12 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
               <input type="text" value={form.heroSubtitle} onChange={e => setForm({...form, heroSubtitle: e.target.value})} className="w-full p-2 border rounded-lg" />
             </div>
           </div>
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Hero Arka Plan Görseli</label>
-            <div className="flex items-center gap-4">
-              {form.heroImage && <img src={form.heroImage} className="w-32 h-20 object-cover rounded border" />}
-              <input type="file" onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  const url = await onUpload(file, 'homepage');
-                  setForm({ ...form, heroImage: url });
-                }
-              }} className="text-xs" />
-            </div>
-          </div>
+          <ImageUpload 
+            label="Hero Arka Plan Görseli"
+            currentUrl={form.heroImage}
+            path="homepage"
+            onUpload={(url: string) => setForm({ ...form, heroImage: url })}
+          />
         </div>
 
         <div className="space-y-4 pt-6 border-t">
@@ -818,15 +846,33 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
             ))}
           </div>
         </div>
-        <button onClick={() => onSave(form)} className="bg-[var(--primary-color)] text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:opacity-90 transition-all">Ana Sayfayı Güncelle</button>
+        <button 
+          onClick={handleSave} 
+          disabled={isSaving}
+          className="bg-[var(--primary-color)] text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:opacity-90 transition-all disabled:opacity-50"
+        >
+          {isSaving ? 'Güncelleniyor...' : 'Ana Sayfayı Güncelle'}
+        </button>
       </div>
     </div>
   );
 };
 
-const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string) => void, onDelete: (id: string) => void, onUpload: (f: File, p: string) => Promise<string> }> = ({ data, onSave, onDelete, onUpload }) => {
+const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string) => void, onDelete: (id: string) => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onUpload, ImageUpload }) => {
   const [editing, setEditing] = useState<any | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const teams = data || [];
+
+  const handleSave = async () => {
+    if (!editing) return;
+    setIsSaving(true);
+    try {
+      await onSave(editing, editing.id?.toString());
+      setEditing(null);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -849,19 +895,12 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
             <input type="text" placeholder="Teknik Sorumlu Görevi" value={editing.coach?.role} onChange={e => setEditing({...editing, coach: { ...editing.coach, role: e.target.value }})} className="w-full p-2 border rounded-lg" />
           </div>
           
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Takım Fotoğrafı</label>
-            <div className="flex items-center gap-4">
-              {editing.heroImage && <img src={editing.heroImage} className="w-32 h-20 object-cover rounded" />}
-              <input type="file" onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  const url = await onUpload(file, 'teams');
-                  setEditing({ ...editing, heroImage: url });
-                }
-              }} className="text-xs" />
-            </div>
-          </div>
+          <ImageUpload 
+            label="Takım Fotoğrafı"
+            currentUrl={editing.heroImage}
+            path="teams"
+            onUpload={(url: string) => setEditing({ ...editing, heroImage: url })}
+          />
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">Oyuncular (Virgülle ayırın: Ad, Mevki, No)</label>
@@ -880,7 +919,13 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
           </div>
 
           <div className="flex gap-2">
-            <button onClick={() => { onSave(editing, editing.id?.toString()); setEditing(null); }} className="bg-green-600 text-white px-6 py-2 rounded-lg">Kaydet</button>
+            <button 
+              onClick={handleSave} 
+              disabled={isSaving}
+              className="bg-green-600 text-white px-6 py-2 rounded-lg disabled:opacity-50"
+            >
+              {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
+            </button>
             <button onClick={() => setEditing(null)} className="bg-gray-200 px-6 py-2 rounded-lg">İptal</button>
           </div>
         </div>
@@ -911,7 +956,19 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
 
 const FixturesTab: React.FC<{ data: Fixture[], teams: Team[], onSave: (d: Fixture) => void }> = ({ data, teams, onSave }) => {
   const [editing, setEditing] = useState<any | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const fixtures = data || [];
+
+  const handleSave = async () => {
+    if (!editing) return;
+    setIsSaving(true);
+    try {
+      await onSave(editing as Fixture);
+      setEditing(null);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -980,7 +1037,13 @@ const FixturesTab: React.FC<{ data: Fixture[], teams: Team[], onSave: (d: Fixtur
           </div>
 
           <div className="flex gap-2">
-            <button onClick={() => { onSave(editing as Fixture); setEditing(null); }} className="bg-green-600 text-white px-6 py-2 rounded-lg">Kaydet</button>
+            <button 
+              onClick={handleSave} 
+              disabled={isSaving}
+              className="bg-green-600 text-white px-6 py-2 rounded-lg disabled:opacity-50"
+            >
+              {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
+            </button>
             <button onClick={() => setEditing(null)} className="bg-gray-200 px-6 py-2 rounded-lg">İptal</button>
           </div>
         </div>
@@ -1000,9 +1063,21 @@ const FixturesTab: React.FC<{ data: Fixture[], teams: Team[], onSave: (d: Fixtur
   );
 };
 
-const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>, id?: string) => void, onDelete: (id: string) => void, onUpload: (f: File, p: string) => Promise<string> }> = ({ data, onSave, onDelete, onUpload }) => {
+const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>, id?: string) => void, onDelete: (id: string) => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onUpload, ImageUpload }) => {
   const [editing, setEditing] = useState<Partial<StaffMember> | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const staff = data || [];
+
+  const handleSave = async () => {
+    if (!editing) return;
+    setIsSaving(true);
+    try {
+      await onSave(editing, editing.id?.toString());
+      setEditing(null);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -1018,22 +1093,21 @@ const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>
           <input type="text" placeholder="Ad Soyad" value={editing.name} onChange={e => setEditing({...editing, name: e.target.value})} className="w-full p-2 border rounded-lg" />
           <input type="text" placeholder="Görev" value={editing.role} onChange={e => setEditing({...editing, role: e.target.value})} className="w-full p-2 border rounded-lg" />
           
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Fotoğraf</label>
-            <div className="flex items-center gap-4">
-              {editing.imageUrl && <img src={editing.imageUrl} className="w-20 h-20 object-cover rounded-full" />}
-              <input type="file" onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  const url = await onUpload(file, 'staff');
-                  setEditing({ ...editing, imageUrl: url });
-                }
-              }} className="text-xs" />
-            </div>
-          </div>
+          <ImageUpload 
+            label="Fotoğraf"
+            currentUrl={editing.imageUrl}
+            path="staff"
+            onUpload={(url: string) => setEditing({ ...editing, imageUrl: url })}
+          />
 
           <div className="flex gap-2">
-            <button onClick={() => { onSave(editing, editing.id?.toString()); setEditing(null); }} className="bg-green-600 text-white px-6 py-2 rounded-lg">Kaydet</button>
+            <button 
+              onClick={handleSave} 
+              disabled={isSaving}
+              className="bg-green-600 text-white px-6 py-2 rounded-lg disabled:opacity-50"
+            >
+              {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
+            </button>
             <button onClick={() => setEditing(null)} className="bg-gray-200 px-6 py-2 rounded-lg">İptal</button>
           </div>
         </div>
