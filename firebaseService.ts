@@ -49,12 +49,23 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 
 // Data Fetching
 export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
-  const data: Partial<CMSData> = {};
+  const data: Partial<CMSData> = {
+    siteSettings: undefined,
+    homePageHero: undefined,
+    teamData: [],
+    fixtures: [],
+    newsData: [],
+    galleryData: [],
+    staffData: [],
+    missionVision: undefined
+  };
   const totalCollections = 8;
   const unsubscribes: (() => void)[] = [];
+  const loadedCollections = new Set<string>();
 
-  const checkAndEmit = () => {
-    if (Object.keys(data).length === totalCollections) {
+  const checkAndEmit = (collectionName: string) => {
+    loadedCollections.add(collectionName);
+    if (loadedCollections.size === totalCollections) {
       callback(data as CMSData);
     }
   };
@@ -73,7 +84,7 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
       globalStyles: { primaryColor: '#f27d26', secondaryColor: '#1a1a1a', fontFamily: 'Inter', baseFontSize: '16px' },
       ...docData
     } as SiteSettings;
-    checkAndEmit();
+    checkAndEmit('settings');
   }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/site')));
 
   // Homepage
@@ -86,42 +97,37 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
       sections: [],
       ...docData
     } as HomePageHero;
-    checkAndEmit();
+    checkAndEmit('homepage');
   }, (err) => handleFirestoreError(err, OperationType.GET, 'homepage/hero')));
 
   // News
   unsubscribes.push(onSnapshot(query(collection(db, 'news'), orderBy('date', 'desc')), (snapshot) => {
     data.newsData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
-    if (!data.newsData) data.newsData = [];
-    checkAndEmit();
+    checkAndEmit('news');
   }, (err) => handleFirestoreError(err, OperationType.LIST, 'news')));
 
   // Teams
   unsubscribes.push(onSnapshot(collection(db, 'teams'), (snapshot) => {
     data.teamData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
-    if (!data.teamData) data.teamData = [];
-    checkAndEmit();
+    checkAndEmit('teams');
   }, (err) => handleFirestoreError(err, OperationType.LIST, 'teams')));
 
   // Fixtures
   unsubscribes.push(onSnapshot(collection(db, 'fixtures'), (snapshot) => {
     data.fixtures = snapshot.docs.map(d => d.data()) as any;
-    if (!data.fixtures) data.fixtures = [];
-    checkAndEmit();
+    checkAndEmit('fixtures');
   }, (err) => handleFirestoreError(err, OperationType.LIST, 'fixtures')));
 
   // Gallery
   unsubscribes.push(onSnapshot(collection(db, 'gallery'), (snapshot) => {
     data.galleryData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
-    if (!data.galleryData) data.galleryData = [];
-    checkAndEmit();
+    checkAndEmit('gallery');
   }, (err) => handleFirestoreError(err, OperationType.LIST, 'gallery')));
 
   // Staff
   unsubscribes.push(onSnapshot(collection(db, 'staff'), (snapshot) => {
     data.staffData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
-    if (!data.staffData) data.staffData = [];
-    checkAndEmit();
+    checkAndEmit('staff');
   }, (err) => handleFirestoreError(err, OperationType.LIST, 'staff')));
 
   // Mission/Vision
@@ -132,7 +138,7 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
       vision: '',
       ...docData
     } as MissionVision;
-    checkAndEmit();
+    checkAndEmit('missionVision');
   }, (err) => handleFirestoreError(err, OperationType.GET, 'missionVision/content')));
 
   return () => unsubscribes.forEach(unsub => unsub());
@@ -140,48 +146,69 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
 
 // Migration Function
 export const migrateDataToFirestore = async (localData: CMSData) => {
+  console.log('Starting migration with data:', localData);
   try {
     // Settings
     await setDoc(doc(db, 'settings', 'site'), localData.siteSettings);
+    console.log('Settings migrated');
     
     // Homepage
     await setDoc(doc(db, 'homepage', 'hero'), localData.homePageHero);
+    console.log('Homepage migrated');
     
     // Mission/Vision
     await setDoc(doc(db, 'missionVision', 'content'), localData.missionVision);
+    console.log('Mission/Vision migrated');
 
     // News
     for (const article of localData.newsData) {
       const { id, ...rest } = article;
       await setDoc(doc(db, 'news', String(id)), rest);
     }
+    console.log('News migrated');
 
     // Teams
     for (const team of localData.teamData) {
       const { id, ...rest } = team;
       await setDoc(doc(db, 'teams', String(id)), rest);
     }
+    console.log('Teams migrated');
 
     // Fixtures
     for (const fixture of localData.fixtures) {
       await setDoc(doc(db, 'fixtures', fixture.teamSlug), fixture);
     }
+    console.log('Fixtures migrated');
 
     // Gallery
     for (const item of localData.galleryData) {
       const { id, ...rest } = item;
       await setDoc(doc(db, 'gallery', String(id)), rest);
     }
+    console.log('Gallery migrated');
 
     // Staff
     for (const member of localData.staffData) {
       const { id, ...rest } = member;
       await setDoc(doc(db, 'staff', String(id)), rest);
     }
+    console.log('Staff migrated');
+
+    // Ensure current user is admin in Firestore if logged in
+    if (auth.currentUser) {
+      await setDoc(doc(db, 'users', auth.currentUser.uid), {
+        email: auth.currentUser.email,
+        role: 'admin',
+        createdAt: new Date().toISOString()
+      });
+      console.log('Admin user record created');
+    }
 
     console.log('Migration successful');
   } catch (err) {
     console.error('Migration failed:', err);
+    handleFirestoreError(err, OperationType.WRITE, 'migration');
+    throw err;
   }
 };
 
