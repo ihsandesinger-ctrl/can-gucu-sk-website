@@ -219,9 +219,17 @@ export const updateSettings = (settings: SiteSettings) =>
 export const updateHomepage = (hero: HomePageHero) => 
   setDoc(doc(db, 'homepage', 'hero'), hero);
 
-export const saveNewsArticle = (article: Partial<NewsArticle>, id?: string) => {
-  if (id) return updateDoc(doc(db, 'news', id), article);
-  return addDoc(collection(db, 'news'), { ...article, date: new Date().toISOString() });
+export const saveNewsArticle = async (article: Partial<NewsArticle>, id?: string) => {
+  try {
+    if (id) return await updateDoc(doc(db, 'news', id), article);
+    return await addDoc(collection(db, 'news'), { ...article, date: new Date().toISOString() });
+  } catch (err) {
+    console.error('[FIRESTORE] News save failed:', err);
+    if (err instanceof Error && err.message.includes('too large')) {
+      console.error('[FIRESTORE] Document size exceeds 1MB limit. Image might be too large.');
+    }
+    throw err;
+  }
 };
 
 export const deleteNewsArticle = (id: string) => deleteDoc(doc(db, 'news', id));

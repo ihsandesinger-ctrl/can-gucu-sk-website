@@ -158,8 +158,52 @@ const AdminPage: React.FC = () => {
       return await convertToBase64(file);
     }
 
+    // Helper to compress image
+    const compressImage = (f: File): Promise<Blob | File> => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(f);
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target?.result as string;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 1200;
+            const MAX_HEIGHT = 1200;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width *= MAX_HEIGHT / height;
+                height = MAX_HEIGHT;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            
+            canvas.toBlob((blob) => {
+              if (blob) {
+                resolve(new File([blob], f.name, { type: 'image/jpeg' }));
+              } else {
+                resolve(f);
+              }
+            }, 'image/jpeg', 0.7);
+          };
+        };
+      });
+    };
+
     // Helper to convert file to base64
-    const convertToBase64 = (f: File): Promise<string> => {
+    const convertToBase64 = (f: File | Blob): Promise<string> => {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(f);
@@ -170,12 +214,20 @@ const AdminPage: React.FC = () => {
 
     try {
       // Basic validation
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        showMessage('error', 'Dosya boyutu 5MB\'dan küçük olmalıdır.');
-        return '';
-      }
       if (!file.type.startsWith('image/')) {
         showMessage('error', 'Lütfen geçerli bir görsel dosyası seçin.');
+        return '';
+      }
+
+      // Compress before upload
+      console.log(`[STORAGE] Original size: ${file.size} bytes`);
+      showMessage('info', 'Görsel optimize ediliyor...');
+      const processedFile = await compressImage(file);
+      const finalFile = processedFile instanceof File ? processedFile : new File([processedFile], file.name, { type: 'image/jpeg' });
+      console.log(`[STORAGE] Compressed size: ${finalFile.size} bytes`);
+
+      if (finalFile.size > 5 * 1024 * 1024) { // 5MB limit after compression
+        showMessage('error', 'Görsel çok büyük. Lütfen daha küçük bir dosya seçin.');
         return '';
       }
 
@@ -187,9 +239,9 @@ const AdminPage: React.FC = () => {
       console.log(`[STORAGE] Attempting upload: ${file.name} to ${path}`);
 
       // Use a Promise with timeout for the upload
-      const uploadPromise = uploadBytes(storageRef, file);
+      const uploadPromise = uploadBytes(storageRef, finalFile);
       const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('timeout')), 8000)
+        setTimeout(() => reject(new Error('timeout')), 10000) // Increased to 10s
       );
 
       try {
@@ -200,10 +252,11 @@ const AdminPage: React.FC = () => {
       } catch (uploadErr: any) {
         console.warn('[STORAGE] Storage upload failed or timed out, trying Base64 fallback:', uploadErr.message);
         
-        // Fallback to Base64 if file is small enough (< 800KB)
-        if (file.size < 800 * 1024) {
+        // Fallback to Base64 if file is small enough (< 600KB)
+        // Firestore limit is 1MB, Base64 is ~1.37x larger, so 600KB -> ~822KB
+        if (finalFile.size < 600 * 1024) {
           console.log('[STORAGE] File is small enough for Base64 fallback');
-          return await convertToBase64(file);
+          return await convertToBase64(finalFile);
         } else {
           throw uploadErr; // Re-throw if too large for fallback
         }
@@ -214,9 +267,7 @@ const AdminPage: React.FC = () => {
       if (err instanceof Error) {
         if (err.message === 'timeout') {
           errorMessage = 'Yükleme zaman aşımına uğradı. Alternatif yöntem deneniyor...';
-          // If it timed out and we haven't tried base64 yet (because it was > 800KB), 
-          // we might still want to try it if it's not TOO large
-          if (file.size < 1.5 * 1024 * 1024) {
+          if (file.size < 800 * 1024) {
              return await convertToBase64(file);
           }
         } else if (err.message.includes('storage/unauthorized')) {
