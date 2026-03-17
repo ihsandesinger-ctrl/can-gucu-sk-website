@@ -22,7 +22,7 @@ import {
 } from '../firebaseService';
 import type { CMSData, NewsArticle, Team, GalleryItem, StaffMember, SiteSettings, HomePageHero, MissionVision, Fixture } from '../types';
 import { subscribeToCMSData } from '../firebaseService';
-import { Plus, Trash2, Save, LogOut, Image as ImageIcon, Settings, Users, Newspaper, Layout, Target, Calendar, Database, ShieldCheck, Copy } from 'lucide-react';
+import { Plus, Trash2, Save, LogOut, Image as ImageIcon, Settings, Users, Newspaper, Layout, Target, Calendar, Database, ShieldCheck, Copy, ChevronUp, ChevronDown } from 'lucide-react';
 
 const AdminPage: React.FC = () => {
   const [user, setUser] = useState<any>(null);
@@ -95,42 +95,58 @@ const AdminPage: React.FC = () => {
     
     setIsMigrating(true);
     try {
+      const fetchJson = async (url: string) => {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`${url} yüklenemedi`);
+        return await res.json();
+      };
+
       const [
-        settingsRes,
-        homepageRes,
-        teamsRes,
-        fixturesRes,
-        newsRes,
-        galleryRes,
-        staffRes,
-        missionVisionRes,
+        settings,
+        homepage,
+        teams,
+        fixtures,
+        news,
+        gallery,
+        staff,
+        missionVision,
       ] = await Promise.all([
-        fetch('/content/settings.json'),
-        fetch('/content/homepage.json'),
-        fetch('/content/teams.json'),
-        fetch('/content/fixtures.json'),
-        fetch('/content/newsData.json'),
-        fetch('/content/galleryData.json'),
-        fetch('/content/staffData.json'),
-        fetch('/content/missionVision.json'),
+        fetchJson('/content/settings.json'),
+        fetchJson('/content/homepage.json'),
+        fetchJson('/content/teams.json'),
+        fetchJson('/content/fixtures.json'),
+        fetchJson('/content/newsData.json'),
+        fetchJson('/content/galleryData.json'),
+        fetchJson('/content/staffData.json'),
+        fetchJson('/content/missionVision.json'),
       ]);
 
+      // Ensure homepage sections have correct IDs for rendering
+      if (homepage.sections) {
+        homepage.sections = homepage.sections.map((s: any) => {
+          if (s.name.toLowerCase().includes('fikstür') || s.name.toLowerCase().includes('maç')) return { ...s, id: 'matches' };
+          if (s.name.toLowerCase().includes('haber')) return { ...s, id: 'news' };
+          if (s.name.toLowerCase().includes('galeri')) return { ...s, id: 'gallery' };
+          return s;
+        });
+      }
+
       const initialData: CMSData = {
-        siteSettings: await settingsRes.json(),
-        homePageHero: await homepageRes.json(),
-        teamData: (await teamsRes.json()).teams,
-        fixtures: (await fixturesRes.json()).fixtures,
-        newsData: (await newsRes.json()).articles,
-        galleryData: (await galleryRes.json()).images,
-        staffData: (await staffRes.json()).members,
-        missionVision: await missionVisionRes.json(),
+        siteSettings: settings,
+        homePageHero: homepage,
+        teamData: teams.teams || [],
+        fixtures: fixtures.fixtures || [],
+        newsData: news.articles || [],
+        galleryData: gallery.images || [],
+        staffData: staff.members || [],
+        missionVision: missionVision,
       };
 
       await migrateDataToFirestore(initialData);
-      showMessage('success', 'Veriler başarıyla aktarıldı.');
+      showMessage('success', 'Veriler başarıyla aktarıldı. Sayfayı yenileyebilirsiniz.');
     } catch (err) {
       console.error('Migration failed:', err);
-      showMessage('error', 'Aktarım sırasında bir hata oluştu.');
+      showMessage('error', `Aktarım hatası: ${err instanceof Error ? err.message : 'Bilinmeyen hata'}`);
     } finally {
       setIsMigrating(false);
     }
@@ -652,8 +668,14 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
     const newSections = [...form.sections];
     const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
     if (targetIdx < 0 || targetIdx >= newSections.length) return;
+    
+    // Swap sections
     [newSections[idx], newSections[targetIdx]] = [newSections[targetIdx], newSections[idx]];
-    setForm({ ...form, sections: newSections });
+    
+    // Update order property
+    const updatedSections = newSections.map((s, i) => ({ ...s, order: i }));
+    
+    setForm({ ...form, sections: updatedSections });
   };
 
   return (
@@ -702,8 +724,20 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
               <div key={sec.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border">
                 <div className="flex items-center gap-4">
                   <div className="flex flex-col gap-1">
-                    <button onClick={() => moveSection(idx, 'up')} className="text-gray-400 hover:text-gray-600"><Plus size={14} className="rotate-45"/></button>
-                    <button onClick={() => moveSection(idx, 'down')} className="text-gray-400 hover:text-gray-600"><Plus size={14} className="rotate-[225deg]"/></button>
+                    <button 
+                      onClick={() => moveSection(idx, 'up')} 
+                      disabled={idx === 0}
+                      className={`hover:text-orange-600 transition-colors ${idx === 0 ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400'}`}
+                    >
+                      <ChevronUp size={20} />
+                    </button>
+                    <button 
+                      onClick={() => moveSection(idx, 'down')} 
+                      disabled={idx === form.sections.length - 1}
+                      className={`hover:text-orange-600 transition-colors ${idx === form.sections.length - 1 ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400'}`}
+                    >
+                      <ChevronDown size={20} />
+                    </button>
                   </div>
                   <input 
                     type="text" 
@@ -713,26 +747,33 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
                       newSecs[idx].name = e.target.value;
                       setForm({...form, sections: newSecs});
                     }}
-                    className="bg-transparent font-medium border-none focus:ring-0 p-0"
+                    className="bg-transparent font-medium border-none focus:ring-0 p-0 text-lg"
                   />
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500">Görünür</span>
-                    <input type="checkbox" checked={sec.visible} onChange={e => {
-                      const newSecs = [...form.sections];
-                      newSecs[idx].visible = e.target.checked;
-                      setForm({...form, sections: newSecs});
-                    }} className="w-4 h-4 text-orange-600 rounded" />
-                  </div>
+                <div className="flex items-center gap-6">
+                  <label className="flex items-center gap-2 cursor-pointer group">
+                    <span className="text-sm text-gray-500 group-hover:text-gray-700">{sec.visible ? 'Görünür' : 'Gizli'}</span>
+                    <div 
+                      onClick={() => {
+                        const newSecs = [...form.sections];
+                        newSecs[idx].visible = !sec.visible;
+                        setForm({...form, sections: newSecs});
+                      }}
+                      className={`w-12 h-6 rounded-full transition-colors relative ${sec.visible ? 'bg-orange-500' : 'bg-gray-300'}`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${sec.visible ? 'left-7' : 'left-1'}`} />
+                    </div>
+                  </label>
                   <button 
                     onClick={() => {
-                      const newSecs = form.sections.filter((_, i) => i !== idx);
-                      setForm({...form, sections: newSecs});
+                      if (confirm('Bu bölümü silmek istediğinize emin misiniz?')) {
+                        const newSecs = form.sections.filter((_, i) => i !== idx);
+                        setForm({...form, sections: newSecs});
+                      }
                     }}
-                    className="text-red-400 hover:text-red-600"
+                    className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-all"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={20} />
                   </button>
                 </div>
               </div>
