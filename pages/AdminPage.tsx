@@ -349,6 +349,8 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
     globalStyles: { primaryColor: '#f27d26', secondaryColor: '#1a1a1a', fontFamily: 'Inter', baseFontSize: '16px' }
   });
 
+  const [uploading, setUploading] = useState(false);
+
   useEffect(() => {
     if (data) setForm(data);
   }, [data]);
@@ -358,17 +360,46 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const url = await onUpload(file, 'settings');
-      setForm({ ...form, logo: url });
+      setUploading(true);
+      try {
+        const url = await onUpload(file, 'settings');
+        if (url) {
+          setForm(prev => {
+            const updated = { ...prev, logo: url };
+            onSave(updated); // Save immediately
+            return updated;
+          });
+        }
+      } catch (err) {
+        console.error('Logo upload error:', err);
+      } finally {
+        setUploading(false);
+      }
     }
   };
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Genel Ayarlar</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Genel Ayarlar</h2>
+        <button 
+          onClick={() => onSave(form)}
+          disabled={uploading}
+          className={`flex items-center gap-2 px-6 py-2 rounded-xl text-white font-bold transition-all ${uploading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[var(--primary-color)] hover:scale-105 shadow-lg'}`}
+        >
+          <Save size={20} />
+          {uploading ? 'Yükleniyor...' : 'Ayarları Kaydet'}
+        </button>
+      </div>
+      
       <div className="bg-white p-6 rounded-2xl shadow-sm space-y-6">
         <div className="flex items-center gap-6 pb-6 border-b">
-          <div className="w-24 h-24 rounded-xl border-2 border-dashed flex items-center justify-center overflow-hidden bg-gray-50">
+          <div className="w-24 h-24 rounded-xl border-2 border-dashed flex items-center justify-center overflow-hidden bg-gray-50 relative">
+            {uploading ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
+                <div className="w-6 h-6 border-2 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : null}
             {form.logo ? (
               <img src={form.logo} alt="Logo" className="w-full h-full object-contain" />
             ) : (
@@ -377,7 +408,14 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Kulüp Logosu</label>
-            <input type="file" onChange={handleLogoUpload} className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100" />
+            <input 
+              type="file" 
+              accept="image/*"
+              onChange={handleLogoUpload} 
+              disabled={uploading}
+              className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 disabled:opacity-50" 
+            />
+            <p className="text-xs text-gray-400 mt-1">Önerilen: 200x200px, PNG veya SVG</p>
           </div>
         </div>
 

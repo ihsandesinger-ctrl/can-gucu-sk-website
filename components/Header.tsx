@@ -184,7 +184,20 @@ const Header: React.FC<HeaderProps> = ({ logo, teams, settings }) => {
                 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-20">
                         <Link to="/" className="flex items-center space-x-4" onClick={handleLinkClick}>
-                            <img src={logo} alt="Logo" className="h-14 w-auto" />
+                            {logo ? (
+                                <img 
+                                    src={logo} 
+                                    alt="Logo" 
+                                    className="h-14 w-auto object-contain" 
+                                    onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                    }} 
+                                />
+                            ) : (
+                                <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center">
+                                    <i className="fas fa-shield-alt text-2xl"></i>
+                                </div>
+                            )}
                             <span className="text-2xl font-bold">ÇANGÜCÜ SK</span>
                         </Link>
                         
