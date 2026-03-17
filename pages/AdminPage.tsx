@@ -279,7 +279,17 @@ const TabButton: React.FC<{ active: boolean, onClick: () => void, icon: React.Re
 // --- Tab Components (Simplified for brevity, but functional) ---
 
 const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => void }> = ({ data, onSave }) => {
-  const [form, setForm] = useState(data);
+  const [form, setForm] = useState(data || {
+    address: '',
+    email: '',
+    phone: '',
+    socialMedia: { facebook: '', instagram: '', twitter: '', youtube: '' },
+    maintenanceMode: false,
+    navigation: [],
+    globalStyles: { primaryColor: '#f27d26', secondaryColor: '#1a1a1a', fontFamily: 'Inter' }
+  });
+  
+  if (!data && !form) return <div>Yükleniyor...</div>;
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Genel Ayarlar</h2>
@@ -312,6 +322,7 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
 
 const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>, id?: string) => void, onDelete: (id: string) => void }> = ({ data, onSave, onDelete }) => {
   const [editing, setEditing] = useState<Partial<NewsArticle> | null>(null);
+  const newsList = data || [];
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -336,7 +347,7 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
       )}
 
       <div className="grid gap-4">
-        {data.map(article => (
+        {newsList.map(article => (
           <div key={article.id} className="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center">
             <div>
               <h4 className="font-bold">{article.title}</h4>
@@ -357,6 +368,7 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
 
 const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryItem>) => void, onDelete: (id: string) => void }> = ({ data, onSave, onDelete }) => {
   const [newImage, setNewImage] = useState({ imageUrl: '', title: '' });
+  const galleryList = data || [];
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Galeri</h2>
@@ -368,7 +380,7 @@ const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryIte
         <button onClick={() => { onSave(newImage); setNewImage({ imageUrl: '', title: '' }); }} className="bg-[var(--primary-color)] text-white px-6 py-2 rounded-lg">Ekle</button>
       </div>
       <div className="grid grid-cols-3 gap-4">
-        {data.map(img => (
+        {galleryList.map(img => (
           <div key={img.id} className="relative group rounded-xl overflow-hidden shadow-sm">
             <img src={img.imageUrl} alt="" className="w-full h-32 object-cover" />
             <button onClick={() => onDelete(img.id.toString())} className="absolute top-2 right-2 bg-red-600 text-white p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-all">
@@ -382,7 +394,14 @@ const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryIte
 };
 
 const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => void }> = ({ data, onSave }) => {
-  const [form, setForm] = useState(data);
+  const [form, setForm] = useState(data || {
+    heroImage: '',
+    heroTitle: '',
+    heroSubtitle: '',
+    sections: []
+  });
+  
+  if (!data && !form) return <div>Yükleniyor...</div>;
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Ana Sayfa Ayarları</h2>
@@ -401,7 +420,7 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
         </div>
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">Bölüm Görünürlüğü</label>
-          {form.sections.map((sec, idx) => (
+          {(form.sections || []).map((sec, idx) => (
             <div key={sec.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
               <span>{sec.name}</span>
               <input type="checkbox" checked={sec.visible} onChange={e => {

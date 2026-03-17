@@ -54,57 +54,77 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
   const totalCollections = 8;
 
   const checkAndEmit = () => {
-    loadedCount++;
-    if (loadedCount === totalCollections) {
+    if (Object.keys(data).length === totalCollections) {
       callback(data as CMSData);
     }
   };
 
   // Settings
   onSnapshot(doc(db, 'settings', 'site'), (snapshot) => {
-    data.siteSettings = snapshot.data() as SiteSettings;
+    data.siteSettings = snapshot.data() as SiteSettings || {
+      address: '',
+      email: '',
+      phone: '',
+      socialMedia: { facebook: '', instagram: '', twitter: '', youtube: '' },
+      maintenanceMode: false,
+      navigation: [],
+      globalStyles: { primaryColor: '#f27d26', secondaryColor: '#1a1a1a', fontFamily: 'Inter' }
+    };
     checkAndEmit();
   }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/site'));
 
   // Homepage
   onSnapshot(doc(db, 'homepage', 'hero'), (snapshot) => {
-    data.homePageHero = snapshot.data() as HomePageHero;
+    data.homePageHero = snapshot.data() as HomePageHero || {
+      heroImage: '',
+      heroTitle: '',
+      heroSubtitle: '',
+      sections: []
+    };
     checkAndEmit();
   }, (err) => handleFirestoreError(err, OperationType.GET, 'homepage/hero'));
 
   // News
   onSnapshot(query(collection(db, 'news'), orderBy('date', 'desc')), (snapshot) => {
     data.newsData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
+    if (!data.newsData) data.newsData = [];
     checkAndEmit();
   }, (err) => handleFirestoreError(err, OperationType.LIST, 'news'));
 
   // Teams
   onSnapshot(collection(db, 'teams'), (snapshot) => {
     data.teamData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
+    if (!data.teamData) data.teamData = [];
     checkAndEmit();
   }, (err) => handleFirestoreError(err, OperationType.LIST, 'teams'));
 
   // Fixtures
   onSnapshot(collection(db, 'fixtures'), (snapshot) => {
     data.fixtures = snapshot.docs.map(d => d.data()) as any;
+    if (!data.fixtures) data.fixtures = [];
     checkAndEmit();
   }, (err) => handleFirestoreError(err, OperationType.LIST, 'fixtures'));
 
   // Gallery
   onSnapshot(collection(db, 'gallery'), (snapshot) => {
     data.galleryData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
+    if (!data.galleryData) data.galleryData = [];
     checkAndEmit();
   }, (err) => handleFirestoreError(err, OperationType.LIST, 'gallery'));
 
   // Staff
   onSnapshot(collection(db, 'staff'), (snapshot) => {
     data.staffData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
+    if (!data.staffData) data.staffData = [];
     checkAndEmit();
   }, (err) => handleFirestoreError(err, OperationType.LIST, 'staff'));
 
   // Mission/Vision
   onSnapshot(doc(db, 'missionVision', 'content'), (snapshot) => {
-    data.missionVision = snapshot.data() as MissionVision;
+    data.missionVision = snapshot.data() as MissionVision || {
+      mission: '',
+      vision: ''
+    };
     checkAndEmit();
   }, (err) => handleFirestoreError(err, OperationType.GET, 'missionVision/content'));
 };
