@@ -14,15 +14,18 @@ import {
   updateMissionVision, 
   saveStaffMember, 
   deleteStaffMember, 
+  savePage,
+  deletePage,
+  updateOrder,
   saveFixture,
   migrateDataToFirestore,
   subscribeToAdmins,
   addAdmin,
   removeAdmin
 } from '../firebaseService';
-import type { CMSData, NewsArticle, Team, GalleryItem, StaffMember, SiteSettings, HomePageHero, MissionVision, Fixture } from '../types';
+import type { CMSData, NewsArticle, Team, GalleryItem, StaffMember, SiteSettings, HomePageHero, MissionVision, Fixture, DynamicPage } from '../types';
 import { subscribeToCMSData } from '../firebaseService';
-import { Plus, Trash2, Save, LogOut, Image as ImageIcon, Settings, Users, Newspaper, Layout, Target, Calendar, Database, ShieldCheck, Copy, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Save, LogOut, Image as ImageIcon, Settings, Users, Newspaper, Layout, Target, Calendar, Database, ShieldCheck, Copy, ChevronUp, ChevronDown, FileText, User } from 'lucide-react';
 
 const AdminPage: React.FC = () => {
   const [user, setUser] = useState<any>(null);
@@ -84,6 +87,38 @@ const AdminPage: React.FC = () => {
   };
 
   const handleLogout = () => signOut(auth);
+  
+  const handleReorder = async (collectionName: string, items: any[], index: number, direction: 'up' | 'down') => {
+    const newItems = [...items];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    if (targetIndex < 0 || targetIndex >= newItems.length) return;
+    
+    const currentItem = newItems[index];
+    const targetItem = newItems[targetIndex];
+    
+    // Swap order values
+    // If order is missing, use timestamp as fallback
+    const currentOrder = currentItem.order || (Date.now() - index);
+    const targetOrder = targetItem.order || (Date.now() - targetIndex);
+    
+    try {
+      // We want the item moving "up" to have a HIGHER order value (since we sort desc)
+      // Wait, if we sort DESC, then higher order is at the top.
+      // If I click "UP", I want to swap with the item above it.
+      // The item above it has a HIGHER order value than me.
+      // So I take its order value, and it takes mine.
+      
+      await Promise.all([
+        updateOrder(collectionName, currentItem.id?.toString() || currentItem.teamSlug, targetOrder),
+        updateOrder(collectionName, targetItem.id?.toString() || targetItem.teamSlug, currentOrder)
+      ]);
+      showMessage('success', 'Sıralama güncellendi');
+    } catch (err) {
+      console.error('Reorder failed:', err);
+      showMessage('error', 'Sıralama güncellenemedi');
+    }
+  };
 
   const showMessage = (type: 'success' | 'error' | 'info', text: string) => {
     setMessage({ type, text });
@@ -139,6 +174,7 @@ const AdminPage: React.FC = () => {
         newsData: news.articles || [],
         galleryData: gallery.images || [],
         staffData: staff.members || [],
+        pagesData: [],
         missionVision: missionVision,
       };
 
@@ -406,6 +442,7 @@ const AdminPage: React.FC = () => {
           <TabButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Settings size={20}/>} label="Genel Ayarlar" />
           <TabButton active={activeTab === 'homepage'} onClick={() => setActiveTab('homepage')} icon={<Layout size={20}/>} label="Ana Sayfa" />
           <TabButton active={activeTab === 'news'} onClick={() => setActiveTab('news')} icon={<Newspaper size={20}/>} label="Haberler" />
+          <TabButton active={activeTab === 'pages'} onClick={() => setActiveTab('pages')} icon={<FileText size={20}/>} label="Sayfalar" />
           <TabButton active={activeTab === 'teams'} onClick={() => setActiveTab('teams')} icon={<Users size={20}/>} label="Takımlar" />
           <TabButton active={activeTab === 'fixtures'} onClick={() => setActiveTab('fixtures')} icon={<Calendar size={20}/>} label="Fikstürler" />
           <TabButton active={activeTab === 'gallery'} onClick={() => setActiveTab('gallery')} icon={<ImageIcon size={20}/>} label="Galeri" />
@@ -440,6 +477,7 @@ const AdminPage: React.FC = () => {
             <MobileTabButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Settings size={18}/>} label="Genel" />
             <MobileTabButton active={activeTab === 'homepage'} onClick={() => setActiveTab('homepage')} icon={<Layout size={18}/>} label="Ana Sayfa" />
             <MobileTabButton active={activeTab === 'news'} onClick={() => setActiveTab('news')} icon={<Newspaper size={18}/>} label="Haberler" />
+            <MobileTabButton active={activeTab === 'pages'} onClick={() => setActiveTab('pages')} icon={<FileText size={18}/>} label="Sayfalar" />
             <MobileTabButton active={activeTab === 'teams'} onClick={() => setActiveTab('teams')} icon={<Users size={18}/>} label="Takımlar" />
             <MobileTabButton active={activeTab === 'fixtures'} onClick={() => setActiveTab('fixtures')} icon={<Calendar size={18}/>} label="Fikstürler" />
             <MobileTabButton active={activeTab === 'gallery'} onClick={() => setActiveTab('gallery')} icon={<ImageIcon size={18}/>} label="Galeri" />
@@ -465,11 +503,12 @@ const AdminPage: React.FC = () => {
           <div className="max-w-4xl mx-auto">
             {activeTab === 'settings' && <SettingsTab data={cmsData.siteSettings} onSave={async (d) => { try { await updateSettings(d); showMessage('success', 'Ayarlar kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
             {activeTab === 'homepage' && <HomepageTab data={cmsData.homePageHero} onSave={async (d) => { try { await updateHomepage(d); showMessage('success', 'Ana sayfa güncellendi'); } catch(e) { showMessage('error', 'Güncellenemedi'); } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'news' && <NewsTab data={cmsData.newsData} onSave={async (d, id) => { try { await saveNewsArticle(d, id); showMessage('success', 'Haber kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteNewsArticle(id); showMessage('success', 'Haber silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'news' && <NewsTab data={cmsData.newsData} onSave={async (d, id) => { try { await saveNewsArticle(d, id); showMessage('success', 'Haber kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteNewsArticle(id); showMessage('success', 'Haber silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('news', cmsData.newsData, idx, dir)} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'pages' && <PagesTab data={cmsData.pagesData} onSave={async (d, id) => { try { await savePage(d, id); showMessage('success', 'Sayfa kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deletePage(id); showMessage('success', 'Sayfa silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
             {activeTab === 'teams' && <TeamsTab data={cmsData.teamData} onSave={async (d, id) => { try { await saveTeam(d, id); showMessage('success', 'Takım kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteTeam(id); showMessage('success', 'Takım silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'fixtures' && <FixturesTab data={cmsData.fixtures} teams={cmsData.teamData} onSave={async (d) => { try { await saveFixture(d); showMessage('success', 'Fikstür kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} />}
-            {activeTab === 'gallery' && <GalleryTab data={cmsData.galleryData} onSave={async (d) => { try { await saveGalleryImage(d); showMessage('success', 'Görsel eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteGalleryImage(id); showMessage('success', 'Görsel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'staff' && <StaffTab data={cmsData.staffData} onSave={async (d, id) => { try { await saveStaffMember(d, id); showMessage('success', 'Personel kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteStaffMember(id); showMessage('success', 'Personel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'fixtures' && <FixturesTab data={cmsData.fixtures} teams={cmsData.teamData} onSave={async (d) => { try { await saveFixture(d); showMessage('success', 'Fikstür kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onReorder={(idx, dir) => handleReorder('fixtures', cmsData.fixtures, idx, dir)} />}
+            {activeTab === 'gallery' && <GalleryTab data={cmsData.galleryData} onSave={async (d) => { try { await saveGalleryImage(d); showMessage('success', 'Görsel eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteGalleryImage(id); showMessage('success', 'Görsel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('gallery', cmsData.galleryData, idx, dir)} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'staff' && <StaffTab data={cmsData.staffData} onSave={async (d, id) => { try { await saveStaffMember(d, id); showMessage('success', 'Personel kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteStaffMember(id); showMessage('success', 'Personel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('staff', cmsData.staffData, idx, dir)} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
             {activeTab === 'about' && <AboutTab data={cmsData.missionVision} onSave={async (d) => { try { await updateMissionVision(d); showMessage('success', 'Kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} />}
             {activeTab === 'users' && <UsersTab admins={admins} currentUser={user} onAdd={async (e, u) => { try { await addAdmin(e, u); showMessage('success', 'Yetkili eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); } }} onRemove={async (u) => { if(confirm('Bu yetkiliyi kaldırmak istediğinize emin misiniz?')) { try { await removeAdmin(u); showMessage('success', 'Yetkili kaldırıldı'); } catch(e) { showMessage('error', 'Kaldırılamadı'); } } }} />}
           </div>
@@ -636,6 +675,38 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
                     />
                   </div>
                   <div className="flex items-center gap-2">
+                    <div className="flex flex-col">
+                      <button 
+                        onClick={() => {
+                          if (idx > 0) {
+                            const newNav = [...form.navigation];
+                            const temp = newNav[idx];
+                            newNav[idx] = newNav[idx - 1];
+                            newNav[idx - 1] = temp;
+                            setForm({...form, navigation: newNav});
+                          }
+                        }}
+                        disabled={idx === 0}
+                        className="text-gray-400 hover:text-gray-600 disabled:opacity-20"
+                      >
+                        <ChevronUp size={14} />
+                      </button>
+                      <button 
+                        onClick={() => {
+                          if (idx < form.navigation.length - 1) {
+                            const newNav = [...form.navigation];
+                            const temp = newNav[idx];
+                            newNav[idx] = newNav[idx + 1];
+                            newNav[idx + 1] = temp;
+                            setForm({...form, navigation: newNav});
+                          }
+                        }}
+                        disabled={idx === form.navigation.length - 1}
+                        className="text-gray-400 hover:text-gray-600 disabled:opacity-20"
+                      >
+                        <ChevronDown size={14} />
+                      </button>
+                    </div>
                     <button 
                       onClick={() => {
                         const newNav = [...form.navigation];
@@ -710,7 +781,7 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
   );
 };
 
-const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>, id?: string) => void, onDelete: (id: string) => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onUpload, ImageUpload }) => {
+const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onReorder, onUpload, ImageUpload }) => {
   const [editing, setEditing] = useState<Partial<NewsArticle> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const newsList = data || [];
@@ -763,11 +834,29 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
       )}
 
       <div className="grid gap-4">
-        {newsList.map(article => (
+        {newsList.map((article, idx) => (
           <div key={article.id} className="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center">
-            <div>
-              <h4 className="font-bold">{article.title}</h4>
-              <p className="text-sm text-gray-500">{new Date(article.date).toLocaleDateString('tr-TR')}</p>
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-1">
+                <button 
+                  onClick={() => onReorder(idx, 'up')} 
+                  disabled={idx === 0}
+                  className="text-gray-400 hover:text-orange-600 disabled:opacity-20"
+                >
+                  <ChevronUp size={20} />
+                </button>
+                <button 
+                  onClick={() => onReorder(idx, 'down')} 
+                  disabled={idx === newsList.length - 1}
+                  className="text-gray-400 hover:text-orange-600 disabled:opacity-20"
+                >
+                  <ChevronDown size={20} />
+                </button>
+              </div>
+              <div>
+                <h4 className="font-bold">{article.title}</h4>
+                <p className="text-sm text-gray-500">{new Date(article.date).toLocaleDateString('tr-TR')}</p>
+              </div>
             </div>
             <div className="flex gap-2">
               <button onClick={() => setEditing(article)} className="text-blue-600 p-2 hover:bg-blue-50 rounded-lg">Düzenle</button>
@@ -782,7 +871,230 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
 
 // --- Other tabs follow similar pattern... I'll implement a few more key ones ---
 
-const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryItem>) => void, onDelete: (id: string) => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onUpload, ImageUpload }) => {
+const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>, id?: string) => void, onDelete: (id: string) => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onUpload, ImageUpload }) => {
+  const [editing, setEditing] = useState<Partial<DynamicPage> | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const pagesList = data || [];
+
+  const handleSave = async () => {
+    if (!editing) return;
+    setIsSaving(true);
+    try {
+      await onSave(editing, editing.id);
+      setEditing(null);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const addPlayer = () => {
+    const players = [...(editing?.players || []), { id: Date.now(), name: '', position: '', number: 0, imageUrl: '' }];
+    setEditing({ ...editing!, players });
+  };
+
+  const removePlayer = (id: number) => {
+    const players = editing?.players?.filter(p => p.id !== id);
+    setEditing({ ...editing!, players });
+  };
+
+  const addAnnouncement = () => {
+    const announcements = [...(editing?.announcements || []), { title: '', date: new Date().toLocaleDateString('tr-TR'), content: '' }];
+    setEditing({ ...editing!, announcements });
+  };
+
+  const removeAnnouncement = (idx: number) => {
+    const announcements = editing?.announcements?.filter((_, i) => i !== idx);
+    setEditing({ ...editing!, announcements });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-2xl font-bold">Dinamik Sayfalar</h2>
+        <button onClick={() => setEditing({ title: '', slug: '', content: '', heroImage: '', coach: { name: '', role: '', imageUrl: '' }, players: [], announcements: [] })} className="bg-[var(--primary-color)] text-white px-4 py-2 w-full sm:w-auto rounded-lg flex items-center justify-center gap-2 shadow-md">
+          <Plus size={18}/> Yeni Sayfa Oluştur
+        </button>
+      </div>
+
+      {editing && (
+        <div className="bg-white p-4 md:p-6 rounded-2xl shadow-md space-y-6">
+          <h3 className="font-bold text-xl border-b pb-2">{editing.id ? 'Sayfayı Düzenle' : 'Yeni Sayfa'}</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Sayfa Başlığı</label>
+              <input type="text" placeholder="Örn: Voleybol Branşı" value={editing.title} onChange={e => setEditing({...editing, title: e.target.value})} className="w-full p-2 border rounded-lg" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Sayfa Linki (Slug)</label>
+              <div className="flex items-center gap-2">
+                <span className="text-gray-400 text-sm">/sayfa/</span>
+                <input type="text" placeholder="voleybol" value={editing.slug} onChange={e => setEditing({...editing, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')})} className="w-full p-2 border rounded-lg" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Açıklama Metni</label>
+            <textarea placeholder="Sayfa içeriği..." value={editing.content} onChange={e => setEditing({...editing, content: e.target.value})} className="w-full p-2 border rounded-lg h-32" />
+          </div>
+
+          <ImageUpload 
+            label="Kapak Görseli (Hero)"
+            currentUrl={editing.heroImage}
+            path="pages"
+            onUpload={(url: string) => setEditing({ ...editing, heroImage: url })}
+          />
+
+          {/* Coach Section */}
+          <div className="p-4 bg-blue-50 rounded-xl space-y-4">
+            <h4 className="font-bold text-blue-800 flex items-center gap-2">
+              <User size={18} /> Antrenör Bilgileri
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input type="text" placeholder="Antrenör Adı" value={editing.coach?.name} onChange={e => setEditing({...editing, coach: {...editing.coach!, name: e.target.value}})} className="w-full p-2 border rounded-lg bg-white" />
+              <input type="text" placeholder="Görevi" value={editing.coach?.role} onChange={e => setEditing({...editing, coach: {...editing.coach!, role: e.target.value}})} className="w-full p-2 border rounded-lg bg-white" />
+            </div>
+            <ImageUpload 
+              currentUrl={editing.coach?.imageUrl}
+              path="pages/coaches"
+              onUpload={(url: string) => setEditing({ ...editing, coach: { ...editing.coach!, imageUrl: url } })}
+            />
+          </div>
+
+          {/* Players Section */}
+          <div className="p-4 bg-amber-50 rounded-xl space-y-4">
+            <div className="flex justify-between items-center">
+              <h4 className="font-bold text-amber-800 flex items-center gap-2">
+                <Users size={18} /> Sporcular / Üyeler
+              </h4>
+              <button onClick={addPlayer} className="text-xs bg-amber-200 text-amber-800 px-2 py-1 rounded hover:bg-amber-300">+ Ekle</button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {editing.players?.map((player) => (
+                <div key={player.id} className="bg-white p-3 rounded-lg border relative space-y-2">
+                  <button onClick={() => removePlayer(player.id)} className="absolute top-2 right-2 text-red-400 hover:text-red-600">
+                    <Trash2 size={14} />
+                  </button>
+                  <input type="text" placeholder="İsim" value={player.name} onChange={e => {
+                    const players = editing.players?.map(p => p.id === player.id ? { ...p, name: e.target.value } : p);
+                    setEditing({ ...editing, players });
+                  }} className="w-full p-1 border rounded text-sm" />
+                  <div className="flex gap-2">
+                    <input type="text" placeholder="Pozisyon" value={player.position} onChange={e => {
+                      const players = editing.players?.map(p => p.id === player.id ? { ...p, position: e.target.value } : p);
+                      setEditing({ ...editing, players });
+                    }} className="w-2/3 p-1 border rounded text-xs" />
+                    <input type="number" placeholder="No" value={player.number} onChange={e => {
+                      const players = editing.players?.map(p => p.id === player.id ? { ...p, number: parseInt(e.target.value) } : p);
+                      setEditing({ ...editing, players });
+                    }} className="w-1/3 p-1 border rounded text-xs" />
+                  </div>
+                  <ImageUpload 
+                    currentUrl={player.imageUrl}
+                    path="pages/players"
+                    onUpload={(url: string) => {
+                      const players = editing.players?.map(p => p.id === player.id ? { ...p, imageUrl: url } : p);
+                      setEditing({ ...editing, players });
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Announcements Section */}
+          <div className="p-4 bg-rose-50 rounded-xl space-y-4">
+            <div className="flex justify-between items-center">
+              <h4 className="font-bold text-rose-800 flex items-center gap-2">
+                <Calendar size={18} /> Duyurular
+              </h4>
+              <button onClick={addAnnouncement} className="text-xs bg-rose-200 text-rose-800 px-2 py-1 rounded hover:bg-rose-300">+ Ekle</button>
+            </div>
+            <div className="space-y-3">
+              {editing.announcements?.map((ann, idx) => (
+                <div key={idx} className="bg-white p-3 rounded-lg border relative space-y-2">
+                  <button onClick={() => removeAnnouncement(idx)} className="absolute top-2 right-2 text-red-400 hover:text-red-600">
+                    <Trash2 size={14} />
+                  </button>
+                  <div className="flex gap-2">
+                    <input type="text" placeholder="Başlık" value={ann.title} onChange={e => {
+                      const announcements = [...editing.announcements!];
+                      announcements[idx].title = e.target.value;
+                      setEditing({ ...editing, announcements });
+                    }} className="w-2/3 p-1 border rounded text-sm font-bold" />
+                    <input type="text" placeholder="Tarih" value={ann.date} onChange={e => {
+                      const announcements = [...editing.announcements!];
+                      announcements[idx].date = e.target.value;
+                      setEditing({ ...editing, announcements });
+                    }} className="w-1/3 p-1 border rounded text-xs" />
+                  </div>
+                  <textarea placeholder="Duyuru içeriği..." value={ann.content} onChange={e => {
+                    const announcements = [...editing.announcements!];
+                    announcements[idx].content = e.target.value;
+                    setEditing({ ...editing, announcements });
+                  }} className="w-full p-1 border rounded text-xs h-16" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-4 border-t">
+            <button 
+              onClick={handleSave} 
+              disabled={isSaving}
+              className="bg-emerald-600 text-white px-8 py-2 rounded-lg font-bold shadow-md disabled:opacity-50 flex items-center gap-2"
+            >
+              {isSaving ? 'Kaydediliyor...' : <><Save size={18}/> Sayfayı Yayınla</>}
+            </button>
+            <button onClick={() => setEditing(null)} className="bg-gray-200 px-8 py-2 rounded-lg font-bold">İptal</button>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {pagesList.map(page => (
+          <div key={page.id} className="bg-white p-4 rounded-xl shadow-sm border flex flex-col justify-between">
+            <div className="flex gap-4 mb-4">
+              <div className="w-20 h-20 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
+                <img src={page.heroImage || 'https://picsum.photos/seed/page/200/200'} alt="" className="w-full h-full object-cover" />
+              </div>
+              <div>
+                <h4 className="font-bold text-lg text-slate-800">{page.title}</h4>
+                <p className="text-xs text-emerald-600 font-medium">/sayfa/{page.slug}</p>
+                <div className="flex gap-2 mt-2">
+                  <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                    {page.players?.length || 0} Sporcu
+                  </span>
+                  <span className="text-[10px] bg-rose-50 text-rose-600 px-2 py-0.5 rounded-full">
+                    {page.announcements?.length || 0} Duyuru
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 border-t pt-3">
+              <button onClick={() => setEditing(page)} className="flex-grow bg-blue-50 text-blue-600 py-2 rounded-lg text-sm font-bold hover:bg-blue-100 transition-colors">Düzenle</button>
+              <button onClick={() => onDelete(page.id!)} className="bg-red-50 text-red-600 p-2 rounded-lg hover:bg-red-100 transition-colors"><Trash2 size={18}/></button>
+              <button 
+                onClick={() => {
+                  const url = `${window.location.origin}/#/sayfa/${page.slug}`;
+                  navigator.clipboard.writeText(url);
+                  alert('Sayfa linki kopyalandı!');
+                }}
+                className="bg-slate-50 text-slate-600 p-2 rounded-lg hover:bg-slate-100 transition-colors"
+                title="Linki Kopyala"
+              >
+                <Copy size={18}/>
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryItem>) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onReorder, onUpload, ImageUpload }) => {
   const [newImage, setNewImage] = useState({ imageUrl: '', title: '' });
   const [isSaving, setIsSaving] = useState(false);
   const galleryList = data || [];
@@ -825,10 +1137,26 @@ const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryIte
         </div>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {galleryList.map(img => (
+        {galleryList.map((img, idx) => (
           <div key={img.id} className="relative group rounded-xl overflow-hidden shadow-sm aspect-square bg-gray-100">
             <img src={img.imageUrl} alt={img.title} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center gap-2">
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center gap-2">
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => onReorder(idx, 'up')} 
+                  disabled={idx === 0}
+                  className="bg-white text-orange-600 p-1.5 rounded-full disabled:opacity-30"
+                >
+                  <ChevronUp size={18} />
+                </button>
+                <button 
+                  onClick={() => onReorder(idx, 'down')} 
+                  disabled={idx === galleryList.length - 1}
+                  className="bg-white text-orange-600 p-1.5 rounded-full disabled:opacity-30"
+                >
+                  <ChevronDown size={18} />
+                </button>
+              </div>
               <button onClick={() => onDelete(img.id.toString())} className="bg-red-600 text-white p-2 rounded-full hover:scale-110 transition-transform">
                 <Trash2 size={18}/>
               </button>
@@ -1149,7 +1477,7 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
   );
 };
 
-const FixturesTab: React.FC<{ data: Fixture[], teams: Team[], onSave: (d: Fixture) => void }> = ({ data, teams, onSave }) => {
+const FixturesTab: React.FC<{ data: Fixture[], teams: Team[], onSave: (d: Fixture) => void, onReorder: (idx: number, dir: 'up' | 'down') => void }> = ({ data, teams, onSave, onReorder }) => {
   const [editing, setEditing] = useState<any | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const fixtures = data || [];
@@ -1245,9 +1573,27 @@ const FixturesTab: React.FC<{ data: Fixture[], teams: Team[], onSave: (d: Fixtur
       )}
 
       <div className="space-y-4">
-        {fixtures.map(fix => (
+        {fixtures.map((fix, idx) => (
           <div key={fix.teamSlug} className="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center">
-            <h4 className="font-bold">{fix.teamName}</h4>
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-1">
+                <button 
+                  onClick={() => onReorder(idx, 'up')} 
+                  disabled={idx === 0}
+                  className="text-gray-400 hover:text-orange-600 disabled:opacity-20"
+                >
+                  <ChevronUp size={20} />
+                </button>
+                <button 
+                  onClick={() => onReorder(idx, 'down')} 
+                  disabled={idx === fixtures.length - 1}
+                  className="text-gray-400 hover:text-orange-600 disabled:opacity-20"
+                >
+                  <ChevronDown size={20} />
+                </button>
+              </div>
+              <h4 className="font-bold">{fix.teamName}</h4>
+            </div>
             <div className="flex gap-2">
               <button onClick={() => setEditing(fix)} className="text-blue-600 p-2 hover:bg-blue-50 rounded-lg">Düzenle</button>
             </div>
@@ -1258,7 +1604,7 @@ const FixturesTab: React.FC<{ data: Fixture[], teams: Team[], onSave: (d: Fixtur
   );
 };
 
-const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>, id?: string) => void, onDelete: (id: string) => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onUpload, ImageUpload }) => {
+const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onReorder, onUpload, ImageUpload }) => {
   const [editing, setEditing] = useState<Partial<StaffMember> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const staff = data || [];
@@ -1309,8 +1655,24 @@ const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {staff.map(member => (
-          <div key={member.id} className="bg-white p-4 rounded-xl shadow-sm text-center">
+        {staff.map((member, idx) => (
+          <div key={member.id} className="bg-white p-4 rounded-xl shadow-sm text-center relative group">
+            <div className="absolute left-2 top-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button 
+                onClick={() => onReorder(idx, 'up')} 
+                disabled={idx === 0}
+                className="bg-white/80 p-1 rounded shadow-sm text-orange-600 disabled:opacity-30"
+              >
+                <ChevronUp size={16} />
+              </button>
+              <button 
+                onClick={() => onReorder(idx, 'down')} 
+                disabled={idx === staff.length - 1}
+                className="bg-white/80 p-1 rounded shadow-sm text-orange-600 disabled:opacity-30"
+              >
+                <ChevronDown size={16} />
+              </button>
+            </div>
             <img src={member.imageUrl} alt="" className="w-20 h-20 rounded-full mx-auto mb-3 object-cover border" />
             <h4 className="font-bold">{member.name}</h4>
             <p className="text-xs text-gray-500 mb-3">{member.role}</p>

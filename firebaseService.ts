@@ -13,7 +13,7 @@ import {
   getDocFromCache
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
-import type { CMSData, Team, NewsArticle, Fixture, GalleryItem, StaffMember, SiteSettings, HomePageHero, MissionVision } from './types';
+import type { CMSData, Team, NewsArticle, Fixture, GalleryItem, StaffMember, SiteSettings, HomePageHero, MissionVision, DynamicPage } from './types';
 
 // Error handling helper
 enum OperationType {
@@ -57,9 +57,10 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
     newsData: [],
     galleryData: [],
     staffData: [],
+    pagesData: [],
     missionVision: undefined
   };
-  const totalCollections = 8;
+  const totalCollections = 9;
   const unsubscribes: (() => void)[] = [];
   const loadedCollections = new Set<string>();
 
@@ -101,7 +102,7 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
   }, (err) => handleFirestoreError(err, OperationType.GET, 'homepage/hero')));
 
   // News
-  unsubscribes.push(onSnapshot(query(collection(db, 'news'), orderBy('date', 'desc')), (snapshot) => {
+  unsubscribes.push(onSnapshot(query(collection(db, 'news'), orderBy('order', 'desc')), (snapshot) => {
     data.newsData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
     checkAndEmit('news');
   }, (err) => handleFirestoreError(err, OperationType.LIST, 'news')));
@@ -113,19 +114,19 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
   }, (err) => handleFirestoreError(err, OperationType.LIST, 'teams')));
 
   // Fixtures
-  unsubscribes.push(onSnapshot(collection(db, 'fixtures'), (snapshot) => {
+  unsubscribes.push(onSnapshot(query(collection(db, 'fixtures'), orderBy('order', 'desc')), (snapshot) => {
     data.fixtures = snapshot.docs.map(d => d.data()) as any;
     checkAndEmit('fixtures');
   }, (err) => handleFirestoreError(err, OperationType.LIST, 'fixtures')));
 
   // Gallery
-  unsubscribes.push(onSnapshot(collection(db, 'gallery'), (snapshot) => {
+  unsubscribes.push(onSnapshot(query(collection(db, 'gallery'), orderBy('order', 'desc')), (snapshot) => {
     data.galleryData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
     checkAndEmit('gallery');
   }, (err) => handleFirestoreError(err, OperationType.LIST, 'gallery')));
 
   // Staff
-  unsubscribes.push(onSnapshot(collection(db, 'staff'), (snapshot) => {
+  unsubscribes.push(onSnapshot(query(collection(db, 'staff'), orderBy('order', 'desc')), (snapshot) => {
     data.staffData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
     checkAndEmit('staff');
   }, (err) => handleFirestoreError(err, OperationType.LIST, 'staff')));
@@ -140,6 +141,12 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
     } as MissionVision;
     checkAndEmit('missionVision');
   }, (err) => handleFirestoreError(err, OperationType.GET, 'missionVision/content')));
+
+  // Pages
+  unsubscribes.push(onSnapshot(collection(db, 'pages'), (snapshot) => {
+    data.pagesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
+    checkAndEmit('pages');
+  }, (err) => handleFirestoreError(err, OperationType.LIST, 'pages')));
 
   return () => unsubscribes.forEach(unsub => unsub());
 };
@@ -222,7 +229,11 @@ export const updateHomepage = (hero: HomePageHero) =>
 export const saveNewsArticle = async (article: Partial<NewsArticle>, id?: string) => {
   try {
     if (id) return await updateDoc(doc(db, 'news', id), article);
-    return await addDoc(collection(db, 'news'), { ...article, date: new Date().toISOString() });
+    return await addDoc(collection(db, 'news'), { 
+      ...article, 
+      date: new Date().toISOString(),
+      order: article.order ?? Date.now()
+    });
   } catch (err) {
     console.error('[FIRESTORE] News save failed:', err);
     if (err instanceof Error && err.message.includes('too large')) {
@@ -242,7 +253,10 @@ export const saveTeam = (team: Partial<Team>, id?: string) => {
 export const deleteTeam = (id: string) => deleteDoc(doc(db, 'teams', id));
 
 export const saveGalleryImage = (image: Partial<GalleryItem>) => 
-  addDoc(collection(db, 'gallery'), image);
+  addDoc(collection(db, 'gallery'), {
+    ...image,
+    order: image.order ?? Date.now()
+  });
 
 export const deleteGalleryImage = (id: string) => deleteDoc(doc(db, 'gallery', id));
 
@@ -251,13 +265,29 @@ export const updateMissionVision = (content: MissionVision) =>
 
 export const saveStaffMember = (member: Partial<StaffMember>, id?: string) => {
   if (id) return updateDoc(doc(db, 'staff', id), member);
-  return addDoc(collection(db, 'staff'), member);
+  return addDoc(collection(db, 'staff'), {
+    ...member,
+    order: member.order ?? Date.now()
+  });
 };
 
 export const deleteStaffMember = (id: string) => deleteDoc(doc(db, 'staff', id));
 
+export const savePage = (page: Partial<DynamicPage>, id?: string) => {
+  if (id) return updateDoc(doc(db, 'pages', id), page);
+  return addDoc(collection(db, 'pages'), page);
+};
+
+export const deletePage = (id: string) => deleteDoc(doc(db, 'pages', id));
+
+export const updateOrder = (collectionName: string, id: string, newOrder: number) =>
+  updateDoc(doc(db, collectionName, id), { order: newOrder });
+
 export const saveFixture = (fixture: Fixture) => 
-  setDoc(doc(db, 'fixtures', fixture.teamSlug), fixture);
+  setDoc(doc(db, 'fixtures', fixture.teamSlug), {
+    ...fixture,
+    order: fixture.order ?? Date.now()
+  });
 
 // User Management
 export const subscribeToAdmins = (callback: (admins: any[]) => void) => {

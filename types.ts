@@ -33,6 +33,7 @@ export interface Fixture {
     teamName: string;
     teamSlug: string;
     matches: Match[];
+    order?: number;
 }
 
 export interface NewsArticle {
@@ -42,12 +43,14 @@ export interface NewsArticle {
   content: string;
   date: string;
   imageUrl: string;
+  order?: number;
 }
 
 export interface GalleryItem {
   id: number;
   imageUrl: string;
   title?: string;
+  order?: number;
 }
 
 export interface StaffMember {
@@ -55,11 +58,29 @@ export interface StaffMember {
   name: string;
   role: string;
   imageUrl: string;
+  order?: number;
 }
 
 export interface MissionVision {
   mission: string;
   vision: string;
+}
+
+export interface Announcement {
+  title: string;
+  date: string;
+  content: string;
+}
+
+export interface DynamicPage {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  heroImage: string;
+  coach?: Coach;
+  players?: Player[];
+  announcements?: Announcement[];
 }
 
 export interface SocialMediaLinks {
@@ -118,5 +139,6 @@ export interface CMSData {
   newsData: NewsArticle[];
   galleryData: GalleryItem[];
   staffData: StaffMember[];
+  pagesData: DynamicPage[];
   missionVision: MissionVision;
 }

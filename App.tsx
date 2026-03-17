@@ -10,6 +10,7 @@ import GalleryPage from './pages/GalleryPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import AdminPage from './pages/AdminPage';
+import DynamicPage from './pages/DynamicPage';
 import ScrollToTop from './components/ScrollToTop';
 import type { CMSData } from './types';
 import { subscribeToCMSData, migrateDataToFirestore } from './firebaseService';
@@ -67,6 +68,7 @@ const App: React.FC = () => {
             newsData: newsData.articles,
             galleryData: galleryData.images,
             staffData: staffData.members,
+            pagesData: [],
             missionVision,
           });
           setLoading(false);
@@ -182,6 +184,7 @@ const Main: React.FC<MainProps> = ({ data }) => {
           <Route path="/galeri" element={<GalleryPage images={data.galleryData} />} />
           <Route path="/hakkimizda" element={<AboutPage staff={data.staffData} content={data.missionVision} />} />
           <Route path="/iletisim" element={<ContactPage siteSettings={data.siteSettings}/>} />
+          <Route path="/sayfa/:slug" element={<DynamicPage />} />
         </Routes>
       </main>
       <Footer siteSettings={data.siteSettings} teams={data.teamData} />
