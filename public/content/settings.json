@@ -9,19 +9,49 @@
     "instagram": "https://instagram.com",
     "youtube": ""
   },
-  "maintenanceMode": false,
+  "maintenanceMode": true,
   "navigation": [
-    { "name": "Ana Sayfa", "path": "/", "visible": true, "isDropdown": false, "items": [] },
-    { 
-      "name": "Takımlarımız", 
+    {
+      "name": "Ana Sayfa",
+      "path": "/",
+      "visible": true,
+      "isDropdown": false,
+      "items": []
+    },
+    {
+      "name": "Takımlarımız",
       "visible": true,
       "isDropdown": true,
       "items": []
     },
-    { "name": "Haberler", "path": "/haberler", "visible": true, "isDropdown": false, "items": [] },
-    { "name": "Galeri", "path": "/galeri", "visible": true, "isDropdown": false, "items": [] },
-    { "name": "Hakkımızda", "path": "/hakkimizda", "visible": true, "isDropdown": false, "items": [] },
-    { "name": "İletişim", "path": "/iletisim", "visible": true, "isDropdown": false, "items": [] }
+    {
+      "name": "Haberler",
+      "path": "/haberler",
+      "visible": true,
+      "isDropdown": false,
+      "items": []
+    },
+    {
+      "name": "Galeri",
+      "path": "/galeri",
+      "visible": true,
+      "isDropdown": false,
+      "items": []
+    },
+    {
+      "name": "Hakkımızda",
+      "path": "/hakkimizda",
+      "visible": true,
+      "isDropdown": false,
+      "items": []
+    },
+    {
+      "name": "İletişim",
+      "path": "/iletisim",
+      "visible": true,
+      "isDropdown": false,
+      "items": []
+    }
   ],
   "globalStyles": {
     "fontFamily": "'Inter', sans-serif",
