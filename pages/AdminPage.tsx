@@ -34,7 +34,7 @@ const AdminPage: React.FC = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isMigrating, setIsMigrating] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
 
   useEffect(() => {
     let unsubscribeAdmins: (() => void) | undefined;
@@ -85,7 +85,7 @@ const AdminPage: React.FC = () => {
 
   const handleLogout = () => signOut(auth);
 
-  const showMessage = (type: 'success' | 'error', text: string) => {
+  const showMessage = (type: 'success' | 'error' | 'info', text: string) => {
     setMessage({ type, text });
     setTimeout(() => setMessage(null), 3000);
   };
@@ -153,6 +153,16 @@ const AdminPage: React.FC = () => {
   };
 
   const handleFileUpload = async (file: File, path: string) => {
+    // Helper to convert file to base64
+    const convertToBase64 = (f: File | Blob): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(f);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = error => reject(error);
+      });
+    };
+
     if (!storage) {
       console.error('[STORAGE] Storage instance is not initialized');
       return await convertToBase64(file);
@@ -199,16 +209,6 @@ const AdminPage: React.FC = () => {
             }, 'image/jpeg', 0.7);
           };
         };
-      });
-    };
-
-    // Helper to convert file to base64
-    const convertToBase64 = (f: File | Blob): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(f);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = error => reject(error);
       });
     };
 
@@ -433,23 +433,46 @@ const AdminPage: React.FC = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-grow p-8 overflow-y-auto max-h-screen">
-        {message && (
-          <div className={`fixed top-4 right-4 p-4 rounded-xl shadow-lg z-50 animate-bounce ${message.type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white`}>
-            {message.text}
+      <main className="flex-grow overflow-y-auto max-h-screen">
+        {/* Mobile Nav */}
+        <div className="md:hidden sticky top-0 bg-white shadow-sm z-50 overflow-x-auto whitespace-nowrap p-3 border-b scrollbar-hide">
+          <div className="flex gap-2">
+            <MobileTabButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Settings size={18}/>} label="Genel" />
+            <MobileTabButton active={activeTab === 'homepage'} onClick={() => setActiveTab('homepage')} icon={<Layout size={18}/>} label="Ana Sayfa" />
+            <MobileTabButton active={activeTab === 'news'} onClick={() => setActiveTab('news')} icon={<Newspaper size={18}/>} label="Haberler" />
+            <MobileTabButton active={activeTab === 'teams'} onClick={() => setActiveTab('teams')} icon={<Users size={18}/>} label="Takımlar" />
+            <MobileTabButton active={activeTab === 'fixtures'} onClick={() => setActiveTab('fixtures')} icon={<Calendar size={18}/>} label="Fikstürler" />
+            <MobileTabButton active={activeTab === 'gallery'} onClick={() => setActiveTab('gallery')} icon={<ImageIcon size={18}/>} label="Galeri" />
+            <MobileTabButton active={activeTab === 'staff'} onClick={() => setActiveTab('staff')} icon={<Users size={18}/>} label="Personel" />
+            <MobileTabButton active={activeTab === 'about'} onClick={() => setActiveTab('about')} icon={<Target size={18}/>} label="Misyon" />
+            <MobileTabButton active={activeTab === 'users'} onClick={() => setActiveTab('users')} icon={<ShieldCheck size={18}/>} label="Yetkililer" />
+            <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-50 text-red-600 text-sm font-medium">
+              <LogOut size={18}/> Çıkış
+            </button>
           </div>
-        )}
+        </div>
 
-        <div className="max-w-4xl mx-auto">
-          {activeTab === 'settings' && <SettingsTab data={cmsData.siteSettings} onSave={async (d) => { try { await updateSettings(d); showMessage('success', 'Ayarlar kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-          {activeTab === 'homepage' && <HomepageTab data={cmsData.homePageHero} onSave={async (d) => { try { await updateHomepage(d); showMessage('success', 'Ana sayfa güncellendi'); } catch(e) { showMessage('error', 'Güncellenemedi'); } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-          {activeTab === 'news' && <NewsTab data={cmsData.newsData} onSave={async (d, id) => { try { await saveNewsArticle(d, id); showMessage('success', 'Haber kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteNewsArticle(id); showMessage('success', 'Haber silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-          {activeTab === 'teams' && <TeamsTab data={cmsData.teamData} onSave={async (d, id) => { try { await saveTeam(d, id); showMessage('success', 'Takım kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteTeam(id); showMessage('success', 'Takım silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-          {activeTab === 'fixtures' && <FixturesTab data={cmsData.fixtures} teams={cmsData.teamData} onSave={async (d) => { try { await saveFixture(d); showMessage('success', 'Fikstür kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} />}
-          {activeTab === 'gallery' && <GalleryTab data={cmsData.galleryData} onSave={async (d) => { try { await saveGalleryImage(d); showMessage('success', 'Görsel eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteGalleryImage(id); showMessage('success', 'Görsel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-          {activeTab === 'staff' && <StaffTab data={cmsData.staffData} onSave={async (d, id) => { try { await saveStaffMember(d, id); showMessage('success', 'Personel kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteStaffMember(id); showMessage('success', 'Personel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-          {activeTab === 'about' && <AboutTab data={cmsData.missionVision} onSave={async (d) => { try { await updateMissionVision(d); showMessage('success', 'Kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} />}
-          {activeTab === 'users' && <UsersTab admins={admins} currentUser={user} onAdd={async (e, u) => { try { await addAdmin(e, u); showMessage('success', 'Yetkili eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); } }} onRemove={async (u) => { if(confirm('Bu yetkiliyi kaldırmak istediğinize emin misiniz?')) { try { await removeAdmin(u); showMessage('success', 'Yetkili kaldırıldı'); } catch(e) { showMessage('error', 'Kaldırılamadı'); } } }} />}
+        <div className="p-4 md:p-8">
+          {message && (
+            <div className={`fixed top-4 right-4 p-4 rounded-xl shadow-lg z-50 animate-bounce ${
+              message.type === 'success' ? 'bg-green-500' : 
+              message.type === 'info' ? 'bg-blue-500' : 'bg-red-500'
+            } text-white`}>
+              {message.text}
+            </div>
+          )}
+
+          <div className="max-w-4xl mx-auto">
+            {activeTab === 'settings' && <SettingsTab data={cmsData.siteSettings} onSave={async (d) => { try { await updateSettings(d); showMessage('success', 'Ayarlar kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'homepage' && <HomepageTab data={cmsData.homePageHero} onSave={async (d) => { try { await updateHomepage(d); showMessage('success', 'Ana sayfa güncellendi'); } catch(e) { showMessage('error', 'Güncellenemedi'); } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'news' && <NewsTab data={cmsData.newsData} onSave={async (d, id) => { try { await saveNewsArticle(d, id); showMessage('success', 'Haber kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteNewsArticle(id); showMessage('success', 'Haber silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'teams' && <TeamsTab data={cmsData.teamData} onSave={async (d, id) => { try { await saveTeam(d, id); showMessage('success', 'Takım kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteTeam(id); showMessage('success', 'Takım silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'fixtures' && <FixturesTab data={cmsData.fixtures} teams={cmsData.teamData} onSave={async (d) => { try { await saveFixture(d); showMessage('success', 'Fikstür kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} />}
+            {activeTab === 'gallery' && <GalleryTab data={cmsData.galleryData} onSave={async (d) => { try { await saveGalleryImage(d); showMessage('success', 'Görsel eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteGalleryImage(id); showMessage('success', 'Görsel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'staff' && <StaffTab data={cmsData.staffData} onSave={async (d, id) => { try { await saveStaffMember(d, id); showMessage('success', 'Personel kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteStaffMember(id); showMessage('success', 'Personel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'about' && <AboutTab data={cmsData.missionVision} onSave={async (d) => { try { await updateMissionVision(d); showMessage('success', 'Kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} />}
+            {activeTab === 'users' && <UsersTab admins={admins} currentUser={user} onAdd={async (e, u) => { try { await addAdmin(e, u); showMessage('success', 'Yetkili eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); } }} onRemove={async (u) => { if(confirm('Bu yetkiliyi kaldırmak istediğinize emin misiniz?')) { try { await removeAdmin(u); showMessage('success', 'Yetkili kaldırıldı'); } catch(e) { showMessage('error', 'Kaldırılamadı'); } } }} />}
+          </div>
         </div>
       </main>
     </div>
@@ -463,6 +486,16 @@ const TabButton: React.FC<{ active: boolean, onClick: () => void, icon: React.Re
   >
     {icon}
     <span className="font-medium">{label}</span>
+  </button>
+);
+
+const MobileTabButton: React.FC<{ active: boolean, onClick: () => void, icon: React.ReactNode, label: string }> = ({ active, onClick, icon, label }) => (
+  <button 
+    onClick={onClick}
+    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all whitespace-nowrap text-sm font-medium ${active ? 'bg-[var(--primary-color)] text-white shadow-md' : 'bg-gray-100 text-gray-600'}`}
+  >
+    {icon}
+    <span>{label}</span>
   </button>
 );
 
@@ -499,20 +532,20 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-bold">Genel Ayarlar</h2>
         <button 
           onClick={handleSave}
           disabled={isSaving}
-          className={`flex items-center gap-2 px-6 py-2 rounded-xl text-white font-bold transition-all ${isSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-[var(--primary-color)] hover:scale-105 shadow-lg'}`}
+          className={`flex items-center justify-center gap-2 px-6 py-3 w-full sm:w-auto rounded-xl text-white font-bold transition-all ${isSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-[var(--primary-color)] hover:scale-105 shadow-lg'}`}
         >
           <Save size={20} />
           {isSaving ? 'Kaydediliyor...' : 'Ayarları Kaydet'}
         </button>
       </div>
       
-      <div className="bg-white p-6 rounded-2xl shadow-sm space-y-6">
-        <div className="flex items-center gap-6 pb-6 border-b">
+      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 pb-6 border-b">
           <ImageUpload 
             label="Kulüp Logosu"
             currentUrl={form.logo}
@@ -543,7 +576,7 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
 
         <div className="space-y-4 pt-4 border-t">
           <h3 className="font-bold">Sosyal Medya</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {Object.entries(form.socialMedia || {}).map(([key, value]) => (
               <div key={key}>
                 <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">{key}</label>
@@ -695,15 +728,15 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-bold">Haberler</h2>
-        <button onClick={() => setEditing({ title: '', summary: '', content: '', imageUrl: '', date: new Date().toISOString() })} className="bg-[var(--primary-color)] text-white px-4 py-2 rounded-lg flex items-center gap-2">
+        <button onClick={() => setEditing({ title: '', summary: '', content: '', imageUrl: '', date: new Date().toISOString() })} className="bg-[var(--primary-color)] text-white px-4 py-2 w-full sm:w-auto rounded-lg flex items-center justify-center gap-2 shadow-md">
           <Plus size={18}/> Yeni Haber
         </button>
       </div>
 
       {editing && (
-        <div className="bg-white p-6 rounded-2xl shadow-md space-y-4">
+        <div className="bg-white p-4 md:p-6 rounded-2xl shadow-md space-y-4">
           <h3 className="font-bold">{editing.id ? 'Haberi Düzenle' : 'Yeni Haber'}</h3>
           <input type="text" placeholder="Başlık" value={editing.title} onChange={e => setEditing({...editing, title: e.target.value})} className="w-full p-2 border rounded-lg" />
           <textarea placeholder="Özet" value={editing.summary} onChange={e => setEditing({...editing, summary: e.target.value})} className="w-full p-2 border rounded-lg" />
@@ -767,8 +800,17 @@ const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryIte
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Galeri</h2>
-      <div className="bg-white p-6 rounded-2xl shadow-sm space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-2xl font-bold">Galeri</h2>
+        <button 
+          onClick={handleSave} 
+          disabled={!newImage.imageUrl || isSaving}
+          className="bg-[var(--primary-color)] text-white px-8 py-3 w-full sm:w-auto rounded-xl font-bold disabled:opacity-50 shadow-lg transition-all hover:scale-105"
+        >
+          {isSaving ? 'Ekleniyor...' : 'Galeriye Ekle'}
+        </button>
+      </div>
+      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <ImageUpload 
             label="Görsel Yükle"
@@ -781,13 +823,6 @@ const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryIte
             <input type="text" placeholder="Görsel Başlığı" value={newImage.title} onChange={e => setNewImage({...newImage, title: e.target.value})} className="w-full p-2 border rounded-lg" />
           </div>
         </div>
-        <button 
-          onClick={handleSave} 
-          disabled={!newImage.imageUrl || isSaving}
-          className="bg-[var(--primary-color)] text-white px-8 py-2 rounded-xl font-bold disabled:opacity-50"
-        >
-          {isSaving ? 'Ekleniyor...' : 'Galeriye Ekle'}
-        </button>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {galleryList.map(img => (
@@ -846,8 +881,17 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Ana Sayfa Ayarları</h2>
-      <div className="bg-white p-6 rounded-2xl shadow-sm space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-2xl font-bold">Ana Sayfa Ayarları</h2>
+        <button 
+          onClick={handleSave} 
+          disabled={isSaving}
+          className="bg-[var(--primary-color)] text-white px-8 py-3 w-full sm:w-auto rounded-xl font-bold shadow-lg hover:opacity-90 transition-all disabled:opacity-50"
+        >
+          {isSaving ? 'Güncelleniyor...' : 'Ana Sayfayı Güncelle'}
+        </button>
+      </div>
+      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm space-y-6">
         <div className="space-y-4">
           <h3 className="font-bold text-lg border-b pb-2">Hero (Giriş) Bölümü</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -969,21 +1013,21 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-bold">Takım Yönetimi</h2>
-        <button onClick={() => setEditing({ name: '', slug: '', coach: { name: '', role: '' }, players: [], heroImage: '' })} className="bg-[var(--primary-color)] text-white px-4 py-2 rounded-lg flex items-center gap-2">
+        <button onClick={() => setEditing({ name: '', slug: '', coach: { name: '', role: '' }, players: [], heroImage: '' })} className="bg-[var(--primary-color)] text-white px-4 py-2 w-full sm:w-auto rounded-lg flex items-center justify-center gap-2 shadow-md">
           <Plus size={18}/> Yeni Takım
         </button>
       </div>
 
       {editing && (
-        <div className="bg-white p-6 rounded-2xl shadow-md space-y-4">
+        <div className="bg-white p-4 md:p-6 rounded-2xl shadow-md space-y-4">
           <h3 className="font-bold">{editing.id ? 'Takımı Düzenle' : 'Yeni Takım'}</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <input type="text" placeholder="Takım Adı (Örn: U19 Takımı)" value={editing.name} onChange={e => setEditing({...editing, name: e.target.value})} className="w-full p-2 border rounded-lg" />
             <input type="text" placeholder="Slug (Örn: u19)" value={editing.slug} onChange={e => setEditing({...editing, slug: e.target.value})} className="w-full p-2 border rounded-lg" />
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <input type="text" placeholder="Teknik Sorumlu Adı" value={editing.coach?.name} onChange={e => setEditing({...editing, coach: { ...editing.coach, name: e.target.value }})} className="w-full p-2 border rounded-lg" />
             <input type="text" placeholder="Teknik Sorumlu Görevi" value={editing.coach?.role} onChange={e => setEditing({...editing, coach: { ...editing.coach, role: e.target.value }})} className="w-full p-2 border rounded-lg" />
           </div>
@@ -995,20 +1039,78 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
             onUpload={(url: string) => setEditing({ ...editing, heroImage: url })}
           />
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Oyuncular (Virgülle ayırın: Ad, Mevki, No)</label>
-            <textarea 
-              value={editing.players?.map((p: any) => `${p.name}, ${p.position}, ${p.number}`).join('\n')} 
-              onChange={e => {
-                const players = e.target.value.split('\n').filter(line => line.trim()).map((line, idx) => {
-                  const [name, position, number] = line.split(',').map(s => s.trim());
-                  return { id: idx, name: name || '', position: position || '', number: parseInt(number) || 0, imageUrl: '' };
-                });
-                setEditing({...editing, players});
-              }} 
-              className="w-full p-2 border rounded-lg h-24"
-              placeholder="Ahmet Yılmaz, Kaleci, 1&#10;Mehmet Demir, Defans, 4"
-            />
+          <div className="space-y-4 pt-4 border-t">
+            <div className="flex justify-between items-center">
+              <label className="block text-sm font-medium text-gray-700">Oyuncular</label>
+              <button 
+                onClick={() => setEditing({...editing, players: [...(editing.players || []), { id: Date.now(), name: '', position: '', number: 0, imageUrl: '' }]})}
+                className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100"
+              >
+                + Oyuncu Ekle
+              </button>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+              {editing.players?.map((player: any, idx: number) => (
+                <div key={player.id || idx} className="p-4 bg-gray-50 rounded-xl border space-y-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    <input 
+                      type="text" 
+                      placeholder="Ad Soyad" 
+                      value={player.name} 
+                      onChange={e => {
+                        const newPlayers = [...editing.players];
+                        newPlayers[idx].name = e.target.value;
+                        setEditing({...editing, players: newPlayers});
+                      }} 
+                      className="p-2 border rounded-lg text-sm" 
+                    />
+                    <input 
+                      type="text" 
+                      placeholder="Mevki" 
+                      value={player.position} 
+                      onChange={e => {
+                        const newPlayers = [...editing.players];
+                        newPlayers[idx].position = e.target.value;
+                        setEditing({...editing, players: newPlayers});
+                      }} 
+                      className="p-2 border rounded-lg text-sm" 
+                    />
+                    <div className="flex gap-2">
+                      <input 
+                        type="number" 
+                        placeholder="No" 
+                        value={player.number} 
+                        onChange={e => {
+                          const newPlayers = [...editing.players];
+                          newPlayers[idx].number = parseInt(e.target.value) || 0;
+                          setEditing({...editing, players: newPlayers});
+                        }} 
+                        className="p-2 border rounded-lg text-sm w-full" 
+                      />
+                      <button 
+                        onClick={() => {
+                          const newPlayers = editing.players.filter((_: any, i: number) => i !== idx);
+                          setEditing({...editing, players: newPlayers});
+                        }}
+                        className="text-red-500 p-2 hover:bg-red-50 rounded-lg"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </div>
+                  <ImageUpload 
+                    label="Oyuncu Fotoğrafı"
+                    currentUrl={player.imageUrl}
+                    path="players"
+                    onUpload={(url: string) => {
+                      const newPlayers = [...editing.players];
+                      newPlayers[idx].imageUrl = url;
+                      setEditing({...editing, players: newPlayers});
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="flex gap-2">
@@ -1174,9 +1276,9 @@ const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-bold">Personel Yönetimi</h2>
-        <button onClick={() => setEditing({ name: '', role: '', imageUrl: '' })} className="bg-[var(--primary-color)] text-white px-4 py-2 rounded-lg flex items-center gap-2">
+        <button onClick={() => setEditing({ name: '', role: '', imageUrl: '' })} className="bg-[var(--primary-color)] text-white px-4 py-2 w-full sm:w-auto rounded-lg flex items-center justify-center gap-2 shadow-md">
           <Plus size={18}/> Yeni Personel
         </button>
       </div>
@@ -1231,8 +1333,11 @@ const AboutTab: React.FC<{ data: MissionVision, onSave: (d: MissionVision) => vo
   }, [data]);
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Misyon & Vizyon</h2>
-      <div className="bg-white p-6 rounded-2xl shadow-sm space-y-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-2xl font-bold">Misyon & Vizyon</h2>
+        <button onClick={() => onSave(form)} className="bg-[var(--primary-color)] text-white px-8 py-3 w-full sm:w-auto rounded-xl font-bold shadow-lg transition-all hover:scale-105">Kaydet</button>
+      </div>
+      <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Misyonumuz</label>
           <textarea value={form.mission} onChange={e => setForm({...form, mission: e.target.value})} className="w-full p-3 border rounded-lg h-40" />
@@ -1241,7 +1346,6 @@ const AboutTab: React.FC<{ data: MissionVision, onSave: (d: MissionVision) => vo
           <label className="block text-sm font-medium text-gray-700 mb-1">Vizyonumuz</label>
           <textarea value={form.vision} onChange={e => setForm({...form, vision: e.target.value})} className="w-full p-3 border rounded-lg h-40" />
         </div>
-        <button onClick={() => onSave(form)} className="bg-[var(--primary-color)] text-white px-8 py-3 rounded-xl font-bold shadow-lg">Kaydet</button>
       </div>
     </div>
   );
@@ -1308,38 +1412,40 @@ const UsersTab: React.FC<{ admins: any[], currentUser: any, onAdd: (email: strin
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase">E-posta</th>
-              <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase">UID</th>
-              <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase text-right">İşlem</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {admins.map(admin => (
-              <tr key={admin.uid} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm font-medium">{admin.email}</td>
-                <td className="px-6 py-4 text-xs font-mono text-gray-500">{admin.uid}</td>
-                <td className="px-6 py-4 text-right">
-                  {admin.uid !== currentUser.uid && (
-                    <button onClick={() => onRemove(admin.uid)} className="text-red-600 hover:bg-red-50 p-2 rounded-lg">
-                      <Trash2 size={18} />
-                    </button>
-                  )}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left min-w-[600px]">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase">E-posta</th>
+                <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase">UID</th>
+                <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase text-right">İşlem</th>
               </tr>
-            ))}
-            {/* Show bootstrap admin if not in list */}
-            {!admins.find(a => a.email === 'ihsandurgut1@gmail.com') && (
-              <tr className="bg-gray-50/50 italic">
-                <td className="px-6 py-4 text-sm text-gray-400">ihsandurgut1@gmail.com (Sistem Yöneticisi)</td>
-                <td className="px-6 py-4 text-xs text-gray-400">-</td>
-                <td className="px-6 py-4 text-right"></td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y">
+              {admins.map(admin => (
+                <tr key={admin.uid} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 text-sm font-medium">{admin.email}</td>
+                  <td className="px-6 py-4 text-xs font-mono text-gray-500">{admin.uid}</td>
+                  <td className="px-6 py-4 text-right">
+                    {admin.uid !== currentUser.uid && (
+                      <button onClick={() => onRemove(admin.uid)} className="text-red-600 hover:bg-red-50 p-2 rounded-lg">
+                        <Trash2 size={18} />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {/* Show bootstrap admin if not in list */}
+              {!admins.find(a => a.email === 'ihsandurgut1@gmail.com') && (
+                <tr className="bg-gray-50/50 italic">
+                  <td className="px-6 py-4 text-sm text-gray-400">ihsandurgut1@gmail.com (Sistem Yöneticisi)</td>
+                  <td className="px-6 py-4 text-xs text-gray-400">-</td>
+                  <td className="px-6 py-4 text-right"></td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
