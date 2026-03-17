@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { auth, db, storage } from '../firebase';
-import { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
+import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { 
   saveNewsArticle, 
@@ -28,7 +28,9 @@ const AdminPage: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [cmsData, setCmsData] = useState<CMSData | null>(null);
   const [admins, setAdmins] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState('settings');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isMigrating, setIsMigrating] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -58,13 +60,25 @@ const AdminPage: React.FC = () => {
     };
   }, []);
 
-  const handleLogin = async () => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginEmail || !loginPassword) {
+      alert('Lütfen e-posta ve şifrenizi girin.');
+      return;
+    }
+    
+    setIsLoggingIn(true);
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (err) {
+      await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+    } catch (err: any) {
       console.error('Login failed:', err);
-      alert('Giriş başarısız. Lütfen yetkili bir hesapla tekrar deneyin.');
+      let errorMsg = 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.';
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        errorMsg = 'E-posta veya şifre hatalı.';
+      }
+      alert(errorMsg);
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -132,22 +146,48 @@ const AdminPage: React.FC = () => {
   if (!user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
-          <h1 className="text-3xl font-bold mb-6">Yönetim Paneli</h1>
-          <p className="text-gray-600 mb-8">Sitenizi yönetmek için lütfen yetkili Google hesabınızla giriş yapın.</p>
-          <button 
-            onClick={handleLogin}
-            className="w-full bg-[var(--primary-color)] text-white py-3 rounded-xl font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2"
-          >
-            Google ile Giriş Yap
-          </button>
+        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full">
+          <h1 className="text-3xl font-bold mb-6 text-center">Yönetim Paneli</h1>
+          <p className="text-gray-600 mb-8 text-center">Sitenizi yönetmek için lütfen e-posta ve şifrenizle giriş yapın.</p>
+          
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">E-posta</label>
+              <input 
+                type="email" 
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-[var(--primary-color)] outline-none"
+                placeholder="admin@example.com"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Şifre</label>
+              <input 
+                type="password" 
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                className="w-full p-3 border rounded-xl focus:ring-2 focus:ring-[var(--primary-color)] outline-none"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            <button 
+              type="submit"
+              disabled={isLoggingIn}
+              className="w-full bg-[var(--primary-color)] text-white py-3 rounded-xl font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isLoggingIn ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
+            </button>
+          </form>
         </div>
       </div>
     );
   }
 
   // Check if user is admin
-  const isAdmin = user.email === 'ihsandurgut1@gmail.com' || admins.some(a => a.uid === user.uid);
+  const isAdmin = user.email?.toLowerCase() === 'ihsandurgut1@gmail.com' || admins.some(a => a.uid === user.uid);
   
   if (!isAdmin) {
     return (
