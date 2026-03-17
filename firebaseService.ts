@@ -50,8 +50,8 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 // Data Fetching
 export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
   const data: Partial<CMSData> = {};
-  let loadedCount = 0;
   const totalCollections = 8;
+  const unsubscribes: (() => void)[] = [];
 
   const checkAndEmit = () => {
     if (Object.keys(data).length === totalCollections) {
@@ -60,73 +60,82 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
   };
 
   // Settings
-  onSnapshot(doc(db, 'settings', 'site'), (snapshot) => {
-    data.siteSettings = snapshot.data() as SiteSettings || {
+  unsubscribes.push(onSnapshot(doc(db, 'settings', 'site'), (snapshot) => {
+    const docData = snapshot.data();
+    data.siteSettings = {
+      logo: '',
       address: '',
       email: '',
       phone: '',
       socialMedia: { facebook: '', instagram: '', twitter: '', youtube: '' },
       maintenanceMode: false,
       navigation: [],
-      globalStyles: { primaryColor: '#f27d26', secondaryColor: '#1a1a1a', fontFamily: 'Inter' }
-    };
+      globalStyles: { primaryColor: '#f27d26', secondaryColor: '#1a1a1a', fontFamily: 'Inter', baseFontSize: '16px' },
+      ...docData
+    } as SiteSettings;
     checkAndEmit();
-  }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/site'));
+  }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/site')));
 
   // Homepage
-  onSnapshot(doc(db, 'homepage', 'hero'), (snapshot) => {
-    data.homePageHero = snapshot.data() as HomePageHero || {
+  unsubscribes.push(onSnapshot(doc(db, 'homepage', 'hero'), (snapshot) => {
+    const docData = snapshot.data();
+    data.homePageHero = {
       heroImage: '',
       heroTitle: '',
       heroSubtitle: '',
-      sections: []
-    };
+      sections: [],
+      ...docData
+    } as HomePageHero;
     checkAndEmit();
-  }, (err) => handleFirestoreError(err, OperationType.GET, 'homepage/hero'));
+  }, (err) => handleFirestoreError(err, OperationType.GET, 'homepage/hero')));
 
   // News
-  onSnapshot(query(collection(db, 'news'), orderBy('date', 'desc')), (snapshot) => {
+  unsubscribes.push(onSnapshot(query(collection(db, 'news'), orderBy('date', 'desc')), (snapshot) => {
     data.newsData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
     if (!data.newsData) data.newsData = [];
     checkAndEmit();
-  }, (err) => handleFirestoreError(err, OperationType.LIST, 'news'));
+  }, (err) => handleFirestoreError(err, OperationType.LIST, 'news')));
 
   // Teams
-  onSnapshot(collection(db, 'teams'), (snapshot) => {
+  unsubscribes.push(onSnapshot(collection(db, 'teams'), (snapshot) => {
     data.teamData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
     if (!data.teamData) data.teamData = [];
     checkAndEmit();
-  }, (err) => handleFirestoreError(err, OperationType.LIST, 'teams'));
+  }, (err) => handleFirestoreError(err, OperationType.LIST, 'teams')));
 
   // Fixtures
-  onSnapshot(collection(db, 'fixtures'), (snapshot) => {
+  unsubscribes.push(onSnapshot(collection(db, 'fixtures'), (snapshot) => {
     data.fixtures = snapshot.docs.map(d => d.data()) as any;
     if (!data.fixtures) data.fixtures = [];
     checkAndEmit();
-  }, (err) => handleFirestoreError(err, OperationType.LIST, 'fixtures'));
+  }, (err) => handleFirestoreError(err, OperationType.LIST, 'fixtures')));
 
   // Gallery
-  onSnapshot(collection(db, 'gallery'), (snapshot) => {
+  unsubscribes.push(onSnapshot(collection(db, 'gallery'), (snapshot) => {
     data.galleryData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
     if (!data.galleryData) data.galleryData = [];
     checkAndEmit();
-  }, (err) => handleFirestoreError(err, OperationType.LIST, 'gallery'));
+  }, (err) => handleFirestoreError(err, OperationType.LIST, 'gallery')));
 
   // Staff
-  onSnapshot(collection(db, 'staff'), (snapshot) => {
+  unsubscribes.push(onSnapshot(collection(db, 'staff'), (snapshot) => {
     data.staffData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
     if (!data.staffData) data.staffData = [];
     checkAndEmit();
-  }, (err) => handleFirestoreError(err, OperationType.LIST, 'staff'));
+  }, (err) => handleFirestoreError(err, OperationType.LIST, 'staff')));
 
   // Mission/Vision
-  onSnapshot(doc(db, 'missionVision', 'content'), (snapshot) => {
-    data.missionVision = snapshot.data() as MissionVision || {
+  unsubscribes.push(onSnapshot(doc(db, 'missionVision', 'content'), (snapshot) => {
+    const docData = snapshot.data();
+    data.missionVision = {
       mission: '',
-      vision: ''
-    };
+      vision: '',
+      ...docData
+    } as MissionVision;
     checkAndEmit();
-  }, (err) => handleFirestoreError(err, OperationType.GET, 'missionVision/content'));
+  }, (err) => handleFirestoreError(err, OperationType.GET, 'missionVision/content')));
+
+  return () => unsubscribes.forEach(unsub => unsub());
 };
 
 // Migration Function
