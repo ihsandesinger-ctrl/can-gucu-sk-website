@@ -220,11 +220,21 @@ export const migrateDataToFirestore = async (localData: CMSData) => {
 };
 
 // Admin Operations
-export const updateSettings = (settings: SiteSettings) => 
-  setDoc(doc(db, 'settings', 'site'), settings);
+export const updateSettings = async (settings: SiteSettings) => {
+  try {
+    return await setDoc(doc(db, 'settings', 'site'), settings);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, 'settings/site');
+  }
+};
 
-export const updateHomepage = (hero: HomePageHero) => 
-  setDoc(doc(db, 'homepage', 'hero'), hero);
+export const updateHomepage = async (hero: HomePageHero) => {
+  try {
+    return await setDoc(doc(db, 'homepage', 'hero'), hero);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, 'homepage/hero');
+  }
+};
 
 export const saveNewsArticle = async (article: Partial<NewsArticle>, id?: string) => {
   try {
@@ -245,37 +255,59 @@ export const saveNewsArticle = async (article: Partial<NewsArticle>, id?: string
 
 export const deleteNewsArticle = (id: string) => deleteDoc(doc(db, 'news', id));
 
-export const saveTeam = (team: Partial<Team>, id?: string) => {
-  if (id) return updateDoc(doc(db, 'teams', id), team);
-  return addDoc(collection(db, 'teams'), team);
+export const saveTeam = async (team: Partial<Team>, id?: string) => {
+  try {
+    if (id) return await updateDoc(doc(db, 'teams', id), team);
+    return await addDoc(collection(db, 'teams'), team);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, id ? `teams/${id}` : 'teams');
+  }
 };
 
 export const deleteTeam = (id: string) => deleteDoc(doc(db, 'teams', id));
 
-export const saveGalleryImage = (image: Partial<GalleryItem>) => 
-  addDoc(collection(db, 'gallery'), {
-    ...image,
-    order: image.order ?? Date.now()
-  });
+export const saveGalleryImage = async (image: Partial<GalleryItem>) => {
+  try {
+    return await addDoc(collection(db, 'gallery'), {
+      ...image,
+      order: image.order ?? Date.now()
+    });
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, 'gallery');
+  }
+};
 
 export const deleteGalleryImage = (id: string) => deleteDoc(doc(db, 'gallery', id));
 
-export const updateMissionVision = (content: MissionVision) => 
-  setDoc(doc(db, 'missionVision', 'content'), content);
+export const updateMissionVision = async (content: MissionVision) => {
+  try {
+    return await setDoc(doc(db, 'missionVision', 'content'), content);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, 'missionVision/content');
+  }
+};
 
-export const saveStaffMember = (member: Partial<StaffMember>, id?: string) => {
-  if (id) return updateDoc(doc(db, 'staff', id), member);
-  return addDoc(collection(db, 'staff'), {
-    ...member,
-    order: member.order ?? Date.now()
-  });
+export const saveStaffMember = async (member: Partial<StaffMember>, id?: string) => {
+  try {
+    if (id) return await updateDoc(doc(db, 'staff', id), member);
+    return await addDoc(collection(db, 'staff'), {
+      ...member,
+      order: member.order ?? Date.now()
+    });
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, id ? `staff/${id}` : 'staff');
+  }
 };
 
 export const deleteStaffMember = (id: string) => deleteDoc(doc(db, 'staff', id));
 
-export const savePage = (page: Partial<DynamicPage>, id?: string) => {
-  if (id) return updateDoc(doc(db, 'pages', id), page);
-  return addDoc(collection(db, 'pages'), page);
+export const savePage = async (page: Partial<DynamicPage>, id?: string) => {
+  try {
+    if (id) return await updateDoc(doc(db, 'pages', id), page);
+    return await addDoc(collection(db, 'pages'), page);
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, id ? `pages/${id}` : 'pages');
+  }
 };
 
 export const deletePage = (id: string) => deleteDoc(doc(db, 'pages', id));
@@ -283,11 +315,16 @@ export const deletePage = (id: string) => deleteDoc(doc(db, 'pages', id));
 export const updateOrder = (collectionName: string, id: string, newOrder: number) =>
   updateDoc(doc(db, collectionName, id), { order: newOrder });
 
-export const saveFixture = (fixture: Fixture) => 
-  setDoc(doc(db, 'fixtures', fixture.teamSlug), {
-    ...fixture,
-    order: fixture.order ?? Date.now()
-  });
+export const saveFixture = async (fixture: Fixture) => {
+  try {
+    return await setDoc(doc(db, 'fixtures', fixture.teamSlug), {
+      ...fixture,
+      order: fixture.order ?? Date.now()
+    });
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, `fixtures/${fixture.teamSlug}`);
+  }
+};
 
 // User Management
 export const subscribeToAdmins = (callback: (admins: any[]) => void) => {

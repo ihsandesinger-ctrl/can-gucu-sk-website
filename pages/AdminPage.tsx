@@ -188,132 +188,132 @@ const AdminPage: React.FC = () => {
     }
   };
 
-  const handleFileUpload = async (file: File, path: string) => {
-    // Helper to convert file to base64
-    const convertToBase64 = (f: File | Blob): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(f);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = error => reject(error);
-      });
-    };
+    const handleFileUpload = async (file: File, path: string) => {
+      // Helper to convert file to base64
+      const convertToBase64 = (f: File | Blob): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(f);
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = error => reject(error);
+        });
+      };
 
-    if (!storage) {
-      console.error('[STORAGE] Storage instance is not initialized');
-      return await convertToBase64(file);
-    }
+      if (!storage) {
+        console.error('[STORAGE] Storage instance is not initialized');
+        return await convertToBase64(file);
+      }
 
-    // Helper to compress image
-    const compressImage = (f: File): Promise<Blob | File> => {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(f);
-        reader.onload = (event) => {
-          const img = new Image();
-          img.src = event.target?.result as string;
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 1200;
-            const MAX_HEIGHT = 1200;
-            let width = img.width;
-            let height = img.height;
+      // Helper to compress image
+      const compressImage = (f: File): Promise<Blob | File> => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(f);
+          reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target?.result as string;
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              const MAX_WIDTH = 1600;
+              const MAX_HEIGHT = 1600;
+              let width = img.width;
+              let height = img.height;
 
-            if (width > height) {
-              if (width > MAX_WIDTH) {
-                height *= MAX_WIDTH / width;
-                width = MAX_WIDTH;
-              }
-            } else {
-              if (height > MAX_HEIGHT) {
-                width *= MAX_HEIGHT / height;
-                height = MAX_HEIGHT;
-              }
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx?.drawImage(img, 0, 0, width, height);
-            
-            canvas.toBlob((blob) => {
-              if (blob) {
-                resolve(new File([blob], f.name, { type: 'image/jpeg' }));
+              if (width > height) {
+                if (width > MAX_WIDTH) {
+                  height *= MAX_WIDTH / width;
+                  width = MAX_WIDTH;
+                }
               } else {
-                resolve(f);
+                if (height > MAX_HEIGHT) {
+                  width *= MAX_HEIGHT / height;
+                  height = MAX_HEIGHT;
+                }
               }
-            }, 'image/jpeg', 0.7);
+
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx?.drawImage(img, 0, 0, width, height);
+              
+              canvas.toBlob((blob) => {
+                if (blob) {
+                  resolve(new File([blob], f.name, { type: 'image/jpeg' }));
+                } else {
+                  resolve(f);
+                }
+              }, 'image/jpeg', 0.7);
+            };
           };
-        };
-      });
-    };
-
-    try {
-      // Basic validation
-      if (!file.type.startsWith('image/')) {
-        showMessage('error', 'Lütfen geçerli bir görsel dosyası seçin.');
-        return '';
-      }
-
-      // Compress before upload
-      console.log(`[STORAGE] Original size: ${file.size} bytes`);
-      showMessage('info', 'Görsel optimize ediliyor...');
-      const processedFile = await compressImage(file);
-      const finalFile = processedFile instanceof File ? processedFile : new File([processedFile], file.name, { type: 'image/jpeg' });
-      console.log(`[STORAGE] Compressed size: ${finalFile.size} bytes`);
-
-      if (finalFile.size > 5 * 1024 * 1024) { // 5MB limit after compression
-        showMessage('error', 'Görsel çok büyük. Lütfen daha küçük bir dosya seçin.');
-        return '';
-      }
-
-      // Sanitize filename
-      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
-      const fileName = `${Date.now()}_${sanitizedName}`;
-      const storageRef = ref(storage, `${path}/${fileName}`);
-      
-      console.log(`[STORAGE] Attempting upload: ${file.name} to ${path}`);
-
-      // Use a Promise with timeout for the upload
-      const uploadPromise = uploadBytes(storageRef, finalFile);
-      const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('timeout')), 10000) // Increased to 10s
-      );
+        });
+      };
 
       try {
-        const uploadResult = await Promise.race([uploadPromise, timeoutPromise]);
-        console.log('[STORAGE] Upload successful:', uploadResult.metadata.fullPath);
-        const url = await getDownloadURL(storageRef);
-        return url;
-      } catch (uploadErr: any) {
-        console.warn('[STORAGE] Storage upload failed or timed out, trying Base64 fallback:', uploadErr.message);
+        // Basic validation
+        if (!file.type.startsWith('image/')) {
+          showMessage('error', 'Lütfen geçerli bir görsel dosyası seçin.');
+          return '';
+        }
+
+        // Compress before upload
+        console.log(`[STORAGE] Original size: ${file.size} bytes`);
+        showMessage('info', 'Görsel optimize ediliyor...');
+        const processedFile = await compressImage(file);
+        const finalFile = processedFile instanceof File ? processedFile : new File([processedFile], file.name, { type: 'image/jpeg' });
+        console.log(`[STORAGE] Compressed size: ${finalFile.size} bytes`);
+
+        if (finalFile.size > 10 * 1024 * 1024) { // 10MB limit for storage
+          showMessage('error', 'Görsel çok büyük. Lütfen daha küçük bir dosya seçin.');
+          return '';
+        }
+
+        // Sanitize filename
+        const sanitizedName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+        const fileName = `${Date.now()}_${sanitizedName}`;
+        const storageRef = ref(storage, `${path}/${fileName}`);
         
-        // Fallback to Base64 if file is small enough (< 600KB)
-        // Firestore limit is 1MB, Base64 is ~1.37x larger, so 600KB -> ~822KB
-        if (finalFile.size < 600 * 1024) {
-          console.log('[STORAGE] File is small enough for Base64 fallback');
-          return await convertToBase64(finalFile);
-        } else {
-          throw uploadErr; // Re-throw if too large for fallback
-        }
-      }
-    } catch (err) {
-      console.error('[STORAGE] All upload methods failed:', err);
-      let errorMessage = 'Görsel yüklenemedi.';
-      if (err instanceof Error) {
-        if (err.message === 'timeout') {
-          errorMessage = 'Yükleme zaman aşımına uğradı. Alternatif yöntem deneniyor...';
-          if (file.size < 800 * 1024) {
-             return await convertToBase64(file);
+        console.log(`[STORAGE] Attempting upload: ${file.name} to ${path}`);
+
+        // Use a Promise with timeout for the upload
+        const uploadPromise = uploadBytes(storageRef, finalFile);
+        const timeoutPromise = new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('timeout')), 60000)
+        );
+
+        try {
+          const uploadResult = await Promise.race([uploadPromise, timeoutPromise]);
+          console.log('[STORAGE] Upload successful:', uploadResult.metadata.fullPath);
+          const url = await getDownloadURL(storageRef);
+          return url;
+        } catch (uploadErr: any) {
+          console.warn('[STORAGE] Storage upload failed or timed out:', uploadErr.message);
+          
+          // Fallback to Base64 if file is small enough (< 600KB)
+          if (finalFile.size < 600 * 1024) {
+            console.log('[STORAGE] Trying Base64 fallback');
+            showMessage('info', 'Depolama alanı erişilemedi, alternatif yöntem deneniyor...');
+            return await convertToBase64(finalFile);
+          } else {
+            console.error('[STORAGE] File too large for Base64 fallback');
+            throw new Error('Görsel boyutu çok büyük (Storage hatası ve Base64 sınırı aşıldı)');
           }
-        } else if (err.message.includes('storage/unauthorized')) {
-          errorMessage = 'Yükleme yetkiniz yok. Lütfen oturumunuzu kontrol edin.';
         }
+      } catch (err) {
+        console.error('[STORAGE] All upload methods failed:', err);
+        let errorMessage = 'Görsel yüklenemedi.';
+        if (err instanceof Error) {
+          if (err.message === 'timeout') {
+            errorMessage = 'Yükleme zaman aşımına uğradı. Lütfen internet bağlantınızı kontrol edin.';
+          } else if (err.message.includes('storage/unauthorized')) {
+            errorMessage = 'Yükleme yetkiniz yok. Lütfen oturumunuzu kontrol edin.';
+          } else if (err.message.includes('too large')) {
+            errorMessage = 'Görsel boyutu çok büyük.';
+          }
+        }
+        showMessage('error', errorMessage);
+        return '';
       }
-      showMessage('error', errorMessage);
-      return '';
-    }
-  };
+    };
 
   const ImageUpload: React.FC<{ onUpload: (url: string) => void, currentUrl?: string, path: string, label?: string }> = ({ onUpload, currentUrl, path, label }) => {
     const [uploading, setUploading] = useState(false);
@@ -525,15 +525,15 @@ const AdminPage: React.FC = () => {
           )}
 
           <div className="max-w-4xl mx-auto">
-            {activeTab === 'settings' && <SettingsTab data={cmsData.siteSettings} onSave={async (d) => { try { await updateSettings(d); showMessage('success', 'Ayarlar kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'homepage' && <HomepageTab data={cmsData.homePageHero} onSave={async (d) => { try { await updateHomepage(d); showMessage('success', 'Ana sayfa güncellendi'); } catch(e) { showMessage('error', 'Güncellenemedi'); } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'news' && <NewsTab data={cmsData.newsData} onSave={async (d, id) => { try { await saveNewsArticle(d, id); showMessage('success', 'Haber kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteNewsArticle(id); showMessage('success', 'Haber silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('news', cmsData.newsData, idx, dir)} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'pages' && <PagesTab data={cmsData.pagesData} onSave={async (d, id) => { try { await savePage(d, id); showMessage('success', 'Sayfa kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deletePage(id); showMessage('success', 'Sayfa silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} showMessage={showMessage} />}
-            {activeTab === 'teams' && <TeamsTab data={cmsData.teamData} onSave={async (d, id) => { try { await saveTeam(d, id); showMessage('success', 'Takım kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteTeam(id); showMessage('success', 'Takım silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'fixtures' && <FixturesTab data={cmsData.fixtures} teams={cmsData.teamData} onSave={async (d) => { try { await saveFixture(d); showMessage('success', 'Fikstür kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onReorder={(idx, dir) => handleReorder('fixtures', cmsData.fixtures, idx, dir)} />}
-            {activeTab === 'gallery' && <GalleryTab data={cmsData.galleryData} onSave={async (d) => { try { await saveGalleryImage(d); showMessage('success', 'Görsel eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteGalleryImage(id); showMessage('success', 'Görsel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('gallery', cmsData.galleryData, idx, dir)} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'staff' && <StaffTab data={cmsData.staffData} onSave={async (d, id) => { try { await saveStaffMember(d, id); showMessage('success', 'Personel kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteStaffMember(id); showMessage('success', 'Personel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('staff', cmsData.staffData, idx, dir)} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'about' && <AboutTab data={cmsData.missionVision} onSave={async (d) => { try { await updateMissionVision(d); showMessage('success', 'Kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} />}
+            {activeTab === 'settings' && <SettingsTab data={cmsData.siteSettings} onSave={async (d) => { try { await updateSettings(d); showMessage('success', 'Ayarlar kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'homepage' && <HomepageTab data={cmsData.homePageHero} onSave={async (d) => { try { await updateHomepage(d); showMessage('success', 'Ana sayfa güncellendi'); } catch(e) { showMessage('error', 'Güncellenemedi'); throw e; } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'news' && <NewsTab data={cmsData.newsData} onSave={async (d, id) => { try { await saveNewsArticle(d, id); showMessage('success', 'Haber kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteNewsArticle(id); showMessage('success', 'Haber silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('news', cmsData.newsData, idx, dir)} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'pages' && <PagesTab data={cmsData.pagesData} onSave={async (d, id) => { try { await savePage(d, id); showMessage('success', 'Sayfa kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deletePage(id); showMessage('success', 'Sayfa silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} showMessage={showMessage} />}
+            {activeTab === 'teams' && <TeamsTab data={cmsData.teamData} onSave={async (d, id) => { try { await saveTeam(d, id); showMessage('success', 'Takım kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteTeam(id); showMessage('success', 'Takım silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'fixtures' && <FixturesTab data={cmsData.fixtures} teams={cmsData.teamData} onSave={async (d) => { try { await saveFixture(d); showMessage('success', 'Fikstür kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onReorder={(idx, dir) => handleReorder('fixtures', cmsData.fixtures, idx, dir)} />}
+            {activeTab === 'gallery' && <GalleryTab data={cmsData.galleryData} onSave={async (d) => { try { await saveGalleryImage(d); showMessage('success', 'Görsel eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteGalleryImage(id); showMessage('success', 'Görsel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('gallery', cmsData.galleryData, idx, dir)} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'staff' && <StaffTab data={cmsData.staffData} onSave={async (d, id) => { try { await saveStaffMember(d, id); showMessage('success', 'Personel kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteStaffMember(id); showMessage('success', 'Personel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('staff', cmsData.staffData, idx, dir)} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'about' && <AboutTab data={cmsData.missionVision} onSave={async (d) => { try { await updateMissionVision(d); showMessage('success', 'Kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} />}
             {activeTab === 'users' && <UsersTab admins={admins} currentUser={user} onAdd={async (e, u) => { try { await addAdmin(e, u); showMessage('success', 'Yetkili eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); } }} onRemove={async (u) => { if(confirm('Bu yetkiliyi kaldırmak istediğinize emin misiniz?')) { try { await removeAdmin(u); showMessage('success', 'Yetkili kaldırıldı'); } catch(e) { showMessage('error', 'Kaldırılamadı'); } } }} />}
           </div>
         </div>
@@ -613,10 +613,16 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
             label="Kulüp Logosu"
             currentUrl={form.logo}
             path="settings"
-            onUpload={(url: string) => {
+            onUpload={async (url: string) => {
               const updated = { ...form, logo: url };
               setForm(updated);
-              onSave(updated); // Immediate save for logo
+              try {
+                await onSave(updated);
+              } catch (err) {
+                console.error("Logo save failed:", err);
+                // Revert local state if save failed
+                setForm(form);
+              }
             }}
           />
           <p className="text-xs text-gray-400 mt-1">Önerilen: 200x200px, PNG veya SVG</p>
