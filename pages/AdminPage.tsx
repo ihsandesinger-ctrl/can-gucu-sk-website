@@ -321,22 +321,44 @@ const AdminPage: React.FC = () => {
       <div className="space-y-2">
         {label && <label className="block text-sm font-medium text-gray-700">{label}</label>}
         <div className="flex items-center gap-4">
-          {currentUrl && (
-            <div className="relative w-20 h-20 rounded-lg overflow-hidden border">
+          {currentUrl ? (
+            <div className="relative group w-24 h-24 rounded-xl overflow-hidden border-2 border-gray-100 shadow-sm">
               <img src={currentUrl} alt="Preview" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
+                <button 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (confirm('Görseli silmek istediğinize emin misiniz?')) {
+                      onUpload('');
+                      showMessage('success', 'Görsel silindi');
+                    }
+                  }}
+                  className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors mb-2"
+                  title="Görseli Sil"
+                >
+                  <Trash2 size={16} />
+                </button>
+                <span className="text-[10px] text-white font-medium">Silmek için tıkla</span>
+              </div>
             </div>
-          )}
-          <label className="flex flex-col items-center justify-center w-32 h-20 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50 transition-all">
-            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+          ) : null}
+          
+          <label className={`flex flex-col items-center justify-center ${currentUrl ? 'w-24 h-24' : 'w-full h-32'} border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-[var(--primary-color)] hover:bg-orange-50/30 transition-all group`}>
+            <div className="flex flex-col items-center justify-center p-2 text-center">
               {uploading ? (
                 <div className="flex flex-col items-center">
-                  <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                  <p className="text-[10px] text-gray-500">Yükleniyor...</p>
+                  <div className="w-8 h-8 border-3 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mb-2"></div>
+                  <p className="text-[10px] text-gray-500 font-medium">Yükleniyor...</p>
                 </div>
               ) : (
                 <>
-                  <ImageIcon className="w-6 h-6 text-gray-400 mb-1" />
-                  <p className="text-[10px] text-gray-500">Görsel Seç</p>
+                  <div className="p-2 bg-gray-50 rounded-full group-hover:bg-orange-100 transition-colors mb-1">
+                    <ImageIcon className="w-6 h-6 text-gray-400 group-hover:text-[var(--primary-color)]" />
+                  </div>
+                  <p className="text-[10px] text-gray-500 font-bold group-hover:text-[var(--primary-color)]">
+                    {currentUrl ? 'Görseli Değiştir' : 'Görsel Yükle'}
+                  </p>
+                  {!currentUrl && <p className="text-[8px] text-gray-400 mt-1">Tıkla veya sürükle</p>}
                 </>
               )}
             </div>
@@ -353,14 +375,16 @@ const AdminPage: React.FC = () => {
                     const url = await handleFileUpload(file, path);
                     if (url) {
                       onUpload(url);
+                      showMessage('success', 'Görsel başarıyla yüklendi');
                     }
                   } catch (err) {
                     console.error("Upload error in component:", err);
+                    showMessage('error', 'Yükleme sırasında bir hata oluştu');
                   } finally {
                     setUploading(false);
                   }
                 }
-              }} 
+              }}
             />
           </label>
         </div>
@@ -504,7 +528,7 @@ const AdminPage: React.FC = () => {
             {activeTab === 'settings' && <SettingsTab data={cmsData.siteSettings} onSave={async (d) => { try { await updateSettings(d); showMessage('success', 'Ayarlar kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
             {activeTab === 'homepage' && <HomepageTab data={cmsData.homePageHero} onSave={async (d) => { try { await updateHomepage(d); showMessage('success', 'Ana sayfa güncellendi'); } catch(e) { showMessage('error', 'Güncellenemedi'); } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
             {activeTab === 'news' && <NewsTab data={cmsData.newsData} onSave={async (d, id) => { try { await saveNewsArticle(d, id); showMessage('success', 'Haber kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteNewsArticle(id); showMessage('success', 'Haber silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('news', cmsData.newsData, idx, dir)} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'pages' && <PagesTab data={cmsData.pagesData} onSave={async (d, id) => { try { await savePage(d, id); showMessage('success', 'Sayfa kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deletePage(id); showMessage('success', 'Sayfa silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'pages' && <PagesTab data={cmsData.pagesData} onSave={async (d, id) => { try { await savePage(d, id); showMessage('success', 'Sayfa kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deletePage(id); showMessage('success', 'Sayfa silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} showMessage={showMessage} />}
             {activeTab === 'teams' && <TeamsTab data={cmsData.teamData} onSave={async (d, id) => { try { await saveTeam(d, id); showMessage('success', 'Takım kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteTeam(id); showMessage('success', 'Takım silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
             {activeTab === 'fixtures' && <FixturesTab data={cmsData.fixtures} teams={cmsData.teamData} onSave={async (d) => { try { await saveFixture(d); showMessage('success', 'Fikstür kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); } }} onReorder={(idx, dir) => handleReorder('fixtures', cmsData.fixtures, idx, dir)} />}
             {activeTab === 'gallery' && <GalleryTab data={cmsData.galleryData} onSave={async (d) => { try { await saveGalleryImage(d); showMessage('success', 'Görsel eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteGalleryImage(id); showMessage('success', 'Görsel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('gallery', cmsData.galleryData, idx, dir)} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
@@ -640,7 +664,7 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
           <div className="flex justify-between items-center">
             <h3 className="font-bold">Navigasyon Menüsü</h3>
             <button 
-              onClick={() => setForm({...form, navigation: [...(form.navigation || []), { name: 'Yeni Menü', path: '/', items: [] }]})}
+              onClick={() => setForm({...form, navigation: [...(form.navigation || []), { name: 'Yeni Menü', path: '#', items: [] }]})}
               className="text-xs bg-orange-50 text-orange-600 px-3 py-1 rounded-full hover:bg-orange-100"
             >
               + Menü Ekle
@@ -673,6 +697,20 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
                       className="bg-white p-1 border rounded-lg text-sm w-1/3"
                       placeholder="Yol (Örn: /haberler)"
                     />
+                    <div className="flex items-center gap-1">
+                      <input 
+                        type="checkbox" 
+                        checked={nav.isDropdown} 
+                        onChange={e => {
+                          const newNav = [...form.navigation];
+                          newNav[idx].isDropdown = e.target.checked;
+                          setForm({...form, navigation: newNav});
+                        }}
+                        id={`dropdown-${idx}`}
+                        className="w-3 h-3 text-orange-600 rounded"
+                      />
+                      <label htmlFor={`dropdown-${idx}`} className="text-[10px] text-gray-500 whitespace-nowrap">Açılır</label>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="flex flex-col">
@@ -710,7 +748,8 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
                     <button 
                       onClick={() => {
                         const newNav = [...form.navigation];
-                        newNav[idx].items = [...(newNav[idx].items || []), { name: 'Alt Menü', path: '/' }];
+                        newNav[idx].items = [...(newNav[idx].items || []), { name: 'Alt Menü', path: '#' }];
+                        newNav[idx].isDropdown = true;
                         setForm({...form, navigation: newNav});
                       }}
                       className="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100"
@@ -871,7 +910,7 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
 
 // --- Other tabs follow similar pattern... I'll implement a few more key ones ---
 
-const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>, id?: string) => void, onDelete: (id: string) => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onUpload, ImageUpload }) => {
+const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>, id?: string) => void, onDelete: (id: string) => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any, showMessage: any }> = ({ data, onSave, onDelete, onUpload, ImageUpload, showMessage }) => {
   const [editing, setEditing] = useState<Partial<DynamicPage> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const pagesList = data || [];
@@ -1079,7 +1118,7 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
                 onClick={() => {
                   const url = `${window.location.origin}/#/sayfa/${page.slug}`;
                   navigator.clipboard.writeText(url);
-                  alert('Sayfa linki kopyalandı!');
+                  showMessage('success', 'Sayfa linki kopyalandı!');
                 }}
                 className="bg-slate-50 text-slate-600 p-2 rounded-lg hover:bg-slate-100 transition-colors"
                 title="Linki Kopyala"

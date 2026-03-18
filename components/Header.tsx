@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import type { Team, NavigationItem, SiteSettings } from '../types';
+import type { Team, NavigationItem, SiteSettings, DynamicPage } from '../types';
 
 interface HeaderProps {
     logo: string;
@@ -13,6 +13,13 @@ const NavItem: React.FC<{ item: NavigationItem; onClick: () => void }> = ({ item
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
+    const sanitizePath = (path?: string) => {
+        if (!path) return '#';
+        // Remove leading # if present to prevent double hash with HashRouter
+        if (path.startsWith('#')) return path.substring(1) || '/';
+        return path;
+    };
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -23,7 +30,8 @@ const NavItem: React.FC<{ item: NavigationItem; onClick: () => void }> = ({ item
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    if (item.isDropdown) {
+    if (item.isDropdown || (item.items && item.items.length > 0)) {
+        const sanitizedPath = sanitizePath(item.path);
         return (
             <div 
                 ref={dropdownRef} 
@@ -32,12 +40,13 @@ const NavItem: React.FC<{ item: NavigationItem; onClick: () => void }> = ({ item
                 onMouseLeave={() => setIsOpen(false)}
             >
                 <div className="flex items-center">
-                    {item.path ? (
+                    {item.path && item.path !== '#' ? (
                         <NavLink
-                            to={item.path}
+                            to={sanitizedPath}
+                            end={sanitizedPath === '/'}
                             onClick={onClick}
                             className={({ isActive }) =>
-                                `px-4 py-2 rounded-l-md text-sm font-medium transition-colors hover:bg-[var(--secondary-color)] ${isActive ? 'bg-[var(--secondary-color)]' : ''}`
+                                `px-4 py-2 rounded-l-md text-sm font-medium transition-colors hover:bg-[var(--secondary-color)] ${isActive && sanitizedPath !== '#' ? 'bg-[var(--secondary-color)]' : ''}`
                             }
                         >
                             {item.name}
@@ -58,48 +67,54 @@ const NavItem: React.FC<{ item: NavigationItem; onClick: () => void }> = ({ item
                 </div>
                 {isOpen && (
                     <div className="absolute left-0 mt-0 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                        {item.items?.map((subItem, idx) => (
-                            <div key={idx} className="relative group/sub">
-                                {subItem.isDropdown ? (
-                                    <div className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer flex justify-between items-center">
-                                        {subItem.name} <i className="fas fa-chevron-right text-xs"></i>
-                                        <div className="hidden group-hover/sub:block absolute left-full top-0 mt-0 w-48 bg-white rounded-md shadow-lg py-1">
-                                            {subItem.items?.map((nestedItem, nIdx) => (
-                                                <NavLink
-                                                    key={nIdx}
-                                                    to={nestedItem.path || '#'}
-                                                    onClick={onClick}
-                                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                >
-                                                    {nestedItem.name}
-                                                </NavLink>
-                                            ))}
+                        {item.items?.map((subItem, idx) => {
+                            const subPath = sanitizePath(subItem.path);
+                            return (
+                                <div key={idx} className="relative group/sub">
+                                    {subItem.isDropdown || (subItem.items && subItem.items.length > 0) ? (
+                                        <div className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer flex justify-between items-center">
+                                            {subItem.name} <i className="fas fa-chevron-right text-xs"></i>
+                                            <div className="hidden group-hover/sub:block absolute left-full top-0 mt-0 w-48 bg-white rounded-md shadow-lg py-1">
+                                                {subItem.items?.map((nestedItem, nIdx) => (
+                                                    <NavLink
+                                                        key={nIdx}
+                                                        to={sanitizePath(nestedItem.path)}
+                                                        onClick={onClick}
+                                                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                    >
+                                                        {nestedItem.name}
+                                                    </NavLink>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                ) : (
-                                    <NavLink
-                                        to={subItem.path || '#'}
-                                        onClick={onClick}
-                                        className={({ isActive }) =>
-                                            `block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 ${isActive ? 'font-bold text-[var(--secondary-color)]' : ''}`
-                                        }
-                                    >
-                                        {subItem.name}
-                                    </NavLink>
-                                )}
-                            </div>
-                        ))}
+                                    ) : (
+                                        <NavLink
+                                            to={subPath}
+                                            end={subPath === '/'}
+                                            onClick={onClick}
+                                            className={({ isActive }) =>
+                                                `block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 ${isActive && subPath !== '#' ? 'font-bold text-[var(--secondary-color)]' : ''}`
+                                            }
+                                        >
+                                            {subItem.name}
+                                        </NavLink>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </div>
         );
     }
 
+    const mainPath = sanitizePath(item.path);
     return (
         <NavLink
-            to={item.path || '#'}
+            to={mainPath}
+            end={mainPath === '/'}
             className={({ isActive }) =>
-                `px-4 py-2 rounded-md text-sm font-medium transition-colors hover:bg-[var(--secondary-color)] ${isActive ? 'bg-[var(--secondary-color)]' : ''}`
+                `px-4 py-2 rounded-md text-sm font-medium transition-colors hover:bg-[var(--secondary-color)] ${isActive && mainPath !== '#' ? 'bg-[var(--secondary-color)]' : ''}`
             }
             onClick={onClick}
         >
@@ -111,7 +126,13 @@ const NavItem: React.FC<{ item: NavigationItem; onClick: () => void }> = ({ item
 const MobileNavItem: React.FC<{ item: NavigationItem; onClick: () => void }> = ({ item, onClick }) => {
     const [isOpen, setIsOpen] = useState(false);
 
-    if (item.isDropdown) {
+    const sanitizePath = (path?: string) => {
+        if (!path) return '#';
+        if (path.startsWith('#')) return path.substring(1) || '/';
+        return path;
+    };
+
+    if (item.isDropdown || (item.items && item.items.length > 0)) {
         return (
             <div>
                 <button
@@ -132,12 +153,14 @@ const MobileNavItem: React.FC<{ item: NavigationItem; onClick: () => void }> = (
         );
     }
 
+    const mobilePath = sanitizePath(item.path);
     return (
         <NavLink
-            to={item.path || '#'}
+            to={mobilePath}
+            end={mobilePath === '/'}
             onClick={onClick}
             className={({ isActive }) =>
-                `block px-3 py-2 rounded-md text-base font-medium transition-colors hover:bg-[var(--secondary-color)] ${isActive ? 'bg-[var(--secondary-color)]' : ''}`
+                `block px-3 py-2 rounded-md text-base font-medium transition-colors hover:bg-[var(--secondary-color)] ${isActive && mobilePath !== '#' ? 'bg-[var(--secondary-color)]' : ''}`
             }
         >
             {item.name}
@@ -166,9 +189,10 @@ const Header: React.FC<HeaderProps> = ({ logo, teams, pages, settings }) => {
     if (!settings || !settings.navigation) return null;
 
     const enrichedNavigation = settings.navigation.map(item => {
-        if (item.name === 'Takımlarımız' && item.isDropdown) {
+        if (item.name === 'Takımlarımız') {
             return {
                 ...item,
+                isDropdown: true,
                 items: teams.map(t => ({
                     name: t.name,
                     path: `/takim/${t.slug}`,
@@ -176,9 +200,10 @@ const Header: React.FC<HeaderProps> = ({ logo, teams, pages, settings }) => {
                 }))
             };
         }
-        if (item.name === 'Branşlarımız' && item.isDropdown) {
+        if (item.name === 'Branşlarımız') {
             return {
                 ...item,
+                isDropdown: true,
                 items: pages.map(p => ({
                     name: p.title,
                     path: `/sayfa/${p.slug}`,
