@@ -27,6 +27,160 @@ import type { CMSData, NewsArticle, Team, GalleryItem, StaffMember, SiteSettings
 import { subscribeToCMSData } from '../firebaseService';
 import { Plus, Trash2, Save, LogOut, Image as ImageIcon, Settings, Users, Newspaper, Layout, Target, Calendar, Database, ShieldCheck, Copy, ChevronUp, ChevronDown, FileText, User } from 'lucide-react';
 
+// Helper to convert file to base64
+const convertToBase64 = (f: File | Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(f);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
+};
+
+// Helper to compress image
+const compressImage = (f: File): Promise<Blob | File> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    const timeout = setTimeout(() => {
+      console.warn('[STORAGE] Compression timed out, using original file');
+      resolve(f);
+    }, 10000);
+
+    reader.readAsDataURL(f);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        clearTimeout(timeout);
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1200; // Reduced for better compatibility
+        const MAX_HEIGHT = 1200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(f);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(new File([blob], f.name, { type: 'image/jpeg' }));
+          } else {
+            resolve(f);
+          }
+        }, 'image/jpeg', 0.6); // Slightly lower quality for better size
+      };
+      img.onerror = () => {
+        clearTimeout(timeout);
+        console.warn('[STORAGE] Image load failed, using original file');
+        resolve(f);
+      };
+    };
+    reader.onerror = () => {
+      clearTimeout(timeout);
+      console.warn('[STORAGE] FileReader failed, using original file');
+      resolve(f);
+    };
+  });
+};
+
+const ImageUpload: React.FC<{ 
+  onUpload: (url: string) => void, 
+  currentUrl?: string, 
+  path: string, 
+  label?: string,
+  handleUpload: (file: File, path: string) => Promise<string>
+}> = ({ onUpload, currentUrl, path, label, handleUpload }) => {
+  const [uploading, setUploading] = useState(false);
+  return (
+    <div className="space-y-2">
+      {label && <label className="block text-sm font-medium text-gray-700">{label}</label>}
+      <div className="flex items-center gap-4">
+        {currentUrl ? (
+          <div className="relative group w-24 h-24 rounded-xl overflow-hidden border-2 border-gray-100 shadow-sm">
+            <img src={currentUrl} alt="Preview" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  if (confirm('Görseli silmek istediğinize emin misiniz?')) {
+                    onUpload('');
+                  }
+                }}
+                className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors mb-2"
+                title="Görseli Sil"
+              >
+                <Trash2 size={16} />
+              </button>
+              <span className="text-[10px] text-white font-medium">Silmek için tıkla</span>
+            </div>
+          </div>
+        ) : null}
+        
+        <label className={`flex flex-col items-center justify-center ${currentUrl ? 'w-24 h-24' : 'w-full h-32'} border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-[var(--primary-color)] hover:bg-orange-50/30 transition-all group`}>
+          <div className="flex flex-col items-center justify-center p-2 text-center">
+            {uploading ? (
+              <div className="flex flex-col items-center">
+                <div className="w-8 h-8 border-3 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mb-2"></div>
+                <p className="text-[10px] text-gray-500 font-medium">Yükleniyor...</p>
+              </div>
+            ) : (
+              <>
+                <div className="p-2 bg-gray-50 rounded-full group-hover:bg-orange-100 transition-colors mb-1">
+                  <ImageIcon className="w-6 h-6 text-gray-400 group-hover:text-[var(--primary-color)]" />
+                </div>
+                <p className="text-[10px] text-gray-500 font-bold group-hover:text-[var(--primary-color)]">
+                  {currentUrl ? 'Görseli Değiştir' : 'Görsel Yükle'}
+                </p>
+                {!currentUrl && <p className="text-[8px] text-gray-400 mt-1">Tıkla veya sürükle</p>}
+              </>
+            )}
+          </div>
+          <input 
+            type="file" 
+            className="hidden" 
+            accept="image/*"
+            disabled={uploading}
+            onChange={async (e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                setUploading(true);
+                try {
+                  const url = await handleUpload(file, path);
+                  if (url) {
+                    onUpload(url);
+                  }
+                } catch (err) {
+                  console.error("Upload error in component:", err);
+                } finally {
+                  setUploading(false);
+                }
+              }
+            }}
+          />
+        </label>
+      </div>
+    </div>
+  );
+};
+
 const AdminPage: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [cmsData, setCmsData] = useState<CMSData | null>(null);
@@ -39,6 +193,89 @@ const AdminPage: React.FC = () => {
   const [isMigrating, setIsMigrating] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
 
+  const showMessage = (type: 'success' | 'error' | 'info', text: string) => {
+    setMessage({ type, text });
+    setTimeout(() => setMessage(null), 3000);
+  };
+
+  const handleFileUpload = async (file: File, path: string) => {
+    if (!storage) {
+      console.error('[STORAGE] Storage instance is not initialized');
+      return await convertToBase64(file);
+    }
+
+    try {
+      // Basic validation
+      if (!file.type.startsWith('image/')) {
+        showMessage('error', 'Lütfen geçerli bir görsel dosyası seçin.');
+        return '';
+      }
+
+      // Compress before upload
+      console.log(`[STORAGE] Original size: ${file.size} bytes`);
+      showMessage('info', 'Görsel optimize ediliyor...');
+      const processedFile = await compressImage(file);
+      const finalFile = processedFile instanceof File ? processedFile : new File([processedFile], file.name, { type: 'image/jpeg' });
+      console.log(`[STORAGE] Compressed size: ${finalFile.size} bytes`);
+
+      if (finalFile.size > 10 * 1024 * 1024) { // 10MB limit for storage
+        showMessage('error', 'Görsel çok büyük. Lütfen daha küçük bir dosya seçin.');
+        return '';
+      }
+
+      // Sanitize filename
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+      const fileName = `${Date.now()}_${sanitizedName}`;
+      const storageRef = ref(storage, `${path}/${fileName}`);
+      
+      console.log(`[STORAGE] Attempting upload: ${file.name} to ${path}`);
+
+      // Use a Promise with timeout for the upload
+      const uploadPromise = uploadBytes(storageRef, finalFile);
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('timeout')), 60000)
+      );
+
+      try {
+        const uploadResult = await Promise.race([uploadPromise, timeoutPromise]);
+        console.log('[STORAGE] Upload successful:', (uploadResult as any).metadata.fullPath);
+        const url = await getDownloadURL(storageRef);
+        showMessage('success', 'Görsel başarıyla yüklendi');
+        return url;
+      } catch (uploadErr: any) {
+        console.warn('[STORAGE] Storage upload failed or timed out:', uploadErr.message);
+        
+        // Fallback to Base64 if file is small enough (< 800KB)
+        // Firestore has a 1MB limit per document, so Base64 must be smaller.
+        if (finalFile.size < 800 * 1024) {
+          console.log('[STORAGE] Trying Base64 fallback');
+          showMessage('info', 'Depolama alanı erişilemedi, alternatif yöntem deneniyor...');
+          const b64 = await convertToBase64(finalFile);
+          showMessage('success', 'Görsel başarıyla yüklendi (Alternatif)');
+          return b64;
+        } else {
+          console.error('[STORAGE] File too large for Base64 fallback');
+          throw new Error('Görsel boyutu çok büyük (Storage hatası ve Base64 sınırı aşıldı)');
+        }
+      }
+    } catch (err) {
+      console.error('[STORAGE] All upload methods failed:', err);
+      let errorMessage = 'Görsel yüklenemedi.';
+      if (err instanceof Error) {
+        if (err.message === 'timeout') {
+          errorMessage = 'Yükleme zaman aşımına uğradı. Lütfen internet bağlantınızı kontrol edin.';
+        } else if (err.message.includes('storage/unauthorized')) {
+          errorMessage = 'Yükleme yetkiniz yok. Lütfen oturumunuzu kontrol edin.';
+        } else if (err.message.includes('too large')) {
+          errorMessage = 'Görsel boyutu çok büyük.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      showMessage('error', errorMessage);
+      return '';
+    }
+  };
   useEffect(() => {
     let unsubscribeAdmins: (() => void) | undefined;
 
@@ -120,11 +357,6 @@ const AdminPage: React.FC = () => {
     }
   };
 
-  const showMessage = (type: 'success' | 'error' | 'info', text: string) => {
-    setMessage({ type, text });
-    setTimeout(() => setMessage(null), 3000);
-  };
-
   const handleMigration = async () => {
     if (!confirm('Mevcut JSON verilerini veritabanına aktarmak istediğinize emin misiniz? Bu işlem mevcut veritabanı verilerinin üzerine yazabilir.')) return;
     
@@ -188,209 +420,6 @@ const AdminPage: React.FC = () => {
     }
   };
 
-    const handleFileUpload = async (file: File, path: string) => {
-      // Helper to convert file to base64
-      const convertToBase64 = (f: File | Blob): Promise<string> => {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(f);
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = error => reject(error);
-        });
-      };
-
-      if (!storage) {
-        console.error('[STORAGE] Storage instance is not initialized');
-        return await convertToBase64(file);
-      }
-
-      // Helper to compress image
-      const compressImage = (f: File): Promise<Blob | File> => {
-        return new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(f);
-          reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target?.result as string;
-            img.onload = () => {
-              const canvas = document.createElement('canvas');
-              const MAX_WIDTH = 1600;
-              const MAX_HEIGHT = 1600;
-              let width = img.width;
-              let height = img.height;
-
-              if (width > height) {
-                if (width > MAX_WIDTH) {
-                  height *= MAX_WIDTH / width;
-                  width = MAX_WIDTH;
-                }
-              } else {
-                if (height > MAX_HEIGHT) {
-                  width *= MAX_HEIGHT / height;
-                  height = MAX_HEIGHT;
-                }
-              }
-
-              canvas.width = width;
-              canvas.height = height;
-              const ctx = canvas.getContext('2d');
-              ctx?.drawImage(img, 0, 0, width, height);
-              
-              canvas.toBlob((blob) => {
-                if (blob) {
-                  resolve(new File([blob], f.name, { type: 'image/jpeg' }));
-                } else {
-                  resolve(f);
-                }
-              }, 'image/jpeg', 0.7);
-            };
-          };
-        });
-      };
-
-      try {
-        // Basic validation
-        if (!file.type.startsWith('image/')) {
-          showMessage('error', 'Lütfen geçerli bir görsel dosyası seçin.');
-          return '';
-        }
-
-        // Compress before upload
-        console.log(`[STORAGE] Original size: ${file.size} bytes`);
-        showMessage('info', 'Görsel optimize ediliyor...');
-        const processedFile = await compressImage(file);
-        const finalFile = processedFile instanceof File ? processedFile : new File([processedFile], file.name, { type: 'image/jpeg' });
-        console.log(`[STORAGE] Compressed size: ${finalFile.size} bytes`);
-
-        if (finalFile.size > 10 * 1024 * 1024) { // 10MB limit for storage
-          showMessage('error', 'Görsel çok büyük. Lütfen daha küçük bir dosya seçin.');
-          return '';
-        }
-
-        // Sanitize filename
-        const sanitizedName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
-        const fileName = `${Date.now()}_${sanitizedName}`;
-        const storageRef = ref(storage, `${path}/${fileName}`);
-        
-        console.log(`[STORAGE] Attempting upload: ${file.name} to ${path}`);
-
-        // Use a Promise with timeout for the upload
-        const uploadPromise = uploadBytes(storageRef, finalFile);
-        const timeoutPromise = new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('timeout')), 60000)
-        );
-
-        try {
-          const uploadResult = await Promise.race([uploadPromise, timeoutPromise]);
-          console.log('[STORAGE] Upload successful:', uploadResult.metadata.fullPath);
-          const url = await getDownloadURL(storageRef);
-          return url;
-        } catch (uploadErr: any) {
-          console.warn('[STORAGE] Storage upload failed or timed out:', uploadErr.message);
-          
-          // Fallback to Base64 if file is small enough (< 600KB)
-          if (finalFile.size < 600 * 1024) {
-            console.log('[STORAGE] Trying Base64 fallback');
-            showMessage('info', 'Depolama alanı erişilemedi, alternatif yöntem deneniyor...');
-            return await convertToBase64(finalFile);
-          } else {
-            console.error('[STORAGE] File too large for Base64 fallback');
-            throw new Error('Görsel boyutu çok büyük (Storage hatası ve Base64 sınırı aşıldı)');
-          }
-        }
-      } catch (err) {
-        console.error('[STORAGE] All upload methods failed:', err);
-        let errorMessage = 'Görsel yüklenemedi.';
-        if (err instanceof Error) {
-          if (err.message === 'timeout') {
-            errorMessage = 'Yükleme zaman aşımına uğradı. Lütfen internet bağlantınızı kontrol edin.';
-          } else if (err.message.includes('storage/unauthorized')) {
-            errorMessage = 'Yükleme yetkiniz yok. Lütfen oturumunuzu kontrol edin.';
-          } else if (err.message.includes('too large')) {
-            errorMessage = 'Görsel boyutu çok büyük.';
-          }
-        }
-        showMessage('error', errorMessage);
-        return '';
-      }
-    };
-
-  const ImageUpload: React.FC<{ onUpload: (url: string) => void, currentUrl?: string, path: string, label?: string }> = ({ onUpload, currentUrl, path, label }) => {
-    const [uploading, setUploading] = useState(false);
-    return (
-      <div className="space-y-2">
-        {label && <label className="block text-sm font-medium text-gray-700">{label}</label>}
-        <div className="flex items-center gap-4">
-          {currentUrl ? (
-            <div className="relative group w-24 h-24 rounded-xl overflow-hidden border-2 border-gray-100 shadow-sm">
-              <img src={currentUrl} alt="Preview" className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
-                <button 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (confirm('Görseli silmek istediğinize emin misiniz?')) {
-                      onUpload('');
-                      showMessage('success', 'Görsel silindi');
-                    }
-                  }}
-                  className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors mb-2"
-                  title="Görseli Sil"
-                >
-                  <Trash2 size={16} />
-                </button>
-                <span className="text-[10px] text-white font-medium">Silmek için tıkla</span>
-              </div>
-            </div>
-          ) : null}
-          
-          <label className={`flex flex-col items-center justify-center ${currentUrl ? 'w-24 h-24' : 'w-full h-32'} border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-[var(--primary-color)] hover:bg-orange-50/30 transition-all group`}>
-            <div className="flex flex-col items-center justify-center p-2 text-center">
-              {uploading ? (
-                <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 border-3 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mb-2"></div>
-                  <p className="text-[10px] text-gray-500 font-medium">Yükleniyor...</p>
-                </div>
-              ) : (
-                <>
-                  <div className="p-2 bg-gray-50 rounded-full group-hover:bg-orange-100 transition-colors mb-1">
-                    <ImageIcon className="w-6 h-6 text-gray-400 group-hover:text-[var(--primary-color)]" />
-                  </div>
-                  <p className="text-[10px] text-gray-500 font-bold group-hover:text-[var(--primary-color)]">
-                    {currentUrl ? 'Görseli Değiştir' : 'Görsel Yükle'}
-                  </p>
-                  {!currentUrl && <p className="text-[8px] text-gray-400 mt-1">Tıkla veya sürükle</p>}
-                </>
-              )}
-            </div>
-            <input 
-              type="file" 
-              className="hidden" 
-              accept="image/*"
-              disabled={uploading}
-              onChange={async (e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  setUploading(true);
-                  try {
-                    const url = await handleFileUpload(file, path);
-                    if (url) {
-                      onUpload(url);
-                      showMessage('success', 'Görsel başarıyla yüklendi');
-                    }
-                  } catch (err) {
-                    console.error("Upload error in component:", err);
-                    showMessage('error', 'Yükleme sırasında bir hata oluştu');
-                  } finally {
-                    setUploading(false);
-                  }
-                }
-              }}
-            />
-          </label>
-        </div>
-      </div>
-    );
-  };
 
   if (loading) return <div className="flex items-center justify-center min-h-screen">Yükleniyor...</div>;
 
@@ -525,14 +554,14 @@ const AdminPage: React.FC = () => {
           )}
 
           <div className="max-w-4xl mx-auto">
-            {activeTab === 'settings' && <SettingsTab data={cmsData.siteSettings} onSave={async (d) => { try { await updateSettings(d); showMessage('success', 'Ayarlar kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'homepage' && <HomepageTab data={cmsData.homePageHero} onSave={async (d) => { try { await updateHomepage(d); showMessage('success', 'Ana sayfa güncellendi'); } catch(e) { showMessage('error', 'Güncellenemedi'); throw e; } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'news' && <NewsTab data={cmsData.newsData} onSave={async (d, id) => { try { await saveNewsArticle(d, id); showMessage('success', 'Haber kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteNewsArticle(id); showMessage('success', 'Haber silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('news', cmsData.newsData, idx, dir)} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'pages' && <PagesTab data={cmsData.pagesData} onSave={async (d, id) => { try { await savePage(d, id); showMessage('success', 'Sayfa kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deletePage(id); showMessage('success', 'Sayfa silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} showMessage={showMessage} />}
-            {activeTab === 'teams' && <TeamsTab data={cmsData.teamData} onSave={async (d, id) => { try { await saveTeam(d, id); showMessage('success', 'Takım kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteTeam(id); showMessage('success', 'Takım silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'settings' && <SettingsTab data={cmsData.siteSettings} onSave={async (d) => { try { await updateSettings(d); showMessage('success', 'Ayarlar kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'homepage' && <HomepageTab data={cmsData.homePageHero} onSave={async (d) => { try { await updateHomepage(d); showMessage('success', 'Ana sayfa güncellendi'); } catch(e) { showMessage('error', 'Güncellenemedi'); throw e; } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'news' && <NewsTab data={cmsData.newsData} onSave={async (d, id) => { try { await saveNewsArticle(d, id); showMessage('success', 'Haber kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteNewsArticle(id); showMessage('success', 'Haber silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('news', cmsData.newsData, idx, dir)} handleUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'pages' && <PagesTab data={cmsData.pagesData} onSave={async (d, id) => { try { await savePage(d, id); showMessage('success', 'Sayfa kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deletePage(id); showMessage('success', 'Sayfa silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} showMessage={showMessage} />}
+            {activeTab === 'teams' && <TeamsTab data={cmsData.teamData} onSave={async (d, id) => { try { await saveTeam(d, id); showMessage('success', 'Takım kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteTeam(id); showMessage('success', 'Takım silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} />}
             {activeTab === 'fixtures' && <FixturesTab data={cmsData.fixtures} teams={cmsData.teamData} onSave={async (d) => { try { await saveFixture(d); showMessage('success', 'Fikstür kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onReorder={(idx, dir) => handleReorder('fixtures', cmsData.fixtures, idx, dir)} />}
-            {activeTab === 'gallery' && <GalleryTab data={cmsData.galleryData} onSave={async (d) => { try { await saveGalleryImage(d); showMessage('success', 'Görsel eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteGalleryImage(id); showMessage('success', 'Görsel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('gallery', cmsData.galleryData, idx, dir)} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'staff' && <StaffTab data={cmsData.staffData} onSave={async (d, id) => { try { await saveStaffMember(d, id); showMessage('success', 'Personel kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteStaffMember(id); showMessage('success', 'Personel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('staff', cmsData.staffData, idx, dir)} onUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'gallery' && <GalleryTab data={cmsData.galleryData} onSave={async (d) => { try { await saveGalleryImage(d); showMessage('success', 'Görsel eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteGalleryImage(id); showMessage('success', 'Görsel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('gallery', cmsData.galleryData, idx, dir)} handleUpload={handleFileUpload} ImageUpload={ImageUpload} />}
+            {activeTab === 'staff' && <StaffTab data={cmsData.staffData} onSave={async (d, id) => { try { await saveStaffMember(d, id); showMessage('success', 'Personel kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteStaffMember(id); showMessage('success', 'Personel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('staff', cmsData.staffData, idx, dir)} handleUpload={handleFileUpload} ImageUpload={ImageUpload} />}
             {activeTab === 'about' && <AboutTab data={cmsData.missionVision} onSave={async (d) => { try { await updateMissionVision(d); showMessage('success', 'Kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} />}
             {activeTab === 'users' && <UsersTab admins={admins} currentUser={user} onAdd={async (e, u) => { try { await addAdmin(e, u); showMessage('success', 'Yetkili eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); } }} onRemove={async (u) => { if(confirm('Bu yetkiliyi kaldırmak istediğinize emin misiniz?')) { try { await removeAdmin(u); showMessage('success', 'Yetkili kaldırıldı'); } catch(e) { showMessage('error', 'Kaldırılamadı'); } } }} />}
           </div>
@@ -564,7 +593,7 @@ const MobileTabButton: React.FC<{ active: boolean, onClick: () => void, icon: Re
 
 // --- Tab Components (Simplified for brevity, but functional) ---
 
-const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onUpload, ImageUpload }) => {
+const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => void, handleUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, handleUpload, ImageUpload }) => {
   const [form, setForm] = useState(data || {
     address: '',
     email: '',
@@ -613,6 +642,7 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
             label="Kulüp Logosu"
             currentUrl={form.logo}
             path="settings"
+            handleUpload={handleUpload}
             onUpload={async (url: string) => {
               const updated = { ...form, logo: url };
               setForm(updated);
@@ -826,7 +856,7 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
   );
 };
 
-const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onReorder, onUpload, ImageUpload }) => {
+const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload }) => {
   const [editing, setEditing] = useState<Partial<NewsArticle> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const newsList = data || [];
@@ -862,6 +892,7 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
             label="Haber Görseli"
             currentUrl={editing.imageUrl}
             path="news"
+            handleUpload={handleUpload}
             onUpload={(url: string) => setEditing({ ...editing, imageUrl: url })}
           />
 
@@ -916,7 +947,7 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
 
 // --- Other tabs follow similar pattern... I'll implement a few more key ones ---
 
-const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>, id?: string) => void, onDelete: (id: string) => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any, showMessage: any }> = ({ data, onSave, onDelete, onUpload, ImageUpload, showMessage }) => {
+const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>, id?: string) => void, onDelete: (id: string) => void, handleUpload: (f: File, p: string) => Promise<string>, ImageUpload: any, showMessage: any }> = ({ data, onSave, onDelete, handleUpload, ImageUpload, showMessage }) => {
   const [editing, setEditing] = useState<Partial<DynamicPage> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const pagesList = data || [];
@@ -988,6 +1019,7 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
             label="Kapak Görseli (Hero)"
             currentUrl={editing.heroImage}
             path="pages"
+            handleUpload={handleUpload}
             onUpload={(url: string) => setEditing({ ...editing, heroImage: url })}
           />
 
@@ -1003,6 +1035,7 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
             <ImageUpload 
               currentUrl={editing.coach?.imageUrl}
               path="pages/coaches"
+              handleUpload={handleUpload}
               onUpload={(url: string) => setEditing({ ...editing, coach: { ...editing.coach!, imageUrl: url } })}
             />
           </div>
@@ -1038,6 +1071,7 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
                   <ImageUpload 
                     currentUrl={player.imageUrl}
                     path="pages/players"
+                    handleUpload={handleUpload}
                     onUpload={(url: string) => {
                       const players = editing.players?.map(p => p.id === player.id ? { ...p, imageUrl: url } : p);
                       setEditing({ ...editing, players });
@@ -1139,7 +1173,7 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
   );
 };
 
-const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryItem>) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onReorder, onUpload, ImageUpload }) => {
+const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryItem>) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload }) => {
   const [newImage, setNewImage] = useState({ imageUrl: '', title: '' });
   const [isSaving, setIsSaving] = useState(false);
   const galleryList = data || [];
@@ -1173,6 +1207,7 @@ const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryIte
             label="Görsel Yükle"
             currentUrl={newImage.imageUrl}
             path="gallery"
+            handleUpload={handleUpload}
             onUpload={(url: string) => setNewImage({ ...newImage, imageUrl: url })}
           />
           <div className="space-y-2">
@@ -1214,7 +1249,7 @@ const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryIte
   );
 };
 
-const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onUpload, ImageUpload }) => {
+const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => void, handleUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, handleUpload, ImageUpload }) => {
   const [form, setForm] = useState(data || {
     heroImage: '',
     heroTitle: '',
@@ -1281,6 +1316,7 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
             label="Hero Arka Plan Görseli"
             currentUrl={form.heroImage}
             path="homepage"
+            handleUpload={handleUpload}
             onUpload={(url: string) => setForm({ ...form, heroImage: url })}
           />
         </div>
@@ -1368,7 +1404,7 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
   );
 };
 
-const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string) => void, onDelete: (id: string) => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onUpload, ImageUpload }) => {
+const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string) => void, onDelete: (id: string) => void, handleUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, handleUpload, ImageUpload }) => {
   const [editing, setEditing] = useState<any | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const teams = data || [];
@@ -1409,6 +1445,7 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
             label="Takım Fotoğrafı"
             currentUrl={editing.heroImage}
             path="teams"
+            handleUpload={handleUpload}
             onUpload={(url: string) => setEditing({ ...editing, heroImage: url })}
           />
 
@@ -1475,6 +1512,7 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
                     label="Oyuncu Fotoğrafı"
                     currentUrl={player.imageUrl}
                     path="players"
+                    handleUpload={handleUpload}
                     onUpload={(url: string) => {
                       const newPlayers = [...editing.players];
                       newPlayers[idx].imageUrl = url;
@@ -1649,7 +1687,7 @@ const FixturesTab: React.FC<{ data: Fixture[], teams: Team[], onSave: (d: Fixtur
   );
 };
 
-const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, onUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onReorder, onUpload, ImageUpload }) => {
+const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload }) => {
   const [editing, setEditing] = useState<Partial<StaffMember> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const staff = data || [];
@@ -1683,6 +1721,7 @@ const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>
             label="Fotoğraf"
             currentUrl={editing.imageUrl}
             path="staff"
+            handleUpload={handleUpload}
             onUpload={(url: string) => setEditing({ ...editing, imageUrl: url })}
           />
 
