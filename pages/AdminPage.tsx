@@ -120,7 +120,8 @@ const ImageUpload: React.FC<{
 
   const handleRemove = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (window.confirm('Logoyu kaldırmak istediğinize emin misiniz?')) {
+    const confirmMsg = isLogo ? 'Logoyu kaldırmak istediğinize emin misiniz?' : 'Görseli kaldırmak istediğinize emin misiniz?';
+    if (window.confirm(confirmMsg)) {
       onUpload('');
       if (onQuickSave) onQuickSave('');
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -141,7 +142,7 @@ const ImageUpload: React.FC<{
               className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-xs font-bold border border-red-100"
             >
               <Trash2 size={14} />
-              Logoyu Kaldır
+              {isLogo ? 'Logoyu Kaldır' : 'Görseli Kaldır'}
             </button>
           </div>
         )}
@@ -159,7 +160,7 @@ const ImageUpload: React.FC<{
                   <ImageIcon className="w-6 h-6 text-gray-400 group-hover:text-[var(--primary-color)]" />
                 </div>
                 <p className="text-[10px] text-gray-500 font-bold group-hover:text-[var(--primary-color)]">
-                  {currentUrl ? 'Yeni Logo' : 'Görsel Yükle'}
+                  {currentUrl ? (isLogo ? 'Yeni Logo' : 'Yeni Görsel') : (isLogo ? 'Logo Yükle' : 'Görsel Yükle')}
                 </p>
                 {!currentUrl && <p className="text-[8px] text-gray-400 mt-1">Tıkla veya sürükle</p>}
               </>
@@ -1494,7 +1495,7 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-bold">Takım Yönetimi</h2>
-        <button onClick={() => setEditing({ name: '', slug: '', coach: { name: '', role: '' }, players: [], heroImage: '' })} className="bg-[var(--primary-color)] text-white px-4 py-2 w-full sm:w-auto rounded-lg flex items-center justify-center gap-2 shadow-md">
+        <button onClick={() => setEditing({ name: '', slug: '', coach: { name: '', role: '', imageUrl: '' }, players: [], heroImage: '' })} className="bg-[var(--primary-color)] text-white px-4 py-2 w-full sm:w-auto rounded-lg flex items-center justify-center gap-2 shadow-md">
           <Plus size={18}/> Yeni Takım
         </button>
       </div>
@@ -1510,6 +1511,14 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
             <input type="text" placeholder="Teknik Sorumlu Adı" value={editing.coach?.name} onChange={e => setEditing({...editing, coach: { ...editing.coach, name: e.target.value }})} className="w-full p-2 border rounded-lg" />
             <input type="text" placeholder="Teknik Sorumlu Görevi" value={editing.coach?.role} onChange={e => setEditing({...editing, coach: { ...editing.coach, role: e.target.value }})} className="w-full p-2 border rounded-lg" />
           </div>
+          
+          <ImageUpload 
+            label="Teknik Sorumlu Fotoğrafı"
+            currentUrl={editing.coach?.imageUrl}
+            path="coaches"
+            handleUpload={handleUpload}
+            onUpload={(url: string) => setEditing({ ...editing, coach: { ...editing.coach, imageUrl: url } })}
+          />
           
           <ImageUpload 
             label="Takım Fotoğrafı"
