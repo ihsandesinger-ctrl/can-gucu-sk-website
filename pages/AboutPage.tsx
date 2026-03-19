@@ -35,7 +35,13 @@ const AboutPage: React.FC<AboutPageProps> = ({ staff, content }) => {
           <div className="flex flex-wrap justify-center gap-8">
             {staff.map((member) => (
               <div key={member.id} className="text-center">
-                <img src={member.imageUrl} alt={member.name} className="w-32 h-32 rounded-lg mx-auto mb-4 object-cover shadow-lg" />
+                {member.imageUrl ? (
+                  <img src={member.imageUrl} alt={member.name} className="w-32 h-32 rounded-lg mx-auto mb-4 object-cover shadow-lg" />
+                ) : (
+                  <div className="w-32 h-32 rounded-lg mx-auto mb-4 bg-slate-200 flex items-center justify-center text-slate-400 shadow-lg">
+                    <span className="text-xs">Fotoğraf Yok</span>
+                  </div>
+                )}
                 <h3 className="font-bold text-lg text-gray-900">{member.name}</h3>
                 <p className="text-gray-600">{member.role}</p>
               </div>

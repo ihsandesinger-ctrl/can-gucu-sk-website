@@ -17,7 +17,13 @@ const GalleryPage: React.FC<GalleryPageProps> = ({ images }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {images.map((item) => (
             <div key={item.id} className="relative rounded-xl overflow-hidden shadow-lg group">
-              <img src={item.imageUrl} alt={item.title || 'Gallery Image'} className="w-full h-64 object-cover transform group-hover:scale-110 transition-transform duration-300" />
+              {item.imageUrl ? (
+                <img src={item.imageUrl} alt={item.title || 'Gallery Image'} className="w-full h-64 object-cover transform group-hover:scale-110 transition-transform duration-300" />
+              ) : (
+                <div className="w-full h-64 bg-slate-200 flex items-center justify-center text-slate-400">
+                  <span>Görsel Yok</span>
+                </div>
+              )}
               {item.title && (
                 <>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>

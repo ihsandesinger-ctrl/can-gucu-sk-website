@@ -90,11 +90,17 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news,
                             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                                 {recentPhotos.map((photo, index) => (
                                      <Link to="/galeri" key={index} className="block relative rounded-lg overflow-hidden shadow-md group h-48 cursor-pointer">
-                                        <img 
-                                            src={photo.imageUrl} 
-                                            alt={photo.title || 'Galeri Fotoğrafı'} 
-                                            className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-300" 
-                                        />
+                                        {photo.imageUrl ? (
+                                            <img 
+                                                src={photo.imageUrl} 
+                                                alt={photo.title || 'Galeri Fotoğrafı'} 
+                                                className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-300" 
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400">
+                                                <span className="text-xs">Görsel Yok</span>
+                                            </div>
+                                        )}
                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                                             <i className="fa fa-eye text-white text-2xl"></i>
                                         </div>

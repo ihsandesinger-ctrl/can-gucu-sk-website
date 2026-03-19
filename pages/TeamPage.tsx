@@ -28,7 +28,13 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
     <div className="bg-gray-50">
       {/* Hero Image */}
       <div className="relative h-64 md:h-80">
-        <img src={team.heroImage} alt={`${team.name} hero`} className="w-full h-full object-cover" />
+        {team.heroImage ? (
+          <img src={team.heroImage} alt={`${team.name} hero`} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400">
+            <span className="text-xl font-bold">{team.name}</span>
+          </div>
+        )}
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
           <h1 className="text-4xl md:text-5xl font-bold text-white">{team.name}</h1>
         </div>

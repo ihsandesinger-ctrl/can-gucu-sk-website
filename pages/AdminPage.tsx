@@ -38,13 +38,13 @@ const convertToBase64 = (f: File | Blob): Promise<string> => {
 };
 
 // Helper to compress image
-const compressImage = (f: File): Promise<Blob | File> => {
+const compressImage = (f: File, isLogo: boolean = false): Promise<Blob | File> => {
   return new Promise((resolve) => {
     const reader = new FileReader();
     const timeout = setTimeout(() => {
       console.warn('[STORAGE] Compression timed out, using original file');
       resolve(f);
-    }, 10000);
+    }, 5000); // Reduced from 8s to 5s
 
     reader.readAsDataURL(f);
     reader.onload = (event) => {
@@ -53,8 +53,9 @@ const compressImage = (f: File): Promise<Blob | File> => {
       img.onload = () => {
         clearTimeout(timeout);
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1200; // Reduced for better compatibility
-        const MAX_HEIGHT = 1200;
+        // Logos don't need to be huge. 400px is plenty for a logo.
+        const MAX_WIDTH = isLogo ? 400 : 1200;
+        const MAX_HEIGHT = isLogo ? 400 : 1200;
         let width = img.width;
         let height = img.height;
 
@@ -79,23 +80,26 @@ const compressImage = (f: File): Promise<Blob | File> => {
         }
         ctx.drawImage(img, 0, 0, width, height);
         
+        // Use PNG for logos to preserve transparency if it's a logo
+        // Use JPEG for others to keep file size small
+        const mimeType = isLogo && f.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        const quality = isLogo ? 0.8 : 0.7; // Slightly lower quality for logo to ensure small size
+
         canvas.toBlob((blob) => {
           if (blob) {
-            resolve(new File([blob], f.name, { type: 'image/jpeg' }));
+            resolve(new File([blob], f.name, { type: mimeType }));
           } else {
             resolve(f);
           }
-        }, 'image/jpeg', 0.6); // Slightly lower quality for better size
+        }, mimeType, quality);
       };
       img.onerror = () => {
         clearTimeout(timeout);
-        console.warn('[STORAGE] Image load failed, using original file');
         resolve(f);
       };
     };
     reader.onerror = () => {
       clearTimeout(timeout);
-      console.warn('[STORAGE] FileReader failed, using original file');
       resolve(f);
     };
   });
@@ -106,40 +110,48 @@ const ImageUpload: React.FC<{
   currentUrl?: string, 
   path: string, 
   label?: string,
-  handleUpload: (file: File, path: string) => Promise<string>
-}> = ({ onUpload, currentUrl, path, label, handleUpload }) => {
+  handleUpload: (file: File, path: string) => Promise<string>,
+  isLogo?: boolean,
+  onQuickSave?: (url: string) => void
+}> = ({ onUpload, currentUrl, path, label, handleUpload, isLogo, onQuickSave }) => {
   const [uploading, setUploading] = useState(false);
+  const [status, setStatus] = useState('');
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleRemove = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (window.confirm('Logoyu kaldırmak istediğinize emin misiniz?')) {
+      onUpload('');
+      if (onQuickSave) onQuickSave('');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="space-y-2">
       {label && <label className="block text-sm font-medium text-gray-700">{label}</label>}
-      <div className="flex items-center gap-4">
-        {currentUrl ? (
-          <div className="relative group w-24 h-24 rounded-xl overflow-hidden border-2 border-gray-100 shadow-sm">
-            <img src={currentUrl} alt="Preview" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
-              <button 
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (confirm('Görseli silmek istediğinize emin misiniz?')) {
-                    onUpload('');
-                  }
-                }}
-                className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors mb-2"
-                title="Görseli Sil"
-              >
-                <Trash2 size={16} />
-              </button>
-              <span className="text-[10px] text-white font-medium">Silmek için tıkla</span>
+      <div className="flex flex-wrap items-center gap-4">
+        {currentUrl && (
+          <div className="flex flex-col items-center gap-2">
+            <div className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-gray-100 shadow-sm bg-gray-50">
+              <img src={currentUrl} alt="Preview" className="w-full h-full object-contain p-1" />
             </div>
+            <button 
+              onClick={handleRemove}
+              className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-xs font-bold border border-red-100"
+            >
+              <Trash2 size={14} />
+              Logoyu Kaldır
+            </button>
           </div>
-        ) : null}
+        )}
         
-        <label className={`flex flex-col items-center justify-center ${currentUrl ? 'w-24 h-24' : 'w-full h-32'} border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-[var(--primary-color)] hover:bg-orange-50/30 transition-all group`}>
+        <label className={`flex flex-col items-center justify-center ${currentUrl ? 'w-24 h-24' : 'w-full h-32'} border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-[var(--primary-color)] hover:bg-orange-50/30 transition-all group relative`}>
           <div className="flex flex-col items-center justify-center p-2 text-center">
             {uploading ? (
               <div className="flex flex-col items-center">
                 <div className="w-8 h-8 border-3 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mb-2"></div>
-                <p className="text-[10px] text-gray-500 font-medium">Yükleniyor...</p>
+                <p className="text-[10px] text-gray-500 font-medium">{status || 'Yükleniyor...'}</p>
               </div>
             ) : (
               <>
@@ -147,13 +159,14 @@ const ImageUpload: React.FC<{
                   <ImageIcon className="w-6 h-6 text-gray-400 group-hover:text-[var(--primary-color)]" />
                 </div>
                 <p className="text-[10px] text-gray-500 font-bold group-hover:text-[var(--primary-color)]">
-                  {currentUrl ? 'Görseli Değiştir' : 'Görsel Yükle'}
+                  {currentUrl ? 'Yeni Logo' : 'Görsel Yükle'}
                 </p>
                 {!currentUrl && <p className="text-[8px] text-gray-400 mt-1">Tıkla veya sürükle</p>}
               </>
             )}
           </div>
           <input 
+            ref={fileInputRef}
             type="file" 
             className="hidden" 
             accept="image/*"
@@ -162,15 +175,22 @@ const ImageUpload: React.FC<{
               const file = e.target.files?.[0];
               if (file) {
                 setUploading(true);
+                setStatus('Optimize ediliyor...');
                 try {
                   const url = await handleUpload(file, path);
                   if (url) {
                     onUpload(url);
+                    if (onQuickSave) {
+                      setStatus('Kaydediliyor...');
+                      await onQuickSave(url);
+                    }
                   }
                 } catch (err) {
                   console.error("Upload error in component:", err);
                 } finally {
                   setUploading(false);
+                  setStatus('');
+                  if (fileInputRef.current) fileInputRef.current.value = '';
                 }
               }
             }}
@@ -211,12 +231,28 @@ const AdminPage: React.FC = () => {
         return '';
       }
 
+      const isLogo = path === 'settings';
+      
+      // If it's a small logo/icon, use Base64 immediately to bypass Storage issues
+      // This is much more reliable for small critical assets
+      if (isLogo && file.size < 150 * 1024) {
+        console.log('[STORAGE] Small logo, using Base64 directly');
+        return await convertToBase64(file);
+      }
+
       // Compress before upload
       console.log(`[STORAGE] Original size: ${file.size} bytes`);
       showMessage('info', 'Görsel optimize ediliyor...');
-      const processedFile = await compressImage(file);
-      const finalFile = processedFile instanceof File ? processedFile : new File([processedFile], file.name, { type: 'image/jpeg' });
+      const processedFile = await compressImage(file, isLogo);
+      const finalFile = processedFile instanceof File ? processedFile : new File([processedFile], file.name, { type: isLogo ? 'image/png' : 'image/jpeg' });
       console.log(`[STORAGE] Compressed size: ${finalFile.size} bytes`);
+
+      // If compressed file is small enough, prefer Base64 for logos to avoid Storage issues
+      // Increased limit to 800KB for logos to ensure they almost always use Base64
+      if (isLogo && finalFile.size < 800 * 1024) {
+        console.log('[STORAGE] Compressed logo is small enough, using Base64 for maximum reliability');
+        return await convertToBase64(finalFile);
+      }
 
       if (finalFile.size > 10 * 1024 * 1024) { // 10MB limit for storage
         showMessage('error', 'Görsel çok büyük. Lütfen daha küçük bir dosya seçin.');
@@ -230,10 +266,10 @@ const AdminPage: React.FC = () => {
       
       console.log(`[STORAGE] Attempting upload: ${file.name} to ${path}`);
 
-      // Use a Promise with timeout for the upload
+      // Use a shorter timeout (7s) for the upload to fail fast and try fallback
       const uploadPromise = uploadBytes(storageRef, finalFile);
       const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('timeout')), 60000)
+        setTimeout(() => reject(new Error('timeout')), 7000)
       );
 
       try {
@@ -243,34 +279,25 @@ const AdminPage: React.FC = () => {
         showMessage('success', 'Görsel başarıyla yüklendi');
         return url;
       } catch (uploadErr: any) {
-        console.warn('[STORAGE] Storage upload failed or timed out:', uploadErr.message);
+        console.warn('[STORAGE] Storage upload failed or timed out, trying Base64 fallback:', uploadErr.message);
         
-        // Fallback to Base64 if file is small enough (< 800KB)
+        // Fallback to Base64 if file is small enough (< 850KB)
         // Firestore has a 1MB limit per document, so Base64 must be smaller.
-        if (finalFile.size < 800 * 1024) {
-          console.log('[STORAGE] Trying Base64 fallback');
-          showMessage('info', 'Depolama alanı erişilemedi, alternatif yöntem deneniyor...');
+        if (finalFile.size < 850 * 1024) {
+          showMessage('info', 'Bulut depolama yavaş, alternatif yöntem kullanılıyor...');
           const b64 = await convertToBase64(finalFile);
           showMessage('success', 'Görsel başarıyla yüklendi (Alternatif)');
           return b64;
         } else {
           console.error('[STORAGE] File too large for Base64 fallback');
-          throw new Error('Görsel boyutu çok büyük (Storage hatası ve Base64 sınırı aşıldı)');
+          throw new Error('Görsel yüklenemedi. Bulut depolama hatası ve dosya çok büyük. Lütfen daha küçük bir dosya deneyin.');
         }
       }
     } catch (err) {
       console.error('[STORAGE] All upload methods failed:', err);
       let errorMessage = 'Görsel yüklenemedi.';
       if (err instanceof Error) {
-        if (err.message === 'timeout') {
-          errorMessage = 'Yükleme zaman aşımına uğradı. Lütfen internet bağlantınızı kontrol edin.';
-        } else if (err.message.includes('storage/unauthorized')) {
-          errorMessage = 'Yükleme yetkiniz yok. Lütfen oturumunuzu kontrol edin.';
-        } else if (err.message.includes('too large')) {
-          errorMessage = 'Görsel boyutu çok büyük.';
-        } else {
-          errorMessage = err.message;
-        }
+        errorMessage = err.message;
       }
       showMessage('error', errorMessage);
       return '';
@@ -606,10 +633,22 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
   });
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [lastDataJson, setLastDataJson] = useState(JSON.stringify(data));
 
   useEffect(() => {
-    if (data) setForm(data);
-  }, [data]);
+    const currentDataJson = JSON.stringify(data);
+    if (data && currentDataJson !== lastDataJson) {
+      setForm(data);
+      setLastDataJson(currentDataJson);
+      setIsDirty(false);
+    }
+  }, [data, lastDataJson]);
+
+  const updateForm = (updates: Partial<SiteSettings>) => {
+    setForm(prev => ({ ...prev, ...updates }));
+    setIsDirty(true);
+  };
   
   if (!data && !form) return <div>Yükleniyor...</div>;
 
@@ -617,6 +656,10 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
     setIsSaving(true);
     try {
       await onSave(form);
+      setLastDataJson(JSON.stringify(form));
+      setIsDirty(false);
+    } catch (err) {
+      console.error("Save failed:", err);
     } finally {
       setIsSaving(false);
     }
@@ -624,16 +667,23 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm py-2 -mx-2 px-2 rounded-xl">
         <h2 className="text-2xl font-bold">Genel Ayarlar</h2>
-        <button 
-          onClick={handleSave}
-          disabled={isSaving}
-          className={`flex items-center justify-center gap-2 px-6 py-3 w-full sm:w-auto rounded-xl text-white font-bold transition-all ${isSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-[var(--primary-color)] hover:scale-105 shadow-lg'}`}
-        >
-          <Save size={20} />
-          {isSaving ? 'Kaydediliyor...' : 'Ayarları Kaydet'}
-        </button>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          {isDirty && (
+            <span className="text-xs font-medium text-orange-600 animate-pulse hidden sm:inline">
+              Kaydedilmemiş değişiklikler var
+            </span>
+          )}
+          <button 
+            onClick={handleSave}
+            disabled={isSaving || (!isDirty && !!data)}
+            className={`flex items-center justify-center gap-2 px-6 py-3 w-full sm:w-auto rounded-xl text-white font-bold transition-all ${isSaving ? 'bg-gray-400 cursor-not-allowed' : isDirty ? 'bg-orange-600 hover:scale-105 shadow-lg' : 'bg-gray-400 cursor-not-allowed opacity-50'}`}
+          >
+            <Save size={20} />
+            {isSaving ? 'Kaydediliyor...' : 'Ayarları Kaydet'}
+          </button>
+        </div>
       </div>
       
       <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm space-y-6">
@@ -643,33 +693,43 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
             currentUrl={form.logo}
             path="settings"
             handleUpload={handleUpload}
-            onUpload={async (url: string) => {
-              const updated = { ...form, logo: url };
-              setForm(updated);
+            isLogo={true}
+            onUpload={(url: string) => {
+              updateForm({ logo: url });
+            }}
+            onQuickSave={async (url: string) => {
               try {
-                await onSave(updated);
+                await onSave({ ...form, logo: url });
+                setLastDataJson(JSON.stringify({ ...form, logo: url }));
+                setIsDirty(false);
               } catch (err) {
-                console.error("Logo save failed:", err);
-                // Revert local state if save failed
-                setForm(form);
+                console.error("Quick save failed:", err);
               }
             }}
           />
-          <p className="text-xs text-gray-400 mt-1">Önerilen: 200x200px, PNG veya SVG</p>
+          <div className="flex-grow">
+            <p className="text-sm font-medium text-gray-700">Logo Yönetimi</p>
+            <p className="text-xs text-gray-400 mt-1">Önerilen: 200x200px, PNG veya SVG. Arkaplanı şeffaf olan görseller daha iyi görünür.</p>
+            {isDirty && form.logo !== data.logo && (
+              <p className="text-[10px] text-orange-500 mt-2 font-bold italic">
+                * Logo değişikliğini kalıcı hale getirmek için "Ayarları Kaydet" butonuna basmayı unutmayın.
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Kulüp Adresi</label>
-            <input type="text" value={form.address} onChange={e => setForm({...form, address: e.target.value})} className="w-full p-2 border rounded-lg" />
+            <input type="text" value={form.address} onChange={e => updateForm({ address: e.target.value })} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">E-posta</label>
-            <input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} className="w-full p-2 border rounded-lg" />
+            <input type="email" value={form.email} onChange={e => updateForm({ email: e.target.value })} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
-            <input type="text" value={form.phone} onChange={e => setForm({...form, phone: e.target.value})} className="w-full p-2 border rounded-lg" />
+            <input type="text" value={form.phone} onChange={e => updateForm({ phone: e.target.value })} className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none" />
           </div>
         </div>
 
@@ -682,8 +742,8 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
                 <input 
                   type="text" 
                   value={value} 
-                  onChange={e => setForm({...form, socialMedia: {...form.socialMedia, [key]: e.target.value}})} 
-                  className="w-full p-2 border rounded-lg" 
+                  onChange={e => updateForm({ socialMedia: {...form.socialMedia, [key]: e.target.value} })} 
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-orange-500 outline-none" 
                   placeholder="URL"
                 />
               </div>
@@ -692,7 +752,7 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
         </div>
 
         <div className="flex items-center gap-2 pt-4 border-t">
-          <input type="checkbox" checked={form.maintenanceMode} onChange={e => setForm({...form, maintenanceMode: e.target.checked})} id="maintenance" className="w-4 h-4 text-orange-600 rounded" />
+          <input type="checkbox" checked={form.maintenanceMode} onChange={e => updateForm({ maintenanceMode: e.target.checked })} id="maintenance" className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500" />
           <label htmlFor="maintenance" className="text-sm font-medium text-gray-700">Bakım Modu (Siteyi ziyaretçilere kapatır)</label>
         </div>
 
@@ -1136,7 +1196,11 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
           <div key={page.id} className="bg-white p-4 rounded-xl shadow-sm border flex flex-col justify-between">
             <div className="flex gap-4 mb-4">
               <div className="w-20 h-20 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
-                <img src={page.heroImage || 'https://picsum.photos/seed/page/200/200'} alt="" className="w-full h-full object-cover" />
+                {page.heroImage ? (
+                  <img src={page.heroImage} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <img src="https://picsum.photos/seed/page/200/200" alt="" className="w-full h-full object-cover" />
+                )}
               </div>
               <div>
                 <h4 className="font-bold text-lg text-slate-800">{page.title}</h4>
@@ -1219,7 +1283,13 @@ const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryIte
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {galleryList.map((img, idx) => (
           <div key={img.id} className="relative group rounded-xl overflow-hidden shadow-sm aspect-square bg-gray-100">
-            <img src={img.imageUrl} alt={img.title} className="w-full h-full object-cover" />
+            {img.imageUrl ? (
+              <img src={img.imageUrl} alt={img.title} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400">
+                <ImageIcon size={32} />
+              </div>
+            )}
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center gap-2">
               <div className="flex gap-2">
                 <button 
@@ -1542,7 +1612,13 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
           <div key={team.id} className="bg-white p-4 rounded-xl shadow-sm flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
-                <img src={team.heroImage} alt="" className="w-full h-full object-cover" />
+                {team.heroImage ? (
+                  <img src={team.heroImage} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-300">
+                    <Users size={20} />
+                  </div>
+                )}
               </div>
               <div>
                 <h4 className="font-bold">{team.name}</h4>
@@ -1757,7 +1833,13 @@ const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>
                 <ChevronDown size={16} />
               </button>
             </div>
-            <img src={member.imageUrl} alt="" className="w-20 h-20 rounded-full mx-auto mb-3 object-cover border" />
+            {member.imageUrl ? (
+              <img src={member.imageUrl} alt="" className="w-20 h-20 rounded-full mx-auto mb-3 object-cover border" />
+            ) : (
+              <div className="w-20 h-20 rounded-full mx-auto mb-3 flex items-center justify-center bg-gray-100 border text-gray-400">
+                <User size={32} />
+              </div>
+            )}
             <h4 className="font-bold">{member.name}</h4>
             <p className="text-xs text-gray-500 mb-3">{member.role}</p>
             <div className="flex justify-center gap-2">
