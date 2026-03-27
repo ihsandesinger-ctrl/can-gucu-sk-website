@@ -52,18 +52,27 @@ const DynamicPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
-      <div className="relative h-[40vh] md:h-[60vh] overflow-hidden">
-        <img
-          src={page.heroImage || 'https://picsum.photos/seed/sports/1920/1080'}
-          alt={page.title}
-          className="w-full h-full object-cover"
-          referrerPolicy="no-referrer"
-        />
-        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+      <div className="relative h-[40vh] md:h-[60vh] overflow-hidden bg-[var(--primary-color)]">
+        {/* Gradient background for depth */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary-color)] via-black/40 to-black z-0"></div>
+        
+        {/* Blurred background to fill gaps */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center blur-2xl scale-110 opacity-30"
+          style={{ backgroundImage: `url('${page.heroImage || 'https://picsum.photos/seed/sports/1920/1080'}')` }}
+        ></div>
+        
+        {/* Main image - contained so nothing is missing */}
+        <div 
+          className="absolute inset-0 bg-contain bg-center bg-no-repeat z-10"
+          style={{ backgroundImage: `url('${page.heroImage || 'https://picsum.photos/seed/sports/1920/1080'}')` }}
+        ></div>
+
+        <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-20">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-6xl font-bold text-white text-center px-4"
+            className="text-4xl md:text-6xl font-bold text-white text-center px-4 drop-shadow-2xl"
           >
             {page.title}
           </motion.h1>

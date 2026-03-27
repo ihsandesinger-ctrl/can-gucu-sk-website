@@ -112,8 +112,9 @@ const ImageUpload: React.FC<{
   label?: string,
   handleUpload: (file: File, path: string) => Promise<string>,
   isLogo?: boolean,
+  isHero?: boolean,
   onQuickSave?: (url: string) => void
-}> = ({ onUpload, currentUrl, path, label, handleUpload, isLogo, onQuickSave }) => {
+}> = ({ onUpload, currentUrl, path, label, handleUpload, isLogo, isHero, onQuickSave }) => {
   const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState('');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -134,8 +135,9 @@ const ImageUpload: React.FC<{
       <div className="flex flex-wrap items-center gap-4">
         {currentUrl && (
           <div className="flex flex-col items-center gap-2">
-            <div className="relative w-24 h-24 rounded-xl overflow-hidden border-2 border-gray-100 shadow-sm bg-gray-50">
-              <img src={currentUrl} alt="Preview" className="w-full h-full object-contain p-1" />
+            <div className={`relative ${isHero ? 'w-full max-w-md aspect-video bg-[var(--primary-color)]' : 'w-24 h-24 bg-gray-50'} rounded-xl overflow-hidden border-2 border-gray-100 shadow-sm`}>
+              {isHero && <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary-color)] via-black/40 to-black z-0"></div>}
+              <img src={currentUrl} alt="Preview" className="relative w-full h-full object-contain p-1 z-10" />
             </div>
             <button 
               onClick={handleRemove}
@@ -147,7 +149,7 @@ const ImageUpload: React.FC<{
           </div>
         )}
         
-        <label className={`flex flex-col items-center justify-center ${currentUrl ? 'w-24 h-24' : 'w-full h-32'} border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-[var(--primary-color)] hover:bg-orange-50/30 transition-all group relative`}>
+        <label className={`flex flex-col items-center justify-center ${currentUrl ? (isHero ? 'w-full h-16' : 'w-24 h-24') : 'w-full h-32'} border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-[var(--primary-color)] hover:bg-orange-50/30 transition-all group relative`}>
           <div className="flex flex-col items-center justify-center p-2 text-center">
             {uploading ? (
               <div className="flex flex-col items-center">
@@ -1088,6 +1090,7 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
             label="Kapak Görseli (Hero)"
             currentUrl={editing.heroImage}
             path="pages"
+            isHero={true}
             handleUpload={handleUpload}
             onUpload={(url: string) => setEditing({ ...editing, heroImage: url })}
           />
@@ -1206,7 +1209,7 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
             <div className="flex gap-4 mb-4">
               <div className="w-20 h-20 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0">
                 {page.heroImage ? (
-                  <img src={page.heroImage} alt="" className="w-full h-full object-cover" />
+                  <img src={page.heroImage} alt="" className="w-full h-full object-contain p-1" />
                 ) : (
                   <img src="https://picsum.photos/seed/page/200/200" alt="" className="w-full h-full object-cover" />
                 )}
@@ -1293,7 +1296,7 @@ const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryIte
         {galleryList.map((img, idx) => (
           <div key={img.id} className="relative group rounded-xl overflow-hidden shadow-sm aspect-square bg-gray-100">
             {img.imageUrl ? (
-              <img src={img.imageUrl} alt={img.title} className="w-full h-full object-cover" />
+              <img src={img.imageUrl} alt={img.title} className="w-full h-full object-contain p-1" />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-400">
                 <ImageIcon size={32} />
@@ -1395,6 +1398,7 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
             label="Hero Arka Plan Görseli"
             currentUrl={form.heroImage}
             path="homepage"
+            isHero={true}
             handleUpload={handleUpload}
             onUpload={(url: string) => setForm({ ...form, heroImage: url })}
           />
@@ -1532,6 +1536,7 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
             label="Takım Fotoğrafı"
             currentUrl={editing.heroImage}
             path="teams"
+            isHero={true}
             handleUpload={handleUpload}
             onUpload={(url: string) => setEditing({ ...editing, heroImage: url })}
           />
@@ -1630,7 +1635,7 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
                 {team.heroImage ? (
-                  <img src={team.heroImage} alt="" className="w-full h-full object-cover" />
+                  <img src={team.heroImage} alt="" className="w-full h-full object-contain p-1" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-300">
                     <Users size={20} />
