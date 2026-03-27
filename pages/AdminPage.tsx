@@ -38,7 +38,7 @@ const convertToBase64 = (f: File | Blob): Promise<string> => {
 };
 
 // Helper to compress image
-const compressImage = (f: File, isLogo: boolean = false): Promise<Blob | File> => {
+const compressImage = (f: File, isLogo: boolean = false, isHero: boolean = false): Promise<Blob | File> => {
   return new Promise((resolve) => {
     const reader = new FileReader();
     const timeout = setTimeout(() => {
@@ -80,9 +80,9 @@ const compressImage = (f: File, isLogo: boolean = false): Promise<Blob | File> =
         }
         ctx.drawImage(img, 0, 0, width, height);
         
-        // Use PNG for logos to preserve transparency if it's a logo
+        // Use PNG for logos and hero images to preserve transparency if it's a PNG
         // Use JPEG for others to keep file size small
-        const mimeType = isLogo && f.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        const mimeType = (isLogo || isHero) && f.type === 'image/png' ? 'image/png' : 'image/jpeg';
         const quality = isLogo ? 0.8 : 0.7; // Slightly lower quality for logo to ensure small size
 
         canvas.toBlob((blob) => {
@@ -110,7 +110,7 @@ const ImageUpload: React.FC<{
   currentUrl?: string, 
   path: string, 
   label?: string,
-  handleUpload: (file: File, path: string) => Promise<string>,
+  handleUpload: (file: File, path: string, isHero?: boolean) => Promise<string>,
   isLogo?: boolean,
   isHero?: boolean,
   onQuickSave?: (url: string) => void
@@ -180,7 +180,7 @@ const ImageUpload: React.FC<{
                 setUploading(true);
                 setStatus('Optimize ediliyor...');
                 try {
-                  const url = await handleUpload(file, path);
+                  const url = await handleUpload(file, path, isHero);
                   if (url) {
                     onUpload(url);
                     if (onQuickSave) {
@@ -221,7 +221,7 @@ const AdminPage: React.FC = () => {
     setTimeout(() => setMessage(null), 3000);
   };
 
-  const handleFileUpload = async (file: File, path: string) => {
+  const handleFileUpload = async (file: File, path: string, isHero: boolean = false) => {
     if (!storage) {
       console.error('[STORAGE] Storage instance is not initialized');
       return await convertToBase64(file);
@@ -246,8 +246,8 @@ const AdminPage: React.FC = () => {
       // Compress before upload
       console.log(`[STORAGE] Original size: ${file.size} bytes`);
       showMessage('info', 'Görsel optimize ediliyor...');
-      const processedFile = await compressImage(file, isLogo);
-      const finalFile = processedFile instanceof File ? processedFile : new File([processedFile], file.name, { type: isLogo ? 'image/png' : 'image/jpeg' });
+      const processedFile = await compressImage(file, isLogo, isHero);
+      const finalFile = processedFile instanceof File ? processedFile : new File([processedFile], file.name, { type: (isLogo || isHero) && file.type === 'image/png' ? 'image/png' : 'image/jpeg' });
       console.log(`[STORAGE] Compressed size: ${finalFile.size} bytes`);
 
       // If compressed file is small enough, prefer Base64 for logos to avoid Storage issues
@@ -631,7 +631,7 @@ const MobileTabButton: React.FC<{ active: boolean, onClick: () => void, icon: Re
 
 // --- Tab Components (Simplified for brevity, but functional) ---
 
-const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => void, handleUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, handleUpload, ImageUpload }) => {
+const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any }> = ({ data, onSave, handleUpload, ImageUpload }) => {
   const [form, setForm] = useState(data || {
     address: '',
     email: '',
@@ -927,7 +927,7 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
   );
 };
 
-const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload }) => {
+const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload }) => {
   const [editing, setEditing] = useState<Partial<NewsArticle> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const newsList = data || [];
@@ -963,6 +963,7 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
             label="Haber Görseli"
             currentUrl={editing.imageUrl}
             path="news"
+            isHero={true}
             handleUpload={handleUpload}
             onUpload={(url: string) => setEditing({ ...editing, imageUrl: url })}
           />
@@ -1018,7 +1019,7 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
 
 // --- Other tabs follow similar pattern... I'll implement a few more key ones ---
 
-const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>, id?: string) => void, onDelete: (id: string) => void, handleUpload: (f: File, p: string) => Promise<string>, ImageUpload: any, showMessage: any }> = ({ data, onSave, onDelete, handleUpload, ImageUpload, showMessage }) => {
+const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>, id?: string) => void, onDelete: (id: string) => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any, showMessage: any }> = ({ data, onSave, onDelete, handleUpload, ImageUpload, showMessage }) => {
   const [editing, setEditing] = useState<Partial<DynamicPage> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const pagesList = data || [];
@@ -1249,7 +1250,7 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
   );
 };
 
-const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryItem>) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload }) => {
+const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryItem>) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload }) => {
   const [newImage, setNewImage] = useState({ imageUrl: '', title: '' });
   const [isSaving, setIsSaving] = useState(false);
   const galleryList = data || [];
@@ -1331,7 +1332,7 @@ const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryIte
   );
 };
 
-const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => void, handleUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, handleUpload, ImageUpload }) => {
+const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any }> = ({ data, onSave, handleUpload, ImageUpload }) => {
   const [form, setForm] = useState(data || {
     heroImage: '',
     heroTitle: '',
@@ -1487,7 +1488,7 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
   );
 };
 
-const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string) => void, onDelete: (id: string) => void, handleUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, handleUpload, ImageUpload }) => {
+const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string) => void, onDelete: (id: string) => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, handleUpload, ImageUpload }) => {
   const [editing, setEditing] = useState<any | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const teams = data || [];
@@ -1785,7 +1786,7 @@ const FixturesTab: React.FC<{ data: Fixture[], teams: Team[], onSave: (d: Fixtur
   );
 };
 
-const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload }) => {
+const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload }) => {
   const [editing, setEditing] = useState<Partial<StaffMember> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const staff = data || [];
