@@ -120,13 +120,26 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news,
     return (
         <div>
             {/* Hero Section */}
-            <div className="relative h-[60vh] bg-cover bg-center" style={{ backgroundImage: `url('${heroContent.heroImage}')` }}>
-                <div className="absolute inset-0 bg-black/60"></div>
+            <div className="relative h-[50vh] md:h-[70vh] overflow-hidden bg-black">
+                {/* Blurred background to fill gaps */}
+                <div 
+                    className="absolute inset-0 bg-cover bg-center blur-2xl scale-110 opacity-40"
+                    style={{ backgroundImage: `url('${heroContent.heroImage}')` }}
+                ></div>
+                
+                {/* Main image - contained so nothing is missing */}
+                <div 
+                    className="absolute inset-0 bg-contain bg-center bg-no-repeat z-0"
+                    style={{ backgroundImage: `url('${heroContent.heroImage}')` }}
+                ></div>
+
+                {/* Overlay for text */}
+                <div className="absolute inset-0 bg-black/30"></div>
                 <div className="relative z-10 flex flex-col items-center justify-center h-full text-white text-center px-4">
-                    <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-4">
+                    <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-4 drop-shadow-xl">
                         {heroContent.heroTitle}
                     </h1>
-                    <p className="text-lg md:text-xl max-w-2xl">
+                    <p className="text-lg md:text-xl max-w-2xl drop-shadow-lg font-medium">
                         {heroContent.heroSubtitle}
                     </p>
                 </div>
