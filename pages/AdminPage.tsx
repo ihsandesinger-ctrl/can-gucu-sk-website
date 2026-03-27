@@ -956,6 +956,24 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
         <div className="bg-white p-4 md:p-6 rounded-2xl shadow-md space-y-4">
           <h3 className="font-bold">{editing.id ? 'Haberi Düzenle' : 'Yeni Haber'}</h3>
           <input type="text" placeholder="Başlık" value={editing.title} onChange={e => setEditing({...editing, title: e.target.value})} className="w-full p-2 border rounded-lg" />
+          
+          <div className="space-y-1">
+            <label className="text-sm text-gray-500">Haber Tarihi</label>
+            <input 
+              type="date" 
+              value={editing.date ? editing.date.split('T')[0] : ''} 
+              onChange={e => {
+                const date = e.target.value;
+                if (date) {
+                  // Preserve the time part if it exists, otherwise use 12:00:00 to avoid timezone issues
+                  const timePart = editing.date?.includes('T') ? editing.date.split('T')[1] : '12:00:00.000Z';
+                  setEditing({...editing, date: `${date}T${timePart}`});
+                }
+              }} 
+              className="w-full p-2 border rounded-lg" 
+            />
+          </div>
+
           <textarea placeholder="Özet" value={editing.summary} onChange={e => setEditing({...editing, summary: e.target.value})} className="w-full p-2 border rounded-lg" />
           <textarea placeholder="İçerik" value={editing.content} onChange={e => setEditing({...editing, content: e.target.value})} className="w-full p-2 border rounded-lg h-32" />
           

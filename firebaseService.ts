@@ -49,6 +49,10 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 
 // Data Fetching
 export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
+  if (!db) {
+    console.warn("Firebase not initialized. CMS data subscription skipped.");
+    return () => {};
+  }
   const data: Partial<CMSData> = {
     siteSettings: undefined,
     homePageHero: undefined,
@@ -153,6 +157,10 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
 
 // Migration Function
 export const migrateDataToFirestore = async (localData: CMSData) => {
+  if (!db) {
+    console.error("Firebase not initialized. Migration aborted.");
+    return;
+  }
   console.log('Starting migration with data:', localData);
   try {
     // Settings
@@ -241,7 +249,7 @@ export const saveNewsArticle = async (article: Partial<NewsArticle>, id?: string
     if (id) return await updateDoc(doc(db, 'news', id), article);
     return await addDoc(collection(db, 'news'), { 
       ...article, 
-      date: new Date().toISOString(),
+      date: article.date || new Date().toISOString(),
       order: article.order ?? Date.now()
     });
   } catch (err) {

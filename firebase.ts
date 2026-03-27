@@ -16,13 +16,23 @@ const firebaseConfig = {
 
 // If environment variables are missing (likely local dev), 
 // you should create a .env file with VITE_FIREBASE_* variables.
-if (!firebaseConfig.apiKey) {
+let app;
+let auth: any;
+let db: any;
+let storage: any;
+
+if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "undefined") {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+    storage = getStorage(app);
+  } catch (error) {
+    console.error("Firebase initialization failed:", error);
+  }
+} else {
   console.warn("Firebase configuration is missing! Please set environment variables (VITE_FIREBASE_API_KEY, etc.) in your environment or .env file.");
 }
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
-export const storage = getStorage(app);
-
+export { auth, db, storage };
 export default app;

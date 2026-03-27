@@ -26,53 +26,19 @@ const App: React.FC = () => {
   useEffect(() => {
     const initApp = async () => {
       try {
+        // If Firebase is not initialized, fallback to local JSON immediately
+        if (!db) {
+          console.warn('Firebase not initialized, loading from local JSON...');
+          await loadLocalData();
+          return;
+        }
+
         // Check if data exists in Firestore
         const settingsDoc = await getDoc(doc(db, 'settings', 'site'));
         
         if (!settingsDoc.exists()) {
           console.log('Firestore is empty, loading from local JSON...');
-          // Fetch from JSON
-          const [
-            settingsRes,
-            homepageRes,
-            teamsRes,
-            fixturesRes,
-            newsRes,
-            galleryRes,
-            staffRes,
-            missionVisionRes,
-          ] = await Promise.all([
-            fetch('/content/settings.json'),
-            fetch('/content/homepage.json'),
-            fetch('/content/teams.json'),
-            fetch('/content/fixtures.json'),
-            fetch('/content/newsData.json'),
-            fetch('/content/galleryData.json'),
-            fetch('/content/staffData.json'),
-            fetch('/content/missionVision.json'),
-          ]);
-
-          const siteSettings = await settingsRes.json();
-          const homePageHero = await homepageRes.json();
-          const teamsData = await teamsRes.json();
-          const fixturesData = await fixturesRes.json();
-          const newsData = await newsRes.json();
-          const galleryData = await galleryRes.json();
-          const staffData = await staffRes.json();
-          const missionVision = await missionVisionRes.json();
-
-          setCmsData({
-            siteSettings,
-            homePageHero,
-            teamData: teamsData.teams,
-            fixtures: fixturesData.fixtures,
-            newsData: newsData.articles,
-            galleryData: galleryData.images,
-            staffData: staffData.members,
-            pagesData: [],
-            missionVision,
-          });
-          setLoading(false);
+          await loadLocalData();
           return;
         }
 
@@ -83,9 +49,60 @@ const App: React.FC = () => {
         });
 
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-        setLoading(false);
+        console.error('App initialization error:', err);
+        // Try to fallback to local data on error
+        try {
+          await loadLocalData();
+        } catch (localErr) {
+          setError(err instanceof Error ? err.message : 'An unknown error occurred');
+          setLoading(false);
+        }
       }
+    };
+
+    const loadLocalData = async () => {
+      // Fetch from JSON
+      const [
+        settingsRes,
+        homepageRes,
+        teamsRes,
+        fixturesRes,
+        newsRes,
+        galleryRes,
+        staffRes,
+        missionVisionRes,
+      ] = await Promise.all([
+        fetch('/content/settings.json'),
+        fetch('/content/homepage.json'),
+        fetch('/content/teams.json'),
+        fetch('/content/fixtures.json'),
+        fetch('/content/newsData.json'),
+        fetch('/content/galleryData.json'),
+        fetch('/content/staffData.json'),
+        fetch('/content/missionVision.json'),
+      ]);
+
+      const siteSettings = await settingsRes.json();
+      const homePageHero = await homepageRes.json();
+      const teamsData = await teamsRes.json();
+      const fixturesData = await fixturesRes.json();
+      const newsData = await newsRes.json();
+      const galleryData = await galleryRes.json();
+      const staffData = await staffRes.json();
+      const missionVision = await missionVisionRes.json();
+
+      setCmsData({
+        siteSettings,
+        homePageHero,
+        teamData: teamsData.teams,
+        fixtures: fixturesData.fixtures,
+        newsData: newsData.articles,
+        galleryData: galleryData.images,
+        staffData: staffData.members,
+        pagesData: [],
+        missionVision,
+      });
+      setLoading(false);
     };
 
     initApp();
