@@ -3,8 +3,7 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
-// In Netlify, you should set these environment variables in the dashboard
-// to avoid "Exposed secrets detected" warnings.
+// Environment variables from Netlify/Vite
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -15,16 +14,18 @@ const firebaseConfig = {
   firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID
 };
 
-// Fallback to local config if environment variables are missing
-// This is done this way to prevent Netlify's scanner from seeing the keys in the bundle
-// if they are provided via environment variables.
+// If environment variables are missing (likely local dev), 
+// we try to use the local config file.
+// We use a safe check to avoid "Module not found" errors on Netlify.
 if (!firebaseConfig.apiKey) {
   try {
-    // @ts-ignore - This file might not exist in production/Netlify if ignored
-    const localConfig = await import('./firebase-applet-config.json');
-    Object.assign(firebaseConfig, localConfig.default);
+    // This is a workaround to allow local dev without env vars
+    // while not breaking the build on Netlify where the file is gitignored.
+    // @ts-ignore
+    const config = await import('./firebase-applet-config.json');
+    Object.assign(firebaseConfig, config.default || config);
   } catch (e) {
-    console.warn('Firebase configuration missing. Please set environment variables or provide firebase-applet-config.json');
+    console.error("Firebase configuration is missing! Please set environment variables in Netlify or provide firebase-applet-config.json locally.");
   }
 }
 
