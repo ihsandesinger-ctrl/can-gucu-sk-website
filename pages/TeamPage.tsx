@@ -1,5 +1,6 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
+import { User } from 'lucide-react';
 import type { Team, Fixture } from '../types';
 import PlayerCard from '../components/PlayerCard';
 import FixtureTable from '../components/FixtureTable';
@@ -45,16 +46,20 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
         <section className="mb-12">
           <h2 className="text-3xl font-bold text-gray-800 mb-6">Teknik Kadro</h2>
           <div className="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-6 max-w-sm">
-            {team.coach.imageUrl && (
+            {team.coach.imageUrl ? (
               <img 
-                className="h-24 w-24 rounded-full object-cover" 
+                className="h-24 w-24 rounded-full object-cover border-2 border-orange-100" 
                 src={team.coach.imageUrl} 
                 alt={team.coach.name} 
               />
+            ) : (
+              <div className="h-24 w-24 rounded-full bg-orange-50 flex items-center justify-center border-2 border-orange-100">
+                <User className="text-orange-300 w-12 h-12" />
+              </div>
             )}
             <div>
-              <p className="font-bold text-xl text-gray-900">{team.coach.name}</p>
-              <p className="text-md text-gray-600">{team.coach.role}</p>
+              <p className="font-bold text-xl text-gray-900">{team.coach.name || 'Antrenör Belirtilmedi'}</p>
+              <p className="text-md text-gray-600">{team.coach.role || 'Teknik Sorumlu'}</p>
             </div>
           </div>
         </section>

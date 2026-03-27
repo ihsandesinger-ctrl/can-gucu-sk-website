@@ -6,6 +6,7 @@ import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import TeamPage from './pages/TeamPage';
 import NewsPage from './pages/NewsPage';
+import NewsDetailPage from './pages/NewsDetailPage';
 import GalleryPage from './pages/GalleryPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
@@ -182,6 +183,7 @@ const Main: React.FC<MainProps> = ({ data }) => {
           />
 
           <Route path="/haberler" element={<NewsPage news={data.newsData} />} />
+          <Route path="/haber/:id" element={<NewsDetailPage news={data.newsData} />} />
           <Route path="/galeri" element={<GalleryPage images={data.galleryData} />} />
           <Route path="/hakkimizda" element={<AboutPage staff={data.staffData} content={data.missionVision} />} />
           <Route path="/iletisim" element={<ContactPage siteSettings={data.siteSettings}/>} />

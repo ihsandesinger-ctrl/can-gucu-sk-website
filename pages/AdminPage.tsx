@@ -267,10 +267,10 @@ const AdminPage: React.FC = () => {
       
       console.log(`[STORAGE] Attempting upload: ${file.name} to ${path}`);
 
-      // Use a shorter timeout (7s) for the upload to fail fast and try fallback
+      // Use a longer timeout (15s) for the upload to be more patient with slow connections
       const uploadPromise = uploadBytes(storageRef, finalFile);
       const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('timeout')), 7000)
+        setTimeout(() => reject(new Error('timeout')), 15000)
       );
 
       try {
@@ -282,16 +282,16 @@ const AdminPage: React.FC = () => {
       } catch (uploadErr: any) {
         console.warn('[STORAGE] Storage upload failed or timed out, trying Base64 fallback:', uploadErr.message);
         
-        // Fallback to Base64 if file is small enough (< 850KB)
+        // Fallback to Base64 if file is small enough (< 900KB)
         // Firestore has a 1MB limit per document, so Base64 must be smaller.
-        if (finalFile.size < 850 * 1024) {
+        if (finalFile.size < 900 * 1024) {
           showMessage('info', 'Bulut depolama yavaş, alternatif yöntem kullanılıyor...');
           const b64 = await convertToBase64(finalFile);
           showMessage('success', 'Görsel başarıyla yüklendi (Alternatif)');
           return b64;
         } else {
           console.error('[STORAGE] File too large for Base64 fallback');
-          throw new Error('Görsel yüklenemedi. Bulut depolama hatası ve dosya çok büyük. Lütfen daha küçük bir dosya deneyin.');
+          throw new Error('Görsel yüklenemedi. Bulut depolama hatası ve dosya çok büyük. Lütfen daha küçük bir dosya deneyin veya internet bağlantınızı kontrol edin.');
         }
       }
     } catch (err) {
@@ -1508,8 +1508,8 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
             <input type="text" placeholder="Slug (Örn: u19)" value={editing.slug} onChange={e => setEditing({...editing, slug: e.target.value})} className="w-full p-2 border rounded-lg" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <input type="text" placeholder="Teknik Sorumlu Adı" value={editing.coach?.name} onChange={e => setEditing({...editing, coach: { ...editing.coach, name: e.target.value }})} className="w-full p-2 border rounded-lg" />
-            <input type="text" placeholder="Teknik Sorumlu Görevi" value={editing.coach?.role} onChange={e => setEditing({...editing, coach: { ...editing.coach, role: e.target.value }})} className="w-full p-2 border rounded-lg" />
+            <input type="text" placeholder="Teknik Sorumlu Adı" value={editing.coach?.name || ''} onChange={e => setEditing({...editing, coach: { ...(editing.coach || {}), name: e.target.value }})} className="w-full p-2 border rounded-lg" />
+            <input type="text" placeholder="Teknik Sorumlu Görevi" value={editing.coach?.role || ''} onChange={e => setEditing({...editing, coach: { ...(editing.coach || {}), role: e.target.value }})} className="w-full p-2 border rounded-lg" />
           </div>
           
           <ImageUpload 
@@ -1517,7 +1517,7 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
             currentUrl={editing.coach?.imageUrl}
             path="coaches"
             handleUpload={handleUpload}
-            onUpload={(url: string) => setEditing({ ...editing, coach: { ...editing.coach, imageUrl: url } })}
+            onUpload={(url: string) => setEditing({ ...editing, coach: { ...(editing.coach || {}), imageUrl: url } })}
           />
           
           <ImageUpload 
