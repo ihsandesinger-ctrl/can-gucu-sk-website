@@ -15,18 +15,9 @@ const firebaseConfig = {
 };
 
 // If environment variables are missing (likely local dev), 
-// we try to use the local config file.
-// We use a safe check to avoid "Module not found" errors on Netlify.
+// you should create a .env file with VITE_FIREBASE_* variables.
 if (!firebaseConfig.apiKey) {
-  try {
-    // This is a workaround to allow local dev without env vars
-    // while not breaking the build on Netlify where the file is gitignored.
-    // @ts-ignore
-    const config = await import('./firebase-applet-config.json');
-    Object.assign(firebaseConfig, config.default || config);
-  } catch (e) {
-    console.error("Firebase configuration is missing! Please set environment variables in Netlify or provide firebase-applet-config.json locally.");
-  }
+  console.warn("Firebase configuration is missing! Please set environment variables (VITE_FIREBASE_API_KEY, etc.) in your environment or .env file.");
 }
 
 const app = initializeApp(firebaseConfig);

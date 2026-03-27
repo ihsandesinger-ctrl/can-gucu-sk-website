@@ -342,9 +342,17 @@ const AdminPage: React.FC = () => {
     } catch (err: any) {
       console.error('Login failed:', err);
       let errorMsg = 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.';
+      
       if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         errorMsg = 'E-posta veya şifre hatalı.';
+      } else if (err.code === 'auth/unauthorized-domain') {
+        errorMsg = 'Bu alan adı (domain) Firebase üzerinde yetkilendirilmemiş. Lütfen Firebase Console > Authentication > Settings > Authorized domains kısmına "cangucu.org" ve "netlify.app" adreslerini ekleyin.';
+      } else if (err.code === 'auth/network-request-failed') {
+        errorMsg = 'Ağ hatası oluştu. Lütfen internet bağlantınızı ve Firebase yapılandırmanızı kontrol edin.';
+      } else {
+        errorMsg = `Hata: ${err.message} (${err.code})`;
       }
+      
       alert(errorMsg);
     } finally {
       setIsLoggingIn(false);
