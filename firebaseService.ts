@@ -70,13 +70,28 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
 
   const checkAndEmit = (collectionName: string) => {
     loadedCollections.add(collectionName);
+    // Emit data if all collections have been attempted (either success or error)
     if (loadedCollections.size === totalCollections) {
-      callback(data as CMSData);
+      // If critical data is missing (due to errors), mark as fallback
+      const isFallback = !data.siteSettings || !data.homePageHero || !data.missionVision;
+      callback({ ...data, isFallback } as CMSData);
     }
+  };
+
+  const handleError = (err: any, collectionName: string, path: string) => {
+    console.error(`Error loading ${collectionName}:`, err);
+    // Still mark as "loaded" so we don't get stuck, but we might have missing data
+    checkAndEmit(collectionName);
+    // We don't throw here to avoid breaking the entire subscription process
   };
 
   // Settings
   unsubscribes.push(onSnapshot(doc(db, 'settings', 'site'), (snapshot) => {
+    if (!snapshot.exists()) {
+      console.warn('Settings document does not exist in Firestore');
+      checkAndEmit('settings');
+      return;
+    }
     const docData = snapshot.data();
     data.siteSettings = {
       logo: '',
@@ -90,7 +105,7 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
       ...docData
     } as SiteSettings;
     checkAndEmit('settings');
-  }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/site')));
+  }, (err) => handleError(err, 'settings', 'settings/site')));
 
   // Homepage
   unsubscribes.push(onSnapshot(doc(db, 'homepage', 'hero'), (snapshot) => {
@@ -103,37 +118,37 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
       ...docData
     } as HomePageHero;
     checkAndEmit('homepage');
-  }, (err) => handleFirestoreError(err, OperationType.GET, 'homepage/hero')));
+  }, (err) => handleError(err, 'homepage', 'homepage/hero')));
 
   // News
   unsubscribes.push(onSnapshot(query(collection(db, 'news'), orderBy('order', 'desc')), (snapshot) => {
     data.newsData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
     checkAndEmit('news');
-  }, (err) => handleFirestoreError(err, OperationType.LIST, 'news')));
+  }, (err) => handleError(err, 'news', 'news')));
 
   // Teams
   unsubscribes.push(onSnapshot(collection(db, 'teams'), (snapshot) => {
     data.teamData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
     checkAndEmit('teams');
-  }, (err) => handleFirestoreError(err, OperationType.LIST, 'teams')));
+  }, (err) => handleError(err, 'teams', 'teams')));
 
   // Fixtures
   unsubscribes.push(onSnapshot(query(collection(db, 'fixtures'), orderBy('order', 'desc')), (snapshot) => {
     data.fixtures = snapshot.docs.map(d => d.data()) as any;
     checkAndEmit('fixtures');
-  }, (err) => handleFirestoreError(err, OperationType.LIST, 'fixtures')));
+  }, (err) => handleError(err, 'fixtures', 'fixtures')));
 
   // Gallery
   unsubscribes.push(onSnapshot(query(collection(db, 'gallery'), orderBy('order', 'desc')), (snapshot) => {
     data.galleryData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
     checkAndEmit('gallery');
-  }, (err) => handleFirestoreError(err, OperationType.LIST, 'gallery')));
+  }, (err) => handleError(err, 'gallery', 'gallery')));
 
   // Staff
   unsubscribes.push(onSnapshot(query(collection(db, 'staff'), orderBy('order', 'desc')), (snapshot) => {
     data.staffData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
     checkAndEmit('staff');
-  }, (err) => handleFirestoreError(err, OperationType.LIST, 'staff')));
+  }, (err) => handleError(err, 'staff', 'staff')));
 
   // Mission/Vision
   unsubscribes.push(onSnapshot(doc(db, 'missionVision', 'content'), (snapshot) => {
@@ -144,13 +159,13 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
       ...docData
     } as MissionVision;
     checkAndEmit('missionVision');
-  }, (err) => handleFirestoreError(err, OperationType.GET, 'missionVision/content')));
+  }, (err) => handleError(err, 'missionVision', 'missionVision/content')));
 
   // Pages
   unsubscribes.push(onSnapshot(collection(db, 'pages'), (snapshot) => {
     data.pagesData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
     checkAndEmit('pages');
-  }, (err) => handleFirestoreError(err, OperationType.LIST, 'pages')));
+  }, (err) => handleError(err, 'pages', 'pages')));
 
   return () => unsubscribes.forEach(unsub => unsub());
 };

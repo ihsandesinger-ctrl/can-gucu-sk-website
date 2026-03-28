@@ -27,6 +27,17 @@ if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "undefined") {
     auth = getAuth(app);
     db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
     storage = getStorage(app);
+
+    // Enable offline persistence
+    import('firebase/firestore').then(({ enableIndexedDbPersistence }) => {
+      enableIndexedDbPersistence(db).catch((err) => {
+        if (err.code === 'failed-precondition') {
+          console.warn('Firestore persistence failed: Multiple tabs open');
+        } else if (err.code === 'unimplemented') {
+          console.warn('Firestore persistence failed: Browser not supported');
+        }
+      });
+    });
   } catch (error) {
     console.error("Firebase initialization failed:", error);
   }

@@ -345,12 +345,21 @@ const AdminPage: React.FC = () => {
   useEffect(() => {
     let unsubscribeAdmins: (() => void) | undefined;
 
+    // Set a timeout for loading
+    const loadingTimeout = setTimeout(() => {
+      if (loading) {
+        console.warn('AdminPage loading timed out. Check Firebase connection.');
+        // We don't force loading to false here, but we could show a retry button
+      }
+    }, 10000);
+
     const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
       setUser(u);
       if (u) {
         subscribeToCMSData((data) => {
           setCmsData(data);
           setLoading(false);
+          clearTimeout(loadingTimeout);
         });
         
         unsubscribeAdmins = subscribeToAdmins((adminList) => {
@@ -358,14 +367,21 @@ const AdminPage: React.FC = () => {
         });
       } else {
         setLoading(false);
+        clearTimeout(loadingTimeout);
       }
+    }, (err) => {
+      console.error('Auth state change error:', err);
+      setLoading(false);
+      clearTimeout(loadingTimeout);
+      showMessage('error', 'Oturum bilgisi alınamadı. Lütfen internet bağlantınızı kontrol edin.');
     });
 
     return () => {
       unsubscribeAuth();
       if (unsubscribeAdmins) unsubscribeAdmins();
+      clearTimeout(loadingTimeout);
     };
-  }, []);
+  }, [loading]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -432,7 +448,11 @@ const AdminPage: React.FC = () => {
   };
 
   const handleMigration = async () => {
-    if (!confirm('Mevcut JSON verilerini veritabanına aktarmak istediğinize emin misiniz? Bu işlem mevcut veritabanı verilerinin üzerine yazabilir.')) return;
+    if (!isSuperAdmin) {
+      alert('Bu işlemi sadece Süper Admin yapabilir.');
+      return;
+    }
+    if (!confirm('SİTEYİ FABRİKA AYARLARINA DÖNDÜRMEK İSTEDİĞİNİZE EMİN MİSİNİZ? Bu işlem veritabanındaki TÜM verilerinizi (haberler, logolar, fikstürler vb.) kalıcı olarak silecek ve yerlerine boş varsayılan verileri yükleyecektir.')) return;
     
     setIsMigrating(true);
     try {
@@ -495,7 +515,19 @@ const AdminPage: React.FC = () => {
   };
 
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen">Yükleniyor...</div>;
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+      <div className="w-12 h-12 border-4 border-[var(--primary-color)] border-t-transparent rounded-full animate-spin mb-4"></div>
+      <p className="text-gray-600 font-medium">Yönetim Paneli Yükleniyor...</p>
+      <p className="text-xs text-gray-400 mt-2">Lütfen bekleyin, veritabanına bağlanılıyor.</p>
+      <button 
+        onClick={() => window.location.reload()} 
+        className="mt-8 text-[var(--primary-color)] hover:underline text-sm font-bold"
+      >
+        Yeniden Dene
+      </button>
+    </div>
+  );
 
   if (!user) {
     return (
@@ -542,6 +574,7 @@ const AdminPage: React.FC = () => {
 
   // Check if user is admin
   const isAdmin = user.email?.toLowerCase() === 'ihsandurgut1@gmail.com' || admins.some(a => a.uid === user.uid);
+  const isSuperAdmin = user.email?.toLowerCase() === 'ihsandurgut1@gmail.com';
   
   if (!isAdmin) {
     return (
@@ -565,7 +598,14 @@ const AdminPage: React.FC = () => {
           <h2 className="text-xl font-bold text-[var(--primary-color)]">ÇANGÜCÜ SK</h2>
           <p className="text-xs text-gray-500">Yönetim Paneli</p>
         </div>
-        <nav className="p-4 space-y-2">
+        
+        {cmsData.isFallback && (
+          <div className="px-4 py-2 mx-4 mb-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-[10px] text-red-600 font-bold uppercase">Bağlantı Uyarısı</p>
+            <p className="text-[9px] text-red-500 leading-tight">Veritabanına bağlanılamadı. Şu an gördüğünüz veriler varsayılan verilerdir. Lütfen internetinizi kontrol edip sayfayı yenileyin.</p>
+          </div>
+        )}
+        <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto max-h-[calc(100vh-180px)]">
           <TabButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Settings size={20}/>} label="Genel Ayarlar" />
           <TabButton active={activeTab === 'homepage'} onClick={() => setActiveTab('homepage')} icon={<Layout size={20}/>} label="Ana Sayfa" />
           <TabButton active={activeTab === 'news'} onClick={() => setActiveTab('news')} icon={<Newspaper size={20}/>} label="Haberler" />
@@ -577,17 +617,22 @@ const AdminPage: React.FC = () => {
           <TabButton active={activeTab === 'about'} onClick={() => setActiveTab('about')} icon={<Target size={20}/>} label="Misyon & Vizyon" />
           <TabButton active={activeTab === 'users'} onClick={() => setActiveTab('users')} icon={<ShieldCheck size={20}/>} label="Yetkili Yönetimi" />
           
-          <div className="pt-4 mt-4 border-t">
-            <button 
-              onClick={handleMigration}
-              disabled={isMigrating}
-              className="flex items-center gap-3 w-full p-3 rounded-xl transition-all text-orange-600 hover:bg-orange-50 disabled:opacity-50"
-            >
-              <Database size={20}/>
-              <span className="font-medium">{isMigrating ? 'Aktarılıyor...' : 'Verileri İçe Aktar'}</span>
-            </button>
-            <p className="text-[10px] text-gray-400 px-3 mt-1">JSON dosyalarındaki verileri veritabanına taşır.</p>
-          </div>
+          {isSuperAdmin && (
+            <div className="pt-4 mt-4 border-t">
+              <div className="px-3 py-2 mb-2 bg-orange-50 rounded-lg border border-orange-100">
+                <p className="text-[10px] text-orange-800 font-bold uppercase mb-1">Süper Admin / Tehlikeli Bölge</p>
+                <button 
+                  onClick={handleMigration}
+                  disabled={isMigrating}
+                  className="flex items-center gap-3 w-full p-2 rounded-lg transition-all text-orange-600 hover:bg-orange-100 disabled:opacity-50"
+                >
+                  <Database size={18}/>
+                  <span className="font-bold text-xs">{isMigrating ? 'Aktarılıyor...' : 'Fabrika Ayarlarına Dön'}</span>
+                </button>
+                <p className="text-[9px] text-orange-600 mt-1 leading-tight">DİKKAT: Veritabanındaki tüm verileri siler ve JSON dosyalarındaki varsayılan verileri yükler. Bu butona basılmadığı sürece site asla sıfırlanmaz.</p>
+              </div>
+            </div>
+          )}
         </nav>
         <div className="absolute bottom-0 w-64 p-4 border-t">
           <button onClick={handleLogout} className="flex items-center gap-2 text-red-600 hover:bg-red-50 w-full p-2 rounded-lg transition-all">
@@ -617,31 +662,38 @@ const AdminPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="p-4 md:p-8">
-          {message && (
-            <div className={`fixed top-4 right-4 p-4 rounded-xl shadow-lg z-50 animate-bounce ${
-              message.type === 'success' ? 'bg-green-500' : 
-              message.type === 'info' ? 'bg-blue-500' : 'bg-red-500'
-            } text-white`}>
-              {message.text}
+          {cmsData.isFallback && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-4 text-red-700">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
+                <ShieldCheck className="text-red-600" size={24} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold">Veritabanı Bağlantısı Yok</h3>
+                <p className="text-sm">Şu an veritabanına bağlanılamıyor. Gördüğünüz veriler yerel yedek verilerdir. Kayıt işlemi devre dışı bırakılmıştır.</p>
+              </div>
+              <button 
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-all"
+              >
+                Yeniden Bağlan
+              </button>
             </div>
           )}
 
           <div className="max-w-4xl mx-auto">
-            {activeTab === 'settings' && <SettingsTab data={cmsData.siteSettings} onSave={async (d) => { try { await updateSettings(d); showMessage('success', 'Ayarlar kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'homepage' && <HomepageTab data={cmsData.homePageHero} onSave={async (d) => { try { await updateHomepage(d); showMessage('success', 'Ana sayfa güncellendi'); } catch(e) { showMessage('error', 'Güncellenemedi'); throw e; } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'news' && <NewsTab data={cmsData.newsData} onSave={async (d, id) => { try { await saveNewsArticle(d, id); showMessage('success', 'Haber kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteNewsArticle(id); showMessage('success', 'Haber silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('news', cmsData.newsData, idx, dir)} handleUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'pages' && <PagesTab data={cmsData.pagesData} onSave={async (d, id) => { try { await savePage(d, id); showMessage('success', 'Sayfa kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deletePage(id); showMessage('success', 'Sayfa silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} showMessage={showMessage} />}
-            {activeTab === 'teams' && <TeamsTab data={cmsData.teamData} onSave={async (d, id) => { try { await saveTeam(d, id); showMessage('success', 'Takım kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteTeam(id); showMessage('success', 'Takım silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'fixtures' && <FixturesTab data={cmsData.fixtures} teams={cmsData.teamData} onSave={async (d) => { try { await saveFixture(d); showMessage('success', 'Fikstür kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onReorder={(idx, dir) => handleReorder('fixtures', cmsData.fixtures, idx, dir)} handleUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'gallery' && <GalleryTab data={cmsData.galleryData} onSave={async (d) => { try { await saveGalleryImage(d); showMessage('success', 'Görsel eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteGalleryImage(id); showMessage('success', 'Görsel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('gallery', cmsData.galleryData, idx, dir)} handleUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'staff' && <StaffTab data={cmsData.staffData} onSave={async (d, id) => { try { await saveStaffMember(d, id); showMessage('success', 'Personel kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteStaffMember(id); showMessage('success', 'Personel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('staff', cmsData.staffData, idx, dir)} handleUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'about' && <AboutTab data={cmsData.missionVision} onSave={async (d) => { try { await updateMissionVision(d); showMessage('success', 'Kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} />}
-            {activeTab === 'users' && <UsersTab admins={admins} currentUser={user} onAdd={async (e, u) => { try { await addAdmin(e, u); showMessage('success', 'Yetkili eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); } }} onRemove={async (u) => { if(confirm('Bu yetkiliyi kaldırmak istediğinize emin misiniz?')) { try { await removeAdmin(u); showMessage('success', 'Yetkili kaldırıldı'); } catch(e) { showMessage('error', 'Kaldırılamadı'); } } }} />}
+            {activeTab === 'settings' && <SettingsTab data={cmsData.siteSettings} onSave={async (d) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await updateSettings(d); showMessage('success', 'Ayarlar kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} />}
+            {activeTab === 'homepage' && <HomepageTab data={cmsData.homePageHero} onSave={async (d) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await updateHomepage(d); showMessage('success', 'Ana sayfa güncellendi'); } catch(e) { showMessage('error', 'Güncellenemedi'); throw e; } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} />}
+            {activeTab === 'news' && <NewsTab data={cmsData.newsData} onSave={async (d, id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveNewsArticle(d, id); showMessage('success', 'Haber kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } if(confirm('Emin misiniz?')) { try { await deleteNewsArticle(id); showMessage('success', 'Haber silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Sıralama değiştirilemez.'); return; } handleReorder('news', cmsData.newsData, idx, dir); }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} />}
+            {activeTab === 'pages' && <PagesTab data={cmsData.pagesData} onSave={async (d, id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await savePage(d, id); showMessage('success', 'Sayfa kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } if(confirm('Emin misiniz?')) { try { await deletePage(id); showMessage('success', 'Sayfa silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} showMessage={showMessage} isFallback={cmsData.isFallback} />}
+            {activeTab === 'teams' && <TeamsTab data={cmsData.teamData} onSave={async (d, id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveTeam(d, id); showMessage('success', 'Takım kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } if(confirm('Emin misiniz?')) { try { await deleteTeam(id); showMessage('success', 'Takım silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} />}
+            {activeTab === 'fixtures' && <FixturesTab data={cmsData.fixtures} teams={cmsData.teamData} onSave={async (d) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveFixture(d); showMessage('success', 'Fikstür kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onReorder={(idx, dir) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Sıralama değiştirilemez.'); return; } handleReorder('fixtures', cmsData.fixtures, idx, dir); }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} />}
+            {activeTab === 'gallery' && <GalleryTab data={cmsData.galleryData} onSave={async (d) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveGalleryImage(d); showMessage('success', 'Görsel eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } if(confirm('Emin misiniz?')) { try { await deleteGalleryImage(id); showMessage('success', 'Görsel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Sıralama değiştirilemez.'); return; } handleReorder('gallery', cmsData.galleryData, idx, dir); }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} />}
+            {activeTab === 'staff' && <StaffTab data={cmsData.staffData} onSave={async (d, id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveStaffMember(d, id); showMessage('success', 'Personel kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } if(confirm('Emin misiniz?')) { try { await deleteStaffMember(id); showMessage('success', 'Personel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Sıralama değiştirilemez.'); return; } handleReorder('staff', cmsData.staffData, idx, dir); }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} />}
+            {activeTab === 'about' && <AboutTab data={cmsData.missionVision} onSave={async (d) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await updateMissionVision(d); showMessage('success', 'Kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} isFallback={cmsData.isFallback} />}
+            {activeTab === 'users' && <UsersTab admins={admins} currentUser={user} onAdd={async (e, u) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Yetkili eklenemez.'); return; } try { await addAdmin(e, u); showMessage('success', 'Yetkili eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); } }} onRemove={async (u) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Yetkili kaldırılamaz.'); return; } if(confirm('Bu yetkiliyi kaldırmak istediğinize emin misiniz?')) { try { await removeAdmin(u); showMessage('success', 'Yetkili kaldırıldı'); } catch(e) { showMessage('error', 'Kaldırılamadı'); } } }} isFallback={cmsData.isFallback} />}
           </div>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
   );
 };
 
@@ -667,12 +719,13 @@ const MobileTabButton: React.FC<{ active: boolean, onClick: () => void, icon: Re
 
 // --- Tab Components (Simplified for brevity, but functional) ---
 
-const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any }> = ({ data, onSave, handleUpload, ImageUpload }) => {
+const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any, isFallback?: boolean }> = ({ data, onSave, handleUpload, ImageUpload, isFallback }) => {
   const [form, setForm] = useState(data || {
+    siteTitle: 'Çangücü SK',
+    logo: '',
     address: '',
     email: '',
     phone: '',
-    logo: '',
     socialMedia: { facebook: '', instagram: '', twitter: '', youtube: '' },
     maintenanceMode: false,
     navigation: [],
@@ -700,6 +753,10 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
   if (!data && !form) return <div>Yükleniyor...</div>;
 
   const handleSave = async () => {
+    if (isFallback) {
+      alert('Veritabanı bağlantısı yok. Değişiklikler kaydedilemez.');
+      return;
+    }
     setIsSaving(true);
     try {
       await onSave(form);
@@ -957,7 +1014,11 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
           </div>
         </div>
 
-        <button onClick={() => onSave(form)} className="bg-[var(--primary-color)] text-white px-8 py-3 rounded-xl flex items-center gap-2 font-bold shadow-lg hover:opacity-90 transition-all">
+        <button 
+          onClick={handleSave} 
+          disabled={isFallback}
+          className="bg-[var(--primary-color)] text-white px-8 py-3 rounded-xl flex items-center gap-2 font-bold shadow-lg hover:opacity-90 transition-all disabled:opacity-50"
+        >
           <Save size={20}/> Ayarları Kaydet
         </button>
       </div>
@@ -965,13 +1026,17 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
   );
 };
 
-const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload }) => {
+const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload, isFallback }) => {
   const [editing, setEditing] = useState<Partial<NewsArticle> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const newsList = data || [];
 
   const handleSave = async () => {
     if (!editing) return;
+    if (isFallback) {
+      alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
+      return;
+    }
     setIsSaving(true);
     try {
       await onSave(editing, editing.id?.toString());
@@ -1027,7 +1092,7 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
           <div className="flex gap-2">
             <button 
               onClick={handleSave} 
-              disabled={isSaving}
+              disabled={isSaving || isFallback}
               className="bg-green-600 text-white px-6 py-2 rounded-lg disabled:opacity-50"
             >
               {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
@@ -1075,13 +1140,17 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
 
 // --- Other tabs follow similar pattern... I'll implement a few more key ones ---
 
-const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>, id?: string) => void, onDelete: (id: string) => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any, showMessage: any }> = ({ data, onSave, onDelete, handleUpload, ImageUpload, showMessage }) => {
+const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>, id?: string) => void, onDelete: (id: string) => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any, showMessage: any, isFallback: boolean }> = ({ data, onSave, onDelete, handleUpload, ImageUpload, showMessage, isFallback }) => {
   const [editing, setEditing] = useState<Partial<DynamicPage> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const pagesList = data || [];
 
   const handleSave = async () => {
     if (!editing) return;
+    if (isFallback) {
+      alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
+      return;
+    }
     setIsSaving(true);
     try {
       await onSave(editing, editing.id);
@@ -1253,7 +1322,7 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
           <div className="flex gap-2 pt-4 border-t">
             <button 
               onClick={handleSave} 
-              disabled={isSaving}
+              disabled={isSaving || isFallback}
               className="bg-emerald-600 text-white px-8 py-2 rounded-lg font-bold shadow-md disabled:opacity-50 flex items-center gap-2"
             >
               {isSaving ? 'Kaydediliyor...' : <><Save size={18}/> Sayfayı Yayınla</>}
@@ -1309,13 +1378,17 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
   );
 };
 
-const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryItem>) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload }) => {
+const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryItem>) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload, isFallback }) => {
   const [newImage, setNewImage] = useState({ imageUrl: '', title: '' });
   const [isSaving, setIsSaving] = useState(false);
   const galleryList = data || [];
 
   const handleSave = async () => {
     if (!newImage.imageUrl) return;
+    if (isFallback) {
+      alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
+      return;
+    }
     setIsSaving(true);
     try {
       await onSave(newImage);
@@ -1331,7 +1404,7 @@ const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryIte
         <h2 className="text-2xl font-bold">Galeri</h2>
         <button 
           onClick={handleSave} 
-          disabled={!newImage.imageUrl || isSaving}
+          disabled={!newImage.imageUrl || isSaving || isFallback}
           className="bg-[var(--primary-color)] text-white px-8 py-3 w-full sm:w-auto rounded-xl font-bold disabled:opacity-50 shadow-lg transition-all hover:scale-105"
         >
           {isSaving ? 'Ekleniyor...' : 'Galeriye Ekle'}
@@ -1392,7 +1465,7 @@ const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryIte
   );
 };
 
-const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any }> = ({ data, onSave, handleUpload, ImageUpload }) => {
+const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean }> = ({ data, onSave, handleUpload, ImageUpload, isFallback }) => {
   const [form, setForm] = useState(data || {
     heroImage: '',
     heroTitle: '',
@@ -1408,6 +1481,10 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
   if (!data && !form) return <div>Yükleniyor...</div>;
 
   const handleSave = async () => {
+    if (isFallback) {
+      alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
+      return;
+    }
     setIsSaving(true);
     try {
       await onSave(form);
@@ -1436,7 +1513,7 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
         <h2 className="text-2xl font-bold">Ana Sayfa Ayarları</h2>
         <button 
           onClick={handleSave} 
-          disabled={isSaving}
+          disabled={isSaving || isFallback}
           className="bg-[var(--primary-color)] text-white px-8 py-3 w-full sm:w-auto rounded-xl font-bold shadow-lg hover:opacity-90 transition-all disabled:opacity-50"
         >
           {isSaving ? 'Güncelleniyor...' : 'Ana Sayfayı Güncelle'}
@@ -1548,13 +1625,17 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
   );
 };
 
-const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string) => void, onDelete: (id: string) => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, handleUpload, ImageUpload }) => {
+const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string) => void, onDelete: (id: string) => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean }> = ({ data, onSave, onDelete, handleUpload, ImageUpload, isFallback }) => {
   const [editing, setEditing] = useState<any | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const teams = data || [];
 
   const handleSave = async () => {
     if (!editing) return;
+    if (isFallback) {
+      alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
+      return;
+    }
     setIsSaving(true);
     try {
       await onSave(editing, editing.id?.toString());
@@ -1683,7 +1764,7 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
           <div className="flex gap-2">
             <button 
               onClick={handleSave} 
-              disabled={isSaving}
+              disabled={isSaving || isFallback}
               className="bg-green-600 text-white px-6 py-2 rounded-lg disabled:opacity-50"
             >
               {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
@@ -1728,14 +1809,19 @@ const FixturesTab: React.FC<{
   onSave: (d: Fixture) => void, 
   onReorder: (idx: number, dir: 'up' | 'down') => void,
   handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>,
-  ImageUpload: any
-}> = ({ data, teams, onSave, onReorder, handleUpload, ImageUpload }) => {
+  ImageUpload: any,
+  isFallback: boolean
+}> = ({ data, teams, onSave, onReorder, handleUpload, ImageUpload, isFallback }) => {
   const [editing, setEditing] = useState<any | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const fixtures = data || [];
 
   const handleSave = async () => {
     if (!editing) return;
+    if (isFallback) {
+      alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
+      return;
+    }
     setIsSaving(true);
     try {
       await onSave(editing as Fixture);
@@ -1858,7 +1944,7 @@ const FixturesTab: React.FC<{
           <div className="flex gap-2">
             <button 
               onClick={handleSave} 
-              disabled={isSaving}
+              disabled={isSaving || isFallback}
               className="bg-green-600 text-white px-6 py-2 rounded-lg disabled:opacity-50"
             >
               {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
@@ -1900,13 +1986,17 @@ const FixturesTab: React.FC<{
   );
 };
 
-const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload }) => {
+const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload, isFallback }) => {
   const [editing, setEditing] = useState<Partial<StaffMember> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const staff = data || [];
 
   const handleSave = async () => {
     if (!editing) return;
+    if (isFallback) {
+      alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
+      return;
+    }
     setIsSaving(true);
     try {
       await onSave(editing, editing.id?.toString());
@@ -1943,7 +2033,7 @@ const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>
           <div className="flex gap-2">
             <button 
               onClick={handleSave} 
-              disabled={isSaving}
+              disabled={isSaving || isFallback}
               className="bg-green-600 text-white px-6 py-2 rounded-lg disabled:opacity-50"
             >
               {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
@@ -1992,17 +2082,32 @@ const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>
   );
 };
 
-const AboutTab: React.FC<{ data: MissionVision, onSave: (d: MissionVision) => void }> = ({ data, onSave }) => {
+const AboutTab: React.FC<{ data: MissionVision, onSave: (d: MissionVision) => void, isFallback: boolean }> = ({ data, onSave, isFallback }) => {
   const [form, setForm] = useState(data || { mission: '', vision: '' });
 
   useEffect(() => {
     if (data) setForm(data);
   }, [data]);
+
+  const handleSave = () => {
+    if (isFallback) {
+      alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
+      return;
+    }
+    onSave(form);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-bold">Misyon & Vizyon</h2>
-        <button onClick={() => onSave(form)} className="bg-[var(--primary-color)] text-white px-8 py-3 w-full sm:w-auto rounded-xl font-bold shadow-lg transition-all hover:scale-105">Kaydet</button>
+        <button 
+          onClick={handleSave} 
+          disabled={isFallback}
+          className="bg-[var(--primary-color)] text-white px-8 py-3 w-full sm:w-auto rounded-xl font-bold shadow-lg transition-all hover:scale-105 disabled:opacity-50"
+        >
+          Kaydet
+        </button>
       </div>
       <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm space-y-4">
         <div>
@@ -2018,7 +2123,7 @@ const AboutTab: React.FC<{ data: MissionVision, onSave: (d: MissionVision) => vo
   );
 };
 
-const UsersTab: React.FC<{ admins: any[], currentUser: any, onAdd: (email: string, uid: string) => void, onRemove: (uid: string) => void }> = ({ admins, currentUser, onAdd, onRemove }) => {
+const UsersTab: React.FC<{ admins: any[], currentUser: any, onAdd: (email: string, uid: string) => void, onRemove: (uid: string) => void, isFallback: boolean }> = ({ admins, currentUser, onAdd, onRemove, isFallback }) => {
   const [newAdmin, setNewAdmin] = useState({ email: '', uid: '' });
 
   const copyToClipboard = (text: string) => {
@@ -2071,8 +2176,12 @@ const UsersTab: React.FC<{ admins: any[], currentUser: any, onAdd: (email: strin
           />
         </div>
         <button 
-          onClick={() => { if(newAdmin.email && newAdmin.uid) { onAdd(newAdmin.email, newAdmin.uid); setNewAdmin({ email: '', uid: '' }); } }} 
-          className="bg-[var(--primary-color)] text-white px-6 py-2 rounded-lg flex items-center gap-2"
+          onClick={() => { 
+            if (isFallback) { alert('Veritabanı bağlantısı yok. Yetkili eklenemez.'); return; }
+            if(newAdmin.email && newAdmin.uid) { onAdd(newAdmin.email, newAdmin.uid); setNewAdmin({ email: '', uid: '' }); } 
+          }} 
+          disabled={isFallback}
+          className="bg-[var(--primary-color)] text-white px-6 py-2 rounded-lg flex items-center gap-2 disabled:opacity-50"
         >
           <Plus size={18}/> Yetkili Ekle
         </button>

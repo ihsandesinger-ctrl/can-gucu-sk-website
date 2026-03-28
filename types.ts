@@ -143,4 +143,5 @@ export interface CMSData {
   staffData: StaffMember[];
   pagesData: DynamicPage[];
   missionVision: MissionVision;
+  isFallback?: boolean;
 }

@@ -25,84 +25,111 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const initApp = async () => {
+      const timeout = setTimeout(() => {
+        if (loading && !error) {
+          setError('Veritabanı bağlantısı zaman aşımına uğradı. Lütfen internet bağlantınızı kontrol edin.');
+          setLoading(false);
+        }
+      }, 15000);
+
       try {
-        // If Firebase is not initialized, fallback to local JSON immediately
         if (!db) {
-          console.warn('Firebase not initialized, loading from local JSON...');
-          await loadLocalData();
+          console.warn('Firebase not initialized. Cannot load live site.');
+          setError('Veritabanı bağlantısı kurulamadı. Lütfen internetinizi kontrol edin.');
+          setLoading(false);
+          clearTimeout(timeout);
           return;
         }
 
-        // Check if data exists in Firestore
-        const settingsDoc = await getDoc(doc(db, 'settings', 'site'));
+        let settingsDoc;
+        try {
+          settingsDoc = await getDoc(doc(db, 'settings', 'site'));
+        } catch (getDocErr: any) {
+          console.error('Error fetching settings from Firestore:', getDocErr);
+          clearTimeout(timeout);
+          
+          if (getDocErr.code === 'permission-denied') {
+            setError('Veritabanına erişim yetkiniz yok. Lütfen giriş yapmayı deneyin.');
+          } else {
+            setError(`Veritabanı hatası: ${getDocErr.message}`);
+          }
+          setLoading(false);
+          return;
+        }
         
-        if (!settingsDoc.exists()) {
-          console.log('Firestore is empty, loading from local JSON...');
-          await loadLocalData();
+        if (!settingsDoc || !settingsDoc.exists()) {
+          console.log('Firestore is empty. Waiting for setup...');
+          // Don't load local data automatically anymore.
+          // This prevents the "factory reset" feeling.
+          setError('Site henüz kurulmamış veya veritabanı boş. Lütfen yönetici panelinden kurulum yapın.');
+          setLoading(false);
+          clearTimeout(timeout);
           return;
         }
 
-        // Subscribe to real-time updates from Firestore
         subscribeToCMSData((data) => {
+          clearTimeout(timeout);
           setCmsData(data);
           setLoading(false);
         });
 
-      } catch (err) {
+      } catch (err: any) {
         console.error('App initialization error:', err);
-        // Try to fallback to local data on error
-        try {
-          await loadLocalData();
-        } catch (localErr) {
-          setError(err instanceof Error ? err.message : 'An unknown error occurred');
-          setLoading(false);
-        }
+        clearTimeout(timeout);
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        setLoading(false);
       }
     };
 
-    const loadLocalData = async () => {
-      // Fetch from JSON
-      const [
-        settingsRes,
-        homepageRes,
-        teamsRes,
-        fixturesRes,
-        newsRes,
-        galleryRes,
-        staffRes,
-        missionVisionRes,
-      ] = await Promise.all([
-        fetch('/content/settings.json'),
-        fetch('/content/homepage.json'),
-        fetch('/content/teams.json'),
-        fetch('/content/fixtures.json'),
-        fetch('/content/newsData.json'),
-        fetch('/content/galleryData.json'),
-        fetch('/content/staffData.json'),
-        fetch('/content/missionVision.json'),
-      ]);
+    const loadLocalData = async (isFallback: boolean = false) => {
+      try {
+        const [
+          settingsRes,
+          homepageRes,
+          teamsRes,
+          fixturesRes,
+          newsRes,
+          galleryRes,
+          staffRes,
+          missionVisionRes,
+        ] = await Promise.all([
+          fetch('/content/settings.json'),
+          fetch('/content/homepage.json'),
+          fetch('/content/teams.json'),
+          fetch('/content/fixtures.json'),
+          fetch('/content/newsData.json'),
+          fetch('/content/galleryData.json'),
+          fetch('/content/staffData.json'),
+          fetch('/content/missionVision.json'),
+        ]);
 
-      const siteSettings = await settingsRes.json();
-      const homePageHero = await homepageRes.json();
-      const teamsData = await teamsRes.json();
-      const fixturesData = await fixturesRes.json();
-      const newsData = await newsRes.json();
-      const galleryData = await galleryRes.json();
-      const staffData = await staffRes.json();
-      const missionVision = await missionVisionRes.json();
+        const siteSettings = await settingsRes.json();
+        const homePageHero = await homepageRes.json();
+        const teamsData = await teamsRes.json();
+        const fixturesData = await fixturesRes.json();
+        const newsData = await newsRes.json();
+        const galleryData = await galleryRes.json();
+        const staffData = await staffRes.json();
+        const missionVision = await missionVisionRes.json();
 
-      setCmsData({
-        siteSettings,
-        homePageHero,
-        teamData: teamsData.teams,
-        fixtures: fixturesData.fixtures,
-        newsData: newsData.articles,
-        galleryData: galleryData.images,
-        staffData: staffData.members,
-        pagesData: [],
-        missionVision,
-      });
-      setLoading(false);
+        setCmsData({
+          siteSettings,
+          homePageHero,
+          teamData: teamsData.teams,
+          fixtures: fixturesData.fixtures,
+          newsData: newsData.articles,
+          galleryData: galleryData.images,
+          staffData: staffData.members,
+          pagesData: [],
+          missionVision,
+          isFallback
+        });
+        setLoading(false);
+      } catch (err) {
+        console.error('Local data load error:', err);
+        setError('Veriler yüklenemedi. Lütfen sayfayı yenileyin.');
+        setLoading(false);
+      }
     };
 
     initApp();
@@ -138,7 +165,20 @@ const App: React.FC = () => {
   }
 
   if (error || !cmsData) {
-    return <div className="flex items-center justify-center min-h-screen">İçerik yüklenemedi: {error}</div>;
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4 text-center">
+        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Bağlantı Hatası</h1>
+          <p className="text-gray-600 mb-8">{error || 'İçerik yüklenemedi.'}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="w-full bg-[var(--primary-color)] text-white py-3 rounded-xl font-semibold hover:opacity-90 transition-all"
+          >
+            Tekrar Dene
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (cmsData.siteSettings.maintenanceMode) {
