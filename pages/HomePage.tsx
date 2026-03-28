@@ -11,22 +11,40 @@ interface HomePageProps {
     news: NewsArticle[];
     gallery: GalleryItem[];
     siteLogo: string;
+    siteTitle: string;
 }
 
-const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news, gallery, siteLogo }) => {
+const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news, gallery, siteLogo, siteTitle }) => {
     
     // Find all upcoming matches from all fixtures
     const getUpcomingMatches = () => {
         const upcoming: any[] = [];
+        if (!fixtures || !Array.isArray(fixtures)) return upcoming;
+
         fixtures.forEach(fixture => {
-            fixture.matches.forEach(match => {
-                if (match.score === '-') {
-                    upcoming.push({ ...match, teamName: fixture.teamName });
-                }
-            });
+            if (fixture && Array.isArray(fixture.matches)) {
+                fixture.matches.forEach(match => {
+                    // Consider a match "upcoming" if it has no score or a placeholder score
+                    const score = match.score ? String(match.score).trim() : '';
+                    const isUpcoming = !score || 
+                                     score === '-' || 
+                                     score.toLowerCase() === 'v' ||
+                                     score.toLowerCase() === 'vs' ||
+                                     score.toLowerCase().includes('v');
+                    
+                    if (isUpcoming) {
+                        upcoming.push({ ...match, teamName: fixture.teamName });
+                    }
+                });
+            }
         });
+
         // Sort by date (YYYY-MM-DD)
-        return upcoming.sort((a, b) => a.date.localeCompare(b.date));
+        return upcoming.sort((a, b) => {
+            if (!a.date) return 1;
+            if (!b.date) return -1;
+            return a.date.localeCompare(b.date);
+        });
     }
 
     const upcomingMatches = getUpcomingMatches();
@@ -43,17 +61,23 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news,
                         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
                             <h2 className="text-3xl font-bold text-center text-white mb-10">SIRADAKİ MAÇLAR</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                {upcomingMatches.map((match, index) => (
-                                     <MatchCard 
-                                        key={index}
-                                        teamName={match.teamName}
-                                        date={match.date}
-                                        homeTeam={match.location === 'Ev' ? "ÇANGÜCÜ SK" : match.opponent}
-                                        awayTeam={match.location === 'Ev' ? match.opponent : "ÇANGÜCÜ SK"}
-                                        homeTeamLogo={match.location === 'Ev' ? siteLogo : undefined}
-                                        awayTeamLogo={match.location === 'Deplasman' ? siteLogo : undefined}
-                                    />
-                                ))}
+                                {upcomingMatches.length > 0 ? (
+                                    upcomingMatches.map((match, index) => (
+                                        <MatchCard 
+                                            key={index}
+                                            teamName={match.teamName}
+                                            date={match.date}
+                                            homeTeam={match.location === 'Ev' ? (siteTitle || "Kulübümüz") : match.opponent}
+                                            awayTeam={match.location === 'Ev' ? match.opponent : (siteTitle || "Kulübümüz")}
+                                            homeTeamLogo={match.location === 'Ev' ? siteLogo : undefined}
+                                            awayTeamLogo={match.location === 'Deplasman' ? siteLogo : undefined}
+                                        />
+                                    ))
+                                ) : (
+                                    <div className="col-span-full text-center text-white/70 py-10">
+                                        <p className="text-lg">Henüz planlanmış maç bulunmamaktadır.</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </section>
@@ -130,11 +154,15 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news,
                     style={{ backgroundImage: `url('${heroContent.heroImage}')` }}
                 ></div>
                 
-                {/* Main image - contained so nothing is missing */}
-                <div 
-                    className="absolute inset-0 bg-contain bg-center bg-no-repeat z-10"
-                    style={{ backgroundImage: `url('${heroContent.heroImage}')` }}
-                ></div>
+                {/* Main image - contained on mobile, cover on desktop */}
+                <div className="absolute inset-0 z-10">
+                    <img 
+                        src={heroContent.heroImage} 
+                        alt={heroContent.heroTitle}
+                        className="w-full h-full object-contain md:object-cover"
+                        referrerPolicy="no-referrer"
+                    />
+                </div>
 
                 {/* Overlay for text readability */}
                 <div className="absolute inset-0 bg-black/20 z-20"></div>

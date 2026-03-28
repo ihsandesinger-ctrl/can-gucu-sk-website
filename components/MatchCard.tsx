@@ -10,7 +10,14 @@ interface MatchCardProps {
     awayTeamLogo?: string;
 }
 
-const MatchCard: React.FC<MatchCardProps> = ({ teamName, date, homeTeam, awayTeam, homeTeamLogo, awayTeamLogo }) => {
+const MatchCard: React.FC<MatchCardProps> = ({ 
+    teamName, 
+    date, 
+    homeTeam = "Bilinmiyor", 
+    awayTeam = "Bilinmiyor", 
+    homeTeamLogo, 
+    awayTeamLogo 
+}) => {
     const formattedDate = React.useMemo(() => {
         try {
             return new Date(date).toLocaleDateString('tr-TR', {

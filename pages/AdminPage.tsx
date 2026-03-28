@@ -27,6 +27,8 @@ import type { CMSData, NewsArticle, Team, GalleryItem, StaffMember, SiteSettings
 import { subscribeToCMSData } from '../firebaseService';
 import { Plus, Trash2, Save, LogOut, Image as ImageIcon, Settings, Users, Newspaper, Layout, Target, Calendar, Database, ShieldCheck, Copy, ChevronUp, ChevronDown, FileText, User } from 'lucide-react';
 
+import ImageCropper from '../components/ImageCropper';
+
 // Helper to convert file to base64
 const convertToBase64 = (f: File | Blob): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -113,10 +115,14 @@ const ImageUpload: React.FC<{
   handleUpload: (file: File, path: string, isHero?: boolean) => Promise<string>,
   isLogo?: boolean,
   isHero?: boolean,
-  onQuickSave?: (url: string) => void
-}> = ({ onUpload, currentUrl, path, label, handleUpload, isLogo, isHero, onQuickSave }) => {
+  onQuickSave?: (url: string) => void,
+  cropAspect?: number,
+  circularCrop?: boolean
+}> = ({ onUpload, currentUrl, path, label, handleUpload, isLogo, isHero, onQuickSave, cropAspect, circularCrop }) => {
   const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState('');
+  const [cropImage, setCropImage] = useState<string | null>(null);
+  const [originalFile, setOriginalFile] = useState<File | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleRemove = (e: React.MouseEvent) => {
@@ -125,6 +131,45 @@ const ImageUpload: React.FC<{
     if (window.confirm(confirmMsg)) {
       onUpload('');
       if (onQuickSave) onQuickSave('');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        alert('Lütfen geçerli bir görsel dosyası seçin.');
+        return;
+      }
+      setOriginalFile(file);
+      const reader = new FileReader();
+      reader.addEventListener('load', () => setCropImage(reader.result as string));
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const onCropComplete = async (croppedBlob: Blob) => {
+    setCropImage(null);
+    if (!originalFile) return;
+
+    setUploading(true);
+    setStatus('Yükleniyor...');
+    try {
+      const croppedFile = new File([croppedBlob], originalFile.name, { type: 'image/jpeg' });
+      const url = await handleUpload(croppedFile, path, isHero);
+      if (url) {
+        onUpload(url);
+        if (onQuickSave) {
+          setStatus('Kaydediliyor...');
+          await onQuickSave(url);
+        }
+      }
+    } catch (err) {
+      console.error("Upload error in component:", err);
+    } finally {
+      setUploading(false);
+      setStatus('');
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -174,32 +219,23 @@ const ImageUpload: React.FC<{
             className="hidden" 
             accept="image/*"
             disabled={uploading}
-            onChange={async (e) => {
-              const file = e.target.files?.[0];
-              if (file) {
-                setUploading(true);
-                setStatus('Optimize ediliyor...');
-                try {
-                  const url = await handleUpload(file, path, isHero);
-                  if (url) {
-                    onUpload(url);
-                    if (onQuickSave) {
-                      setStatus('Kaydediliyor...');
-                      await onQuickSave(url);
-                    }
-                  }
-                } catch (err) {
-                  console.error("Upload error in component:", err);
-                } finally {
-                  setUploading(false);
-                  setStatus('');
-                  if (fileInputRef.current) fileInputRef.current.value = '';
-                }
-              }
-            }}
+            onChange={onSelectFile}
           />
         </label>
       </div>
+
+      {cropImage && (
+        <ImageCropper
+          image={cropImage}
+          aspectRatio={cropAspect || (isHero ? 16/9 : 1)}
+          circularCrop={circularCrop}
+          onCropComplete={onCropComplete}
+          onCancel={() => {
+            setCropImage(null);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -705,6 +741,8 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
             path="settings"
             handleUpload={handleUpload}
             isLogo={true}
+            cropAspect={1}
+            circularCrop={true}
             onUpload={(url: string) => {
               updateForm({ logo: url });
             }}
@@ -982,6 +1020,7 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
             currentUrl={editing.imageUrl}
             path="news"
             isHero={true}
+            cropAspect={16/9}
             handleUpload={handleUpload}
             onUpload={(url: string) => setEditing({ ...editing, imageUrl: url })}
           />
@@ -1110,6 +1149,7 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
             currentUrl={editing.heroImage}
             path="pages"
             isHero={true}
+            cropAspect={16/9}
             handleUpload={handleUpload}
             onUpload={(url: string) => setEditing({ ...editing, heroImage: url })}
           />
@@ -1126,6 +1166,8 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
             <ImageUpload 
               currentUrl={editing.coach?.imageUrl}
               path="pages/coaches"
+              cropAspect={1}
+              circularCrop={true}
               handleUpload={handleUpload}
               onUpload={(url: string) => setEditing({ ...editing, coach: { ...editing.coach!, imageUrl: url } })}
             />
@@ -1162,6 +1204,7 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
                   <ImageUpload 
                     currentUrl={player.imageUrl}
                     path="pages/players"
+                    cropAspect={1}
                     handleUpload={handleUpload}
                     onUpload={(url: string) => {
                       const players = editing.players?.map(p => p.id === player.id ? { ...p, imageUrl: url } : p);
@@ -1302,6 +1345,7 @@ const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryIte
             label="Görsel Yükle"
             currentUrl={newImage.imageUrl}
             path="gallery"
+            cropAspect={4/3}
             handleUpload={handleUpload}
             onUpload={(url: string) => setNewImage({ ...newImage, imageUrl: url })}
           />
@@ -1418,6 +1462,7 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
             currentUrl={form.heroImage}
             path="homepage"
             isHero={true}
+            cropAspect={16/9}
             handleUpload={handleUpload}
             onUpload={(url: string) => setForm({ ...form, heroImage: url })}
           />
@@ -1547,6 +1592,8 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
             label="Teknik Sorumlu Fotoğrafı"
             currentUrl={editing.coach?.imageUrl}
             path="coaches"
+            cropAspect={1}
+            circularCrop={true}
             handleUpload={handleUpload}
             onUpload={(url: string) => setEditing({ ...editing, coach: { ...(editing.coach || {}), imageUrl: url } })}
           />
@@ -1556,6 +1603,7 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
             currentUrl={editing.heroImage}
             path="teams"
             isHero={true}
+            cropAspect={16/9}
             handleUpload={handleUpload}
             onUpload={(url: string) => setEditing({ ...editing, heroImage: url })}
           />
@@ -1623,6 +1671,7 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
                     label="Oyuncu Fotoğrafı"
                     currentUrl={player.imageUrl}
                     path="players"
+                    cropAspect={1}
                     handleUpload={handleUpload}
                     onUpload={(url: string) => {
                       const newPlayers = [...editing.players];
@@ -1838,6 +1887,8 @@ const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>
             label="Fotoğraf"
             currentUrl={editing.imageUrl}
             path="staff"
+            cropAspect={1}
+            circularCrop={true}
             handleUpload={handleUpload}
             onUpload={(url: string) => setEditing({ ...editing, imageUrl: url })}
           />

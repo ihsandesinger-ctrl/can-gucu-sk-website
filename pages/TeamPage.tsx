@@ -28,7 +28,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
   return (
     <div className="bg-gray-50">
       {/* Hero Image */}
-      <div className="relative h-64 md:h-80 overflow-hidden bg-[var(--primary-color)]">
+      <div className="relative h-64 md:h-[500px] overflow-hidden bg-[var(--primary-color)]">
         {/* Gradient background for depth */}
         <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary-color)] via-black/40 to-black z-0"></div>
         
@@ -39,10 +39,14 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
         ></div>
         
         {/* Main image - contained on mobile, cover on desktop */}
-        <div 
-          className="absolute inset-0 bg-contain md:bg-cover bg-center bg-no-repeat z-10"
-          style={{ backgroundImage: `url('${team.heroImage || 'https://picsum.photos/seed/sports/1920/1080'}')` }}
-        ></div>
+        <div className="absolute inset-0 z-10">
+          <img 
+            src={team.heroImage || 'https://picsum.photos/seed/sports/1920/1080'} 
+            alt={team.name}
+            className="w-full h-full object-contain md:object-cover"
+            referrerPolicy="no-referrer"
+          />
+        </div>
 
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
           <h1 className="text-4xl md:text-5xl font-bold text-white drop-shadow-2xl">{team.name}</h1>

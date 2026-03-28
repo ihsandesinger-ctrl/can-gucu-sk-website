@@ -191,6 +191,7 @@ const Main: React.FC<MainProps> = ({ data }) => {
               news={data.newsData} 
               gallery={data.galleryData} 
               siteLogo={data.siteSettings.logo}
+              siteTitle={data.siteSettings.siteTitle || ''}
             />} 
           />
           
