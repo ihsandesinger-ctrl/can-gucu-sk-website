@@ -633,7 +633,7 @@ const AdminPage: React.FC = () => {
             {activeTab === 'news' && <NewsTab data={cmsData.newsData} onSave={async (d, id) => { try { await saveNewsArticle(d, id); showMessage('success', 'Haber kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteNewsArticle(id); showMessage('success', 'Haber silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('news', cmsData.newsData, idx, dir)} handleUpload={handleFileUpload} ImageUpload={ImageUpload} />}
             {activeTab === 'pages' && <PagesTab data={cmsData.pagesData} onSave={async (d, id) => { try { await savePage(d, id); showMessage('success', 'Sayfa kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deletePage(id); showMessage('success', 'Sayfa silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} showMessage={showMessage} />}
             {activeTab === 'teams' && <TeamsTab data={cmsData.teamData} onSave={async (d, id) => { try { await saveTeam(d, id); showMessage('success', 'Takım kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteTeam(id); showMessage('success', 'Takım silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} />}
-            {activeTab === 'fixtures' && <FixturesTab data={cmsData.fixtures} teams={cmsData.teamData} onSave={async (d) => { try { await saveFixture(d); showMessage('success', 'Fikstür kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onReorder={(idx, dir) => handleReorder('fixtures', cmsData.fixtures, idx, dir)} />}
+            {activeTab === 'fixtures' && <FixturesTab data={cmsData.fixtures} teams={cmsData.teamData} onSave={async (d) => { try { await saveFixture(d); showMessage('success', 'Fikstür kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onReorder={(idx, dir) => handleReorder('fixtures', cmsData.fixtures, idx, dir)} handleUpload={handleFileUpload} ImageUpload={ImageUpload} />}
             {activeTab === 'gallery' && <GalleryTab data={cmsData.galleryData} onSave={async (d) => { try { await saveGalleryImage(d); showMessage('success', 'Görsel eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteGalleryImage(id); showMessage('success', 'Görsel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('gallery', cmsData.galleryData, idx, dir)} handleUpload={handleFileUpload} ImageUpload={ImageUpload} />}
             {activeTab === 'staff' && <StaffTab data={cmsData.staffData} onSave={async (d, id) => { try { await saveStaffMember(d, id); showMessage('success', 'Personel kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if(confirm('Emin misiniz?')) { try { await deleteStaffMember(id); showMessage('success', 'Personel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => handleReorder('staff', cmsData.staffData, idx, dir)} handleUpload={handleFileUpload} ImageUpload={ImageUpload} />}
             {activeTab === 'about' && <AboutTab data={cmsData.missionVision} onSave={async (d) => { try { await updateMissionVision(d); showMessage('success', 'Kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} />}
@@ -1726,7 +1726,14 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
   );
 };
 
-const FixturesTab: React.FC<{ data: Fixture[], teams: Team[], onSave: (d: Fixture) => void, onReorder: (idx: number, dir: 'up' | 'down') => void }> = ({ data, teams, onSave, onReorder }) => {
+const FixturesTab: React.FC<{ 
+  data: Fixture[], 
+  teams: Team[], 
+  onSave: (d: Fixture) => void, 
+  onReorder: (idx: number, dir: 'up' | 'down') => void,
+  handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>,
+  ImageUpload: any
+}> = ({ data, teams, onSave, onReorder, handleUpload, ImageUpload }) => {
   const [editing, setEditing] = useState<any | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const fixtures = data || [];
@@ -1776,34 +1783,78 @@ const FixturesTab: React.FC<{ data: Fixture[], teams: Team[], onSave: (d: Fixtur
               </button>
             </div>
             {editing.matches?.map((match: any, idx: number) => (
-              <div key={idx} className="grid grid-cols-5 gap-2 items-center p-2 bg-gray-50 rounded-lg">
-                <input type="date" value={match.date} onChange={e => {
-                  const newMatches = [...editing.matches!];
-                  newMatches[idx].date = e.target.value;
-                  setEditing({...editing, matches: newMatches});
-                }} className="text-xs p-1 border rounded" />
-                <input type="text" placeholder="Rakip" value={match.opponent} onChange={e => {
-                  const newMatches = [...editing.matches!];
-                  newMatches[idx].opponent = e.target.value;
-                  setEditing({...editing, matches: newMatches});
-                }} className="text-xs p-1 border rounded" />
-                <input type="text" placeholder="Skor" value={match.score} onChange={e => {
-                  const newMatches = [...editing.matches!];
-                  newMatches[idx].score = e.target.value;
-                  setEditing({...editing, matches: newMatches});
-                }} className="text-xs p-1 border rounded" />
-                <select value={match.location} onChange={e => {
-                  const newMatches = [...editing.matches!];
-                  newMatches[idx].location = e.target.value as any;
-                  setEditing({...editing, matches: newMatches});
-                }} className="text-xs p-1 border rounded">
-                  <option value="Ev">Ev</option>
-                  <option value="Deplasman">Deplasman</option>
-                </select>
-                <button onClick={() => {
-                  const newMatches = editing.matches!.filter((_: any, i: number) => i !== idx);
-                  setEditing({...editing, matches: newMatches});
-                }} className="text-red-500"><Trash2 size={14}/></button>
+              <div key={idx} className="p-4 bg-gray-50 rounded-xl border space-y-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Tarih</label>
+                    <input type="date" value={match.date} onChange={e => {
+                      const newMatches = [...editing.matches!];
+                      newMatches[idx].date = e.target.value;
+                      setEditing({...editing, matches: newMatches});
+                    }} className="w-full text-xs p-2 border rounded" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Rakip</label>
+                    <input type="text" placeholder="Rakip" value={match.opponent} onChange={e => {
+                      const newMatches = [...editing.matches!];
+                      newMatches[idx].opponent = e.target.value;
+                      setEditing({...editing, matches: newMatches});
+                    }} className="w-full text-xs p-2 border rounded" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Skor</label>
+                    <input type="text" placeholder="Skor" value={match.score} onChange={e => {
+                      const newMatches = [...editing.matches!];
+                      newMatches[idx].score = e.target.value;
+                      setEditing({...editing, matches: newMatches});
+                    }} className="w-full text-xs p-2 border rounded" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Konum</label>
+                    <select value={match.location} onChange={e => {
+                      const newMatches = [...editing.matches!];
+                      newMatches[idx].location = e.target.value as any;
+                      setEditing({...editing, matches: newMatches});
+                    }} className="w-full text-xs p-2 border rounded">
+                      <option value="Ev">Ev</option>
+                      <option value="Deplasman">Deplasman</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <ImageUpload 
+                    label="Ev Sahibi Logo (Opsiyonel)"
+                    currentUrl={match.homeLogo}
+                    path="match-logos"
+                    handleUpload={handleUpload}
+                    onUpload={(url: string) => {
+                      const newMatches = [...editing.matches!];
+                      newMatches[idx].homeLogo = url;
+                      setEditing({...editing, matches: newMatches});
+                    }}
+                  />
+                  <ImageUpload 
+                    label="Deplasman Logo (Opsiyonel)"
+                    currentUrl={match.awayLogo}
+                    path="match-logos"
+                    handleUpload={handleUpload}
+                    onUpload={(url: string) => {
+                      const newMatches = [...editing.matches!];
+                      newMatches[idx].awayLogo = url;
+                      setEditing({...editing, matches: newMatches});
+                    }}
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <button onClick={() => {
+                    const newMatches = editing.matches!.filter((_: any, i: number) => i !== idx);
+                    setEditing({...editing, matches: newMatches});
+                  }} className="text-red-500 flex items-center gap-1 text-xs font-bold hover:bg-red-50 p-1 rounded">
+                    <Trash2 size={14}/> Maçı Sil
+                  </button>
+                </div>
               </div>
             ))}
           </div>

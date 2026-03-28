@@ -27,6 +27,8 @@ export interface Match {
   opponent: string;
   score?: string;
   location: 'Ev' | 'Deplasman';
+  homeLogo?: string;
+  awayLogo?: string;
 }
 
 export interface Fixture {

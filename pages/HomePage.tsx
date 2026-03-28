@@ -23,19 +23,26 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news,
 
         fixtures.forEach(fixture => {
             if (fixture && Array.isArray(fixture.matches)) {
-                fixture.matches.forEach(match => {
-                    // Consider a match "upcoming" if it has no score or a placeholder score
+                // Find the first upcoming match for this team
+                const teamUpcomingMatches = fixture.matches.filter(match => {
                     const score = match.score ? String(match.score).trim() : '';
-                    const isUpcoming = !score || 
-                                     score === '-' || 
-                                     score.toLowerCase() === 'v' ||
-                                     score.toLowerCase() === 'vs' ||
-                                     score.toLowerCase().includes('v');
-                    
-                    if (isUpcoming) {
-                        upcoming.push({ ...match, teamName: fixture.teamName });
-                    }
+                    return !score || 
+                           score === '-' || 
+                           score.toLowerCase() === 'v' ||
+                           score.toLowerCase() === 'vs' ||
+                           score.toLowerCase().includes('v');
                 });
+
+                if (teamUpcomingMatches.length > 0) {
+                    // Sort these matches by date to find the first one
+                    const sortedTeamMatches = teamUpcomingMatches.sort((a, b) => {
+                        if (!a.date) return 1;
+                        if (!b.date) return -1;
+                        return a.date.localeCompare(b.date);
+                    });
+                    
+                    upcoming.push({ ...sortedTeamMatches[0], teamName: fixture.teamName });
+                }
             }
         });
 
@@ -67,10 +74,10 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news,
                                             key={index}
                                             teamName={match.teamName}
                                             date={match.date}
-                                            homeTeam={match.location === 'Ev' ? (siteTitle || "Kulübümüz") : match.opponent}
-                                            awayTeam={match.location === 'Ev' ? match.opponent : (siteTitle || "Kulübümüz")}
-                                            homeTeamLogo={match.location === 'Ev' ? siteLogo : undefined}
-                                            awayTeamLogo={match.location === 'Deplasman' ? siteLogo : undefined}
+                                            homeTeam={match.location === 'Ev' ? "Çangücü SK" : match.opponent}
+                                            awayTeam={match.location === 'Ev' ? match.opponent : "Çangücü SK"}
+                                            homeTeamLogo={match.homeLogo}
+                                            awayTeamLogo={match.awayLogo}
                                         />
                                     ))
                                 ) : (
