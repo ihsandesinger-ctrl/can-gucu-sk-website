@@ -62,9 +62,9 @@ const DynamicPage: React.FC = () => {
           style={{ backgroundImage: `url('${page.heroImage || 'https://picsum.photos/seed/sports/1920/1080'}')` }}
         ></div>
         
-        {/* Main image - contained so nothing is missing */}
+        {/* Main image - contained on mobile, cover on desktop */}
         <div 
-          className="absolute inset-0 bg-contain bg-center bg-no-repeat z-10"
+          className="absolute inset-0 bg-contain md:bg-cover bg-center bg-no-repeat z-10"
           style={{ backgroundImage: `url('${page.heroImage || 'https://picsum.photos/seed/sports/1920/1080'}')` }}
         ></div>
 

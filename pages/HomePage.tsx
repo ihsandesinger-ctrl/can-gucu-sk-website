@@ -15,19 +15,18 @@ interface HomePageProps {
 
 const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news, gallery, siteLogo }) => {
     
-    // Find the next upcoming match for the first two teams in the list
+    // Find all upcoming matches from all fixtures
     const getUpcomingMatches = () => {
-        const upcoming = [];
-        for(const team of teams.slice(0, 2)) {
-            const teamFixture = fixtures.find(f => f.teamSlug === team.slug);
-            if (teamFixture) {
-                const nextMatch = teamFixture.matches.find(m => m.score === '-');
-                if (nextMatch) {
-                    upcoming.push({ ...nextMatch, teamName: teamFixture.teamName });
+        const upcoming: any[] = [];
+        fixtures.forEach(fixture => {
+            fixture.matches.forEach(match => {
+                if (match.score === '-') {
+                    upcoming.push({ ...match, teamName: fixture.teamName });
                 }
-            }
-        }
-        return upcoming;
+            });
+        });
+        // Sort by date (YYYY-MM-DD)
+        return upcoming.sort((a, b) => a.date.localeCompare(b.date));
     }
 
     const upcomingMatches = getUpcomingMatches();
@@ -49,9 +48,10 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news,
                                         key={index}
                                         teamName={match.teamName}
                                         date={match.date}
-                                        homeTeam="ÇANGÜCÜ SK"
-                                        awayTeam={match.opponent}
-                                        homeTeamLogo={siteLogo}
+                                        homeTeam={match.location === 'Ev' ? "ÇANGÜCÜ SK" : match.opponent}
+                                        awayTeam={match.location === 'Ev' ? match.opponent : "ÇANGÜCÜ SK"}
+                                        homeTeamLogo={match.location === 'Ev' ? siteLogo : undefined}
+                                        awayTeamLogo={match.location === 'Deplasman' ? siteLogo : undefined}
                                     />
                                 ))}
                             </div>

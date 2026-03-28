@@ -38,9 +38,9 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
           style={{ backgroundImage: `url('${team.heroImage || 'https://picsum.photos/seed/sports/1920/1080'}')` }}
         ></div>
         
-        {/* Main image - contained so nothing is missing */}
+        {/* Main image - contained on mobile, cover on desktop */}
         <div 
-          className="absolute inset-0 bg-contain bg-center bg-no-repeat z-10"
+          className="absolute inset-0 bg-contain md:bg-cover bg-center bg-no-repeat z-10"
           style={{ backgroundImage: `url('${team.heroImage || 'https://picsum.photos/seed/sports/1920/1080'}')` }}
         ></div>
 
@@ -55,11 +55,13 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
           <h2 className="text-3xl font-bold text-gray-800 mb-6">Teknik Kadro</h2>
           <div className="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-6 max-w-sm">
             {team.coach.imageUrl ? (
-              <img 
-                className="h-24 w-24 rounded-full object-cover border-2 border-orange-100" 
-                src={team.coach.imageUrl} 
-                alt={team.coach.name} 
-              />
+              <div className="h-24 w-24 rounded-full overflow-hidden border-2 border-orange-100 bg-gray-100">
+                <img 
+                  className="h-full w-full object-contain" 
+                  src={team.coach.imageUrl} 
+                  alt={team.coach.name} 
+                />
+              </div>
             ) : (
               <div className="h-24 w-24 rounded-full bg-orange-50 flex items-center justify-center border-2 border-orange-100">
                 <User className="text-orange-300 w-12 h-12" />

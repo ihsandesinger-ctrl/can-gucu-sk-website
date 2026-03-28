@@ -8,9 +8,9 @@ interface PlayerCardProps {
 
 const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
     return (
-        <div className="relative rounded-xl overflow-hidden shadow-lg group">
+        <div className="relative rounded-xl overflow-hidden shadow-lg group bg-gray-200">
             <img 
-                className="w-full h-64 object-cover transform group-hover:scale-110 transition-transform duration-300" 
+                className="w-full h-64 object-contain transform group-hover:scale-110 transition-transform duration-300" 
                 src={player.imageUrl || 'https://picsum.photos/seed/player/400/600'} 
                 alt={player.name} 
                 onError={(e) => {
