@@ -1020,7 +1020,6 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
             currentUrl={editing.imageUrl}
             path="news"
             isHero={true}
-            cropAspect={16/9}
             handleUpload={handleUpload}
             onUpload={(url: string) => setEditing({ ...editing, imageUrl: url })}
           />
@@ -1149,7 +1148,6 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
             currentUrl={editing.heroImage}
             path="pages"
             isHero={true}
-            cropAspect={16/9}
             handleUpload={handleUpload}
             onUpload={(url: string) => setEditing({ ...editing, heroImage: url })}
           />
@@ -1462,7 +1460,6 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
             currentUrl={form.heroImage}
             path="homepage"
             isHero={true}
-            cropAspect={16/9}
             handleUpload={handleUpload}
             onUpload={(url: string) => setForm({ ...form, heroImage: url })}
           />
@@ -1603,7 +1600,6 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
             currentUrl={editing.heroImage}
             path="teams"
             isHero={true}
-            cropAspect={16/9}
             handleUpload={handleUpload}
             onUpload={(url: string) => setEditing({ ...editing, heroImage: url })}
           />

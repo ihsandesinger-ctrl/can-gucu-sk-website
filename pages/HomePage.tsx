@@ -166,7 +166,7 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news,
                     <img 
                         src={heroContent.heroImage} 
                         alt={heroContent.heroTitle}
-                        className="w-full h-full object-contain md:object-cover"
+                        className="w-full h-full object-contain"
                         referrerPolicy="no-referrer"
                     />
                 </div>

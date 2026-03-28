@@ -43,7 +43,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
           <img 
             src={team.heroImage || 'https://picsum.photos/seed/sports/1920/1080'} 
             alt={team.name}
-            className="w-full h-full object-contain md:object-cover"
+            className="w-full h-full object-contain"
             referrerPolicy="no-referrer"
           />
         </div>
