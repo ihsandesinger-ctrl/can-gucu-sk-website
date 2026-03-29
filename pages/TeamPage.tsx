@@ -38,12 +38,12 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
           style={{ backgroundImage: `url('${team.heroImage || 'https://picsum.photos/seed/sports/1920/1080'}')` }}
         ></div>
         
-        {/* Main image - fill the container */}
+        {/* Main image - contain to show full crop */}
         <div className="absolute inset-0 z-10">
           <img 
             src={team.heroImage || 'https://picsum.photos/seed/sports/1920/1080'} 
             alt={team.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
             referrerPolicy="no-referrer"
           />
         </div>

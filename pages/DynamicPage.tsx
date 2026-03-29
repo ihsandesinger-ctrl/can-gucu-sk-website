@@ -74,9 +74,9 @@ const DynamicPage: React.FC<DynamicPageProps> = ({ pages = [] }) => {
           style={{ backgroundImage: `url('${page.heroImage || 'https://picsum.photos/seed/sports/1920/1080'}')` }}
         ></div>
         
-        {/* Main image - fill the container */}
+        {/* Main image - contain to show full crop */}
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat z-10"
+          className="absolute inset-0 bg-contain bg-center bg-no-repeat z-10"
           style={{ backgroundImage: `url('${page.heroImage || 'https://picsum.photos/seed/sports/1920/1080'}')` }}
         ></div>
 
