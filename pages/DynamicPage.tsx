@@ -6,31 +6,43 @@ import { DynamicPage as DynamicPageType } from '../types';
 import { motion } from 'motion/react';
 import { Calendar, User, Users, Info } from 'lucide-react';
 
-const DynamicPage: React.FC = () => {
+interface DynamicPageProps {
+  pages?: DynamicPageType[];
+}
+
+const DynamicPage: React.FC<DynamicPageProps> = ({ pages = [] }) => {
   const { slug } = useParams<{ slug: string }>();
   const [page, setPage] = useState<DynamicPageType | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchPage = async () => {
-      if (!slug) return;
-      setLoading(true);
-      try {
-        const q = query(collection(db, 'pages'), where('slug', '==', slug));
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-          const doc = querySnapshot.docs[0];
-          setPage({ id: doc.id, ...doc.data() } as DynamicPageType);
+    if (!slug) return;
+    setLoading(true);
+    
+    // Find page in the passed props first
+    const foundPage = pages.find(p => p.slug === slug);
+    if (foundPage) {
+      setPage(foundPage);
+      setLoading(false);
+    } else {
+      // Fallback to direct fetch if not found in props (unlikely but safe)
+      const fetchPage = async () => {
+        try {
+          const q = query(collection(db, 'pages'), where('slug', '==', slug));
+          const querySnapshot = await getDocs(q);
+          if (!querySnapshot.empty) {
+            const doc = querySnapshot.docs[0];
+            setPage({ id: doc.id, ...doc.data() } as DynamicPageType);
+          }
+        } catch (error) {
+          console.error('Sayfa yüklenirken hata oluştu:', error);
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('Sayfa yüklenirken hata oluştu:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPage();
-  }, [slug]);
+      };
+      fetchPage();
+    }
+  }, [slug, pages]);
 
   if (loading) {
     return (
@@ -62,9 +74,9 @@ const DynamicPage: React.FC = () => {
           style={{ backgroundImage: `url('${page.heroImage || 'https://picsum.photos/seed/sports/1920/1080'}')` }}
         ></div>
         
-        {/* Main image - contained on mobile, cover on desktop */}
+        {/* Main image - fill the container */}
         <div 
-          className="absolute inset-0 bg-contain md:bg-cover bg-center bg-no-repeat z-10"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat z-10"
           style={{ backgroundImage: `url('${page.heroImage || 'https://picsum.photos/seed/sports/1920/1080'}')` }}
         ></div>
 

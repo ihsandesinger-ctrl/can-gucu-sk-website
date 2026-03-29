@@ -10,7 +10,8 @@ import {
   query, 
   orderBy, 
   onSnapshot,
-  getDocFromCache
+  getDocFromCache,
+  limit
 } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import type { CMSData, Team, NewsArticle, Fixture, GalleryItem, StaffMember, SiteSettings, HomePageHero, MissionVision, DynamicPage } from './types';
@@ -72,6 +73,18 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
     loadedCollections.add(collectionName);
     // Emit data if all collections have been attempted (either success or error)
     if (loadedCollections.size === totalCollections) {
+      // Calculate total docs for debugging quota
+      const totalDocs = 
+        (data.newsData?.length || 0) + 
+        (data.teamData?.length || 0) + 
+        (data.galleryData?.length || 0) + 
+        (data.staffData?.length || 0) + 
+        (data.fixtures?.length || 0) + 
+        (data.pagesData?.length || 0) + 
+        3; // settings, homepage, missionVision
+      
+      console.log(`[FIRESTORE] Initial load complete. Total documents: ${totalDocs}`);
+      
       // If critical data is missing (due to errors), mark as fallback
       const isFallback = !data.siteSettings || !data.homePageHero || !data.missionVision;
       callback({ ...data, isFallback } as CMSData);
@@ -121,13 +134,15 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
   }, (err) => handleError(err, 'homepage', 'homepage/hero')));
 
   // News
-  unsubscribes.push(onSnapshot(query(collection(db, 'news'), orderBy('order', 'desc')), (snapshot) => {
+  unsubscribes.push(onSnapshot(query(collection(db, 'news'), orderBy('order', 'desc'), limit(50)), (snapshot) => {
+    if (snapshot.metadata.fromCache) console.log('[FIRESTORE] News loaded from cache');
     data.newsData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
     checkAndEmit('news');
   }, (err) => handleError(err, 'news', 'news')));
 
   // Teams
   unsubscribes.push(onSnapshot(collection(db, 'teams'), (snapshot) => {
+    if (snapshot.metadata.fromCache) console.log('[FIRESTORE] Teams loaded from cache');
     data.teamData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
     checkAndEmit('teams');
   }, (err) => handleError(err, 'teams', 'teams')));
@@ -139,7 +154,8 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
   }, (err) => handleError(err, 'fixtures', 'fixtures')));
 
   // Gallery
-  unsubscribes.push(onSnapshot(query(collection(db, 'gallery'), orderBy('order', 'desc')), (snapshot) => {
+  unsubscribes.push(onSnapshot(query(collection(db, 'gallery'), orderBy('order', 'desc'), limit(50)), (snapshot) => {
+    if (snapshot.metadata.fromCache) console.log('[FIRESTORE] Gallery loaded from cache');
     data.galleryData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
     checkAndEmit('gallery');
   }, (err) => handleError(err, 'gallery', 'gallery')));

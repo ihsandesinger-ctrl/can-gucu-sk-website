@@ -25,7 +25,7 @@ import {
 } from '../firebaseService';
 import type { CMSData, NewsArticle, Team, GalleryItem, StaffMember, SiteSettings, HomePageHero, MissionVision, Fixture, DynamicPage } from '../types';
 import { subscribeToCMSData } from '../firebaseService';
-import { Plus, Trash2, Save, LogOut, Image as ImageIcon, Settings, Users, Newspaper, Layout, Target, Calendar, Database, ShieldCheck, Copy, ChevronUp, ChevronDown, FileText, User } from 'lucide-react';
+import { Plus, Trash2, Save, LogOut, Image as ImageIcon, Settings, Users, Newspaper, Layout, Target, Calendar, Database, ShieldCheck, Copy, ChevronUp, ChevronDown, FileText, User, Download } from 'lucide-react';
 
 import ImageCropper from '../components/ImageCropper';
 
@@ -117,8 +117,9 @@ const ImageUpload: React.FC<{
   isHero?: boolean,
   onQuickSave?: (url: string) => void,
   cropAspect?: number,
-  circularCrop?: boolean
-}> = ({ onUpload, currentUrl, path, label, handleUpload, isLogo, isHero, onQuickSave, cropAspect, circularCrop }) => {
+  circularCrop?: boolean,
+  isFallback?: boolean
+}> = ({ onUpload, currentUrl, path, label, handleUpload, isLogo, isHero, onQuickSave, cropAspect, circularCrop, isFallback }) => {
   const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState('');
   const [cropImage, setCropImage] = useState<string | null>(null);
@@ -127,6 +128,10 @@ const ImageUpload: React.FC<{
 
   const handleRemove = (e: React.MouseEvent) => {
     e.preventDefault();
+    if (isFallback) {
+      alert('Veritabanı bağlantısı yok. Görsel silinemez.');
+      return;
+    }
     const confirmMsg = isLogo ? 'Logoyu kaldırmak istediğinize emin misiniz?' : 'Görseli kaldırmak istediğinize emin misiniz?';
     if (window.confirm(confirmMsg)) {
       onUpload('');
@@ -136,6 +141,10 @@ const ImageUpload: React.FC<{
   };
 
   const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isFallback) {
+      alert('Veritabanı bağlantısı yok. Görsel yüklenemez.');
+      return;
+    }
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
@@ -186,7 +195,8 @@ const ImageUpload: React.FC<{
             </div>
             <button 
               onClick={handleRemove}
-              className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-xs font-bold border border-red-100"
+              disabled={isFallback}
+              className={`flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-xs font-bold border border-red-100 ${isFallback ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <Trash2 size={14} />
               {isLogo ? 'Logoyu Kaldır' : 'Görseli Kaldır'}
@@ -194,7 +204,7 @@ const ImageUpload: React.FC<{
           </div>
         )}
         
-        <label className={`flex flex-col items-center justify-center ${currentUrl ? (isHero ? 'w-full h-16' : 'w-24 h-24') : 'w-full h-32'} border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-[var(--primary-color)] hover:bg-orange-50/30 transition-all group relative`}>
+        <label className={`flex flex-col items-center justify-center ${currentUrl ? (isHero ? 'w-full h-16' : 'w-24 h-24') : 'w-full h-32'} border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-[var(--primary-color)] hover:bg-orange-50/30 transition-all group relative ${isFallback ? 'opacity-50 cursor-not-allowed' : ''}`}>
           <div className="flex flex-col items-center justify-center p-2 text-center">
             {uploading ? (
               <div className="flex flex-col items-center">
@@ -218,7 +228,7 @@ const ImageUpload: React.FC<{
             type="file" 
             className="hidden" 
             accept="image/*"
-            disabled={uploading}
+            disabled={uploading || isFallback}
             onChange={onSelectFile}
           />
         </label>
@@ -344,19 +354,19 @@ const AdminPage: React.FC = () => {
   };
   useEffect(() => {
     let unsubscribeAdmins: (() => void) | undefined;
+    let unsubscribeCMS: (() => void) | undefined;
 
     // Set a timeout for loading
     const loadingTimeout = setTimeout(() => {
       if (loading) {
         console.warn('AdminPage loading timed out. Check Firebase connection.');
-        // We don't force loading to false here, but we could show a retry button
       }
     }, 10000);
 
     const unsubscribeAuth = onAuthStateChanged(auth, (u) => {
       setUser(u);
       if (u) {
-        subscribeToCMSData((data) => {
+        unsubscribeCMS = subscribeToCMSData((data) => {
           setCmsData(data);
           setLoading(false);
           clearTimeout(loadingTimeout);
@@ -379,9 +389,10 @@ const AdminPage: React.FC = () => {
     return () => {
       unsubscribeAuth();
       if (unsubscribeAdmins) unsubscribeAdmins();
+      if (unsubscribeCMS) unsubscribeCMS();
       clearTimeout(loadingTimeout);
     };
-  }, [loading]);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -616,6 +627,7 @@ const AdminPage: React.FC = () => {
           <TabButton active={activeTab === 'staff'} onClick={() => setActiveTab('staff')} icon={<Users size={20}/>} label="Personel" />
           <TabButton active={activeTab === 'about'} onClick={() => setActiveTab('about')} icon={<Target size={20}/>} label="Misyon & Vizyon" />
           <TabButton active={activeTab === 'users'} onClick={() => setActiveTab('users')} icon={<ShieldCheck size={20}/>} label="Yetkili Yönetimi" />
+          <TabButton active={activeTab === 'export'} onClick={() => setActiveTab('export')} icon={<Database size={20}/>} label="Webflow Aktarımı" />
           
           {isSuperAdmin && (
             <div className="pt-4 mt-4 border-t">
@@ -656,6 +668,7 @@ const AdminPage: React.FC = () => {
             <MobileTabButton active={activeTab === 'staff'} onClick={() => setActiveTab('staff')} icon={<Users size={18}/>} label="Personel" />
             <MobileTabButton active={activeTab === 'about'} onClick={() => setActiveTab('about')} icon={<Target size={18}/>} label="Misyon" />
             <MobileTabButton active={activeTab === 'users'} onClick={() => setActiveTab('users')} icon={<ShieldCheck size={18}/>} label="Yetkililer" />
+            <MobileTabButton active={activeTab === 'export'} onClick={() => setActiveTab('export')} icon={<Database size={18}/>} label="Webflow" />
             <button onClick={handleLogout} className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-50 text-red-600 text-sm font-medium">
               <LogOut size={18}/> Çıkış
             </button>
@@ -691,6 +704,7 @@ const AdminPage: React.FC = () => {
             {activeTab === 'staff' && <StaffTab data={cmsData.staffData} onSave={async (d, id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveStaffMember(d, id); showMessage('success', 'Personel kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } if(confirm('Emin misiniz?')) { try { await deleteStaffMember(id); showMessage('success', 'Personel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Sıralama değiştirilemez.'); return; } handleReorder('staff', cmsData.staffData, idx, dir); }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} />}
             {activeTab === 'about' && <AboutTab data={cmsData.missionVision} onSave={async (d) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await updateMissionVision(d); showMessage('success', 'Kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} isFallback={cmsData.isFallback} />}
             {activeTab === 'users' && <UsersTab admins={admins} currentUser={user} onAdd={async (e, u) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Yetkili eklenemez.'); return; } try { await addAdmin(e, u); showMessage('success', 'Yetkili eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); } }} onRemove={async (u) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Yetkili kaldırılamaz.'); return; } if(confirm('Bu yetkiliyi kaldırmak istediğinize emin misiniz?')) { try { await removeAdmin(u); showMessage('success', 'Yetkili kaldırıldı'); } catch(e) { showMessage('error', 'Kaldırılamadı'); } } }} isFallback={cmsData.isFallback} />}
+            {activeTab === 'export' && <WebflowExportTab cmsData={cmsData} />}
           </div>
         </main>
       </div>
@@ -2222,6 +2236,108 @@ const UsersTab: React.FC<{ admins: any[], currentUser: any, onAdd: (email: strin
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  );
+};
+
+const ExportCard: React.FC<{ title: string, count: number, onDownload: () => void }> = ({ title, count, onDownload }) => (
+  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
+    <div>
+      <h4 className="font-bold text-lg mb-1">{title}</h4>
+      <p className="text-sm text-gray-500 mb-4">{count} kayıt bulundu</p>
+    </div>
+    <button 
+      onClick={onDownload}
+      className="flex items-center justify-center gap-2 bg-gray-900 text-white py-2 rounded-xl hover:bg-black transition-colors"
+    >
+      <Download size={18} /> CSV İndir
+    </button>
+  </div>
+);
+
+const WebflowExportTab: React.FC<{ cmsData: CMSData }> = ({ cmsData }) => {
+  const downloadCSV = (data: any[], filename: string) => {
+    if (!data || data.length === 0) {
+      alert('Dışa aktarılacak veri bulunamadı.');
+      return;
+    }
+
+    // Get all unique keys from all objects in the array
+    const headers = Array.from(new Set(data.flatMap(obj => Object.keys(obj))));
+    
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => 
+        headers.map(fieldName => {
+          const value = row[fieldName] === null || row[fieldName] === undefined ? '' : row[fieldName];
+          // Escape quotes and wrap in quotes if contains comma or newline
+          const stringValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
+          const escaped = stringValue.replace(/"/g, '""');
+          return `"${escaped}"`;
+        }).join(',')
+      )
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${filename}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold">Webflow Veri Aktarımı</h2>
+      <div className="bg-orange-50 p-6 rounded-2xl border border-orange-100 flex items-start gap-4">
+        <div className="bg-orange-500 text-white p-2 rounded-lg">
+          <Database size={24} />
+        </div>
+        <div>
+          <h3 className="font-bold text-orange-900">Webflow Geçiş Aracı</h3>
+          <p className="text-sm text-orange-700">
+            Aşağıdaki butonları kullanarak mevcut verilerinizi CSV formatında indirebilirsiniz. 
+            Bu dosyaları Webflow CMS koleksiyonlarınıza doğrudan "Import" ederek yükleyebilirsiniz.
+            Resim URL'leri de dosya içerisinde yer almaktadır, Webflow bunları otomatik olarak çekecektir.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <ExportCard 
+          title="Haberler" 
+          count={cmsData.newsData.length} 
+          onDownload={() => downloadCSV(cmsData.newsData, 'cangucu_haberler')} 
+        />
+        <ExportCard 
+          title="Takımlar" 
+          count={cmsData.teamData.length} 
+          onDownload={() => downloadCSV(cmsData.teamData, 'cangucu_takimlar')} 
+        />
+        <ExportCard 
+          title="Fikstürler" 
+          count={cmsData.fixtures.length} 
+          onDownload={() => downloadCSV(cmsData.fixtures, 'cangucu_fiksturler')} 
+        />
+        <ExportCard 
+          title="Galeri" 
+          count={cmsData.galleryData.length} 
+          onDownload={() => downloadCSV(cmsData.galleryData, 'cangucu_galeri')} 
+        />
+        <ExportCard 
+          title="Personel" 
+          count={cmsData.staffData.length} 
+          onDownload={() => downloadCSV(cmsData.staffData, 'cangucu_personel')} 
+        />
+        <ExportCard 
+          title="Sayfalar" 
+          count={cmsData.pagesData.length} 
+          onDownload={() => downloadCSV(cmsData.pagesData, 'cangucu_sayfalar')} 
+        />
       </div>
     </div>
   );

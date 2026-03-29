@@ -38,12 +38,12 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
           style={{ backgroundImage: `url('${team.heroImage || 'https://picsum.photos/seed/sports/1920/1080'}')` }}
         ></div>
         
-        {/* Main image - contained on mobile, cover on desktop */}
+        {/* Main image - fill the container */}
         <div className="absolute inset-0 z-10">
           <img 
             src={team.heroImage || 'https://picsum.photos/seed/sports/1920/1080'} 
             alt={team.name}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-cover"
             referrerPolicy="no-referrer"
           />
         </div>
@@ -61,9 +61,10 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
             {team.coach.imageUrl ? (
               <div className="h-24 w-24 rounded-full overflow-hidden border-2 border-orange-100 bg-gray-100">
                 <img 
-                  className="h-full w-full object-contain" 
+                  className="h-full w-full object-cover" 
                   src={team.coach.imageUrl} 
                   alt={team.coach.name} 
+                  referrerPolicy="no-referrer"
                 />
               </div>
             ) : (

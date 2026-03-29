@@ -8,11 +8,12 @@ interface PlayerCardProps {
 
 const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
     return (
-        <div className="relative rounded-xl overflow-hidden shadow-lg group bg-gray-200">
+        <div className="relative aspect-[3/4] rounded-xl overflow-hidden shadow-lg group bg-gray-200">
             <img 
-                className="w-full h-64 object-contain transform group-hover:scale-110 transition-transform duration-300" 
+                className="w-full h-full object-cover object-top transform group-hover:scale-110 transition-transform duration-300" 
                 src={player.imageUrl || 'https://picsum.photos/seed/player/400/600'} 
                 alt={player.name} 
+                referrerPolicy="no-referrer"
                 onError={(e) => {
                     (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/player/400/600';
                 }}

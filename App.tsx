@@ -41,37 +41,18 @@ const App: React.FC = () => {
           return;
         }
 
-        let settingsDoc;
-        try {
-          settingsDoc = await getDoc(doc(db, 'settings', 'site'));
-        } catch (getDocErr: any) {
-          console.error('Error fetching settings from Firestore:', getDocErr);
+        const unsub = subscribeToCMSData((data) => {
           clearTimeout(timeout);
-          
-          if (getDocErr.code === 'permission-denied') {
-            setError('Veritabanına erişim yetkiniz yok. Lütfen giriş yapmayı deneyin.');
+          if (data.isFallback && !data.siteSettings) {
+            setError('Site henüz kurulmamış veya veritabanı boş. Lütfen yönetici panelinden kurulum yapın.');
           } else {
-            setError(`Veritabanı hatası: ${getDocErr.message}`);
+            setCmsData(data);
+            setError(null);
           }
           setLoading(false);
-          return;
-        }
-        
-        if (!settingsDoc || !settingsDoc.exists()) {
-          console.log('Firestore is empty. Waiting for setup...');
-          // Don't load local data automatically anymore.
-          // This prevents the "factory reset" feeling.
-          setError('Site henüz kurulmamış veya veritabanı boş. Lütfen yönetici panelinden kurulum yapın.');
-          setLoading(false);
-          clearTimeout(timeout);
-          return;
-        }
-
-        subscribeToCMSData((data) => {
-          clearTimeout(timeout);
-          setCmsData(data);
-          setLoading(false);
         });
+
+        return unsub;
 
       } catch (err: any) {
         console.error('App initialization error:', err);
@@ -81,58 +62,14 @@ const App: React.FC = () => {
       }
     };
 
-    const loadLocalData = async (isFallback: boolean = false) => {
-      try {
-        const [
-          settingsRes,
-          homepageRes,
-          teamsRes,
-          fixturesRes,
-          newsRes,
-          galleryRes,
-          staffRes,
-          missionVisionRes,
-        ] = await Promise.all([
-          fetch('/content/settings.json'),
-          fetch('/content/homepage.json'),
-          fetch('/content/teams.json'),
-          fetch('/content/fixtures.json'),
-          fetch('/content/newsData.json'),
-          fetch('/content/galleryData.json'),
-          fetch('/content/staffData.json'),
-          fetch('/content/missionVision.json'),
-        ]);
+    let unsubscribe: (() => void) | undefined;
+    initApp().then(unsub => {
+      unsubscribe = unsub;
+    });
 
-        const siteSettings = await settingsRes.json();
-        const homePageHero = await homepageRes.json();
-        const teamsData = await teamsRes.json();
-        const fixturesData = await fixturesRes.json();
-        const newsData = await newsRes.json();
-        const galleryData = await galleryRes.json();
-        const staffData = await staffRes.json();
-        const missionVision = await missionVisionRes.json();
-
-        setCmsData({
-          siteSettings,
-          homePageHero,
-          teamData: teamsData.teams,
-          fixtures: fixturesData.fixtures,
-          newsData: newsData.articles,
-          galleryData: galleryData.images,
-          staffData: staffData.members,
-          pagesData: [],
-          missionVision,
-          isFallback
-        });
-        setLoading(false);
-      } catch (err) {
-        console.error('Local data load error:', err);
-        setError('Veriler yüklenemedi. Lütfen sayfayı yenileyin.');
-        setLoading(false);
-      }
+    return () => {
+      if (unsubscribe) unsubscribe();
     };
-
-    initApp();
   }, []);
 
   // Update favicon and global styles dynamically
@@ -185,7 +122,7 @@ const App: React.FC = () => {
     return (
       <HashRouter>
         <Routes>
-          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/cangucu-panel" element={<AdminPage />} />
           <Route path="*" element={
             <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4 text-center">
               <img src={cmsData.siteSettings.logo} alt="Logo" className="h-24 mb-8" />
@@ -202,7 +139,7 @@ const App: React.FC = () => {
     <HashRouter>
       <ScrollToTop />
       <Routes>
-        <Route path="/admin" element={<AdminPage />} />
+        <Route path="/cangucu-panel" element={<AdminPage />} />
         <Route path="*" element={<Main data={cmsData} />} />
       </Routes>
     </HashRouter>
@@ -245,7 +182,7 @@ const Main: React.FC<MainProps> = ({ data }) => {
           <Route path="/galeri" element={<GalleryPage images={data.galleryData} />} />
           <Route path="/hakkimizda" element={<AboutPage staff={data.staffData} content={data.missionVision} />} />
           <Route path="/iletisim" element={<ContactPage siteSettings={data.siteSettings}/>} />
-          <Route path="/sayfa/:slug" element={<DynamicPage />} />
+          <Route path="/sayfa/:slug" element={<DynamicPage pages={data.pagesData} />} />
         </Routes>
       </main>
       <Footer siteSettings={data.siteSettings} teams={data.teamData} />
