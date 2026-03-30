@@ -2,32 +2,44 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://cangucu.org/</loc>
-    <lastmod>2024-03-30</lastmod>
+    <lastmod>2026-03-30</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://cangucu.org/#/haberler</loc>
-    <lastmod>2024-03-30</lastmod>
+    <loc>https://cangucu.org/haberler</loc>
+    <lastmod>2026-03-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://cangucu.org/#/galeri</loc>
-    <lastmod>2024-03-30</lastmod>
+    <loc>https://cangucu.org/takimlar</loc>
+    <lastmod>2026-03-30</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cangucu.org/fikstur</loc>
+    <lastmod>2026-03-30</lastmod>
     <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://cangucu.org/galeri</loc>
+    <lastmod>2026-03-30</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://cangucu.org/#/hakkimizda</loc>
-    <lastmod>2024-03-30</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <loc>https://cangucu.org/iletisim</loc>
+    <lastmod>2026-03-30</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://cangucu.org/#/iletisim</loc>
-    <lastmod>2024-03-30</lastmod>
-    <changefreq>monthly</changefreq>
+    <loc>https://cangucu.org/hakkimizda</loc>
+    <lastmod>2026-03-30</lastmod>
+    <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
 </urlset>
