@@ -25,7 +25,7 @@ import {
 } from '../firebaseService';
 import type { CMSData, NewsArticle, Team, GalleryItem, StaffMember, SiteSettings, HomePageHero, MissionVision, Fixture, DynamicPage } from '../types';
 import { subscribeToCMSData } from '../firebaseService';
-import { Plus, Trash2, Save, LogOut, Image as ImageIcon, Settings, Users, Newspaper, Layout, Target, Calendar, Database, ShieldCheck, Copy, ChevronUp, ChevronDown, FileText, User, Download } from 'lucide-react';
+import { Plus, Trash2, Save, LogOut, Image as ImageIcon, Settings, Users, Newspaper, Layout, Target, Calendar, Database, ShieldCheck, Copy, ChevronUp, ChevronDown, FileText, User, Download, CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 import ImageCropper from '../components/ImageCropper';
 
@@ -129,37 +129,42 @@ const ImageUpload: React.FC<{
   onQuickSave?: (url: string) => void,
   cropAspect?: number,
   circularCrop?: boolean,
-  isFallback?: boolean
-}> = ({ onUpload, currentUrl, path, label, handleUpload, isLogo, isHero, isSmall, onQuickSave, cropAspect, circularCrop, isFallback }) => {
+  isFallback?: boolean,
+  showMessage: (type: 'success' | 'error' | 'info', msg: string) => void
+}> = ({ onUpload, currentUrl, path, label, handleUpload, isLogo, isHero, isSmall, onQuickSave, cropAspect, circularCrop, isFallback, showMessage }) => {
   const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState('');
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [originalFile, setOriginalFile] = useState<File | null>(null);
+  const [showConfirmRemove, setShowConfirmRemove] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleRemove = (e: React.MouseEvent) => {
     e.preventDefault();
     if (isFallback) {
-      alert('Veritabanı bağlantısı yok. Görsel silinemez.');
+      showMessage('error', 'Veritabanı bağlantısı yok. Görsel silinemez.');
       return;
     }
-    const confirmMsg = isLogo ? 'Logoyu kaldırmak istediğinize emin misiniz?' : 'Görseli kaldırmak istediğinize emin misiniz?';
-    if (window.confirm(confirmMsg)) {
-      onUpload('');
-      if (onQuickSave) onQuickSave('');
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
+    setShowConfirmRemove(true);
+  };
+
+  const confirmRemove = () => {
+    onUpload('');
+    if (onQuickSave) onQuickSave('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    setShowConfirmRemove(false);
+    showMessage('success', 'Görsel kaldırıldı');
   };
 
   const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isFallback) {
-      alert('Veritabanı bağlantısı yok. Görsel yüklenemez.');
+      showMessage('error', 'Veritabanı bağlantısı yok. Görsel yüklenemez.');
       return;
     }
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
-        alert('Lütfen geçerli bir görsel dosyası seçin.');
+        showMessage('error', 'Lütfen geçerli bir görsel dosyası seçin.');
         return;
       }
       setOriginalFile(file);
@@ -185,8 +190,12 @@ const ImageUpload: React.FC<{
           await onQuickSave(url);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Upload error in component:", err);
+      // The error message is already shown by showMessage in handleFileUpload, 
+      // but we show it here too just in case handleFileUpload didn't catch it.
+      const msg = err.message || 'Görsel yüklenirken bir hata oluştu.';
+      showMessage('error', `Yükleme hatası: ${msg}`);
     } finally {
       setUploading(false);
       setStatus('');
@@ -245,6 +254,30 @@ const ImageUpload: React.FC<{
         </label>
       </div>
 
+      {/* Confirmation Modal for Removal */}
+      {showConfirmRemove && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+            <h3 className="text-lg font-bold mb-2">Görseli Kaldır</h3>
+            <p className="text-gray-600 text-sm mb-6">Bu görseli kaldırmak istediğinize emin misiniz?</p>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowConfirmRemove(false)}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all"
+              >
+                Vazgeç
+              </button>
+              <button 
+                onClick={confirmRemove}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all"
+              >
+                Kaldır
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {cropImage && (
         <ImageCropper
           image={cropImage}
@@ -269,9 +302,18 @@ const AdminPage: React.FC = () => {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isMigrating, setIsMigrating] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    confirmText?: string;
+    cancelText?: string;
+    type?: 'danger' | 'primary';
+  } | null>(null);
 
   const showMessage = (type: 'success' | 'error' | 'info', text: string) => {
     setMessage({ type, text });
@@ -279,16 +321,20 @@ const AdminPage: React.FC = () => {
   };
 
   const handleFileUpload = async (file: File, path: string, isHero: boolean = false, isSmall: boolean = false) => {
-    if (!storage) {
-      console.error('[STORAGE] Storage instance is not initialized');
-      return await convertToBase64(file);
+    if (!storage || !storage.app.options.storageBucket) {
+      console.error('[STORAGE] Storage instance or storageBucket is missing');
+      // Only fallback to Base64 for tiny logos if storage is missing
+      if (path === 'settings' && file.size < 50 * 1024) {
+        return await convertToBase64(file);
+      }
+      const missingConfig = !storage ? 'başlatılamadı' : 'yapılandırılmamış (storageBucket eksik)';
+      throw new Error(`Bulut depolama (Firebase Storage) sistemi ${missingConfig}. Lütfen yönetici ile iletişime geçin.`);
     }
 
     try {
       // Basic validation
       if (!file.type.startsWith('image/')) {
-        showMessage('error', 'Lütfen geçerli bir görsel dosyası seçin.');
-        return '';
+        throw new Error('Lütfen geçerli bir görsel dosyası seçin.');
       }
 
       const isLogo = path === 'settings';
@@ -313,8 +359,7 @@ const AdminPage: React.FC = () => {
       }
 
       if (finalFile.size > 10 * 1024 * 1024) { // 10MB limit for storage
-        showMessage('error', 'Görsel çok büyük. Lütfen daha küçük bir dosya seçin.');
-        return '';
+        throw new Error('Görsel çok büyük. Lütfen 10MB\'dan daha küçük bir dosya seçin.');
       }
 
       // Sanitize filename
@@ -327,7 +372,7 @@ const AdminPage: React.FC = () => {
       // Use a longer timeout (30s) for the upload to be more patient with slow connections
       const uploadPromise = uploadBytes(storageRef, finalFile);
       const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('timeout')), 30000)
+        setTimeout(() => reject(new Error('timeout')), 60000)
       );
 
       try {
@@ -361,10 +406,15 @@ const AdminPage: React.FC = () => {
         errorMessage = err.message;
       }
       showMessage('error', errorMessage);
-      return '';
+      throw err;
     }
   };
   useEffect(() => {
+    if (storage && !storage.app.options.storageBucket) {
+      console.warn('[STORAGE] Storage bucket is missing in configuration');
+      showMessage('error', 'Bulut depolama (Firebase Storage) yapılandırması eksik (storageBucket). Görsel yükleme çalışmayabilir.');
+    }
+
     let unsubscribeAdmins: (() => void) | undefined;
     let unsubscribeCMS: (() => void) | undefined;
 
@@ -408,8 +458,9 @@ const AdminPage: React.FC = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError(null);
     if (!loginEmail || !loginPassword) {
-      alert('Lütfen e-posta ve şifrenizi girin.');
+      setLoginError('Lütfen e-posta ve şifrenizi girin.');
       return;
     }
     
@@ -430,7 +481,7 @@ const AdminPage: React.FC = () => {
         errorMsg = `Hata: ${err.message} (${err.code})`;
       }
       
-      alert(errorMsg);
+      setLoginError(errorMsg);
     } finally {
       setIsLoggingIn(false);
     }
@@ -472,13 +523,19 @@ const AdminPage: React.FC = () => {
 
   const handleMigration = async () => {
     if (!isSuperAdmin) {
-      alert('Bu işlemi sadece Süper Admin yapabilir.');
+      showMessage('error', 'Bu işlemi sadece Süper Admin yapabilir.');
       return;
     }
-    if (!confirm('SİTEYİ FABRİKA AYARLARINA DÖNDÜRMEK İSTEDİĞİNİZE EMİN MİSİNİZ? Bu işlem veritabanındaki TÜM verilerinizi (haberler, logolar, fikstürler vb.) kalıcı olarak silecek ve yerlerine boş varsayılan verileri yükleyecektir.')) return;
     
-    setIsMigrating(true);
-    try {
+    setConfirmModal({
+      title: 'Fabrika Ayarlarına Dön',
+      message: 'SİTEYİ FABRİKA AYARLARINA DÖNDÜRMEK İSTEDİĞİNİZE EMİN MİSİNİZ? Bu işlem veritabanındaki TÜM verilerinizi (haberler, logolar, fikstürler vb.) kalıcı olarak silecek ve yerlerine boş varsayılan verileri yükleyecektir.',
+      confirmText: 'Sıfırla ve Varsayılanları Yükle',
+      type: 'danger',
+      onConfirm: async () => {
+        setConfirmModal(null);
+        setIsMigrating(true);
+        try {
       const fetchJson = async (url: string) => {
         const res = await fetch(url);
         if (!res.ok) throw new Error(`${url} yüklenemedi`);
@@ -535,7 +592,9 @@ const AdminPage: React.FC = () => {
     } finally {
       setIsMigrating(false);
     }
-  };
+  }
+});
+};
 
 
   if (loading) return (
@@ -560,6 +619,11 @@ const AdminPage: React.FC = () => {
           <p className="text-gray-600 mb-8 text-center">Sitenizi yönetmek için lütfen e-posta ve şifrenizle giriş yapın.</p>
           
           <form onSubmit={handleLogin} className="space-y-4">
+            {loginError && (
+              <div className="p-3 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl font-medium">
+                {loginError}
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">E-posta</label>
               <input 
@@ -706,19 +770,57 @@ const AdminPage: React.FC = () => {
           )}
 
           <div className="max-w-4xl mx-auto">
-            {activeTab === 'settings' && <SettingsTab data={cmsData.siteSettings} onSave={async (d) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await updateSettings(d); showMessage('success', 'Ayarlar kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} />}
-            {activeTab === 'homepage' && <HomepageTab data={cmsData.homePageHero} onSave={async (d) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await updateHomepage(d); showMessage('success', 'Ana sayfa güncellendi'); } catch(e) { showMessage('error', 'Güncellenemedi'); throw e; } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} />}
-            {activeTab === 'news' && <NewsTab data={cmsData.newsData} onSave={async (d, id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveNewsArticle(d, id); showMessage('success', 'Haber kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } if(confirm('Emin misiniz?')) { try { await deleteNewsArticle(id); showMessage('success', 'Haber silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Sıralama değiştirilemez.'); return; } handleReorder('news', cmsData.newsData, idx, dir); }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} />}
-            {activeTab === 'pages' && <PagesTab data={cmsData.pagesData} onSave={async (d, id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await savePage(d, id); showMessage('success', 'Sayfa kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } if(confirm('Emin misiniz?')) { try { await deletePage(id); showMessage('success', 'Sayfa silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} showMessage={showMessage} isFallback={cmsData.isFallback} />}
-            {activeTab === 'teams' && <TeamsTab data={cmsData.teamData} onSave={async (d, id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveTeam(d, id); showMessage('success', 'Takım kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } if(confirm('Emin misiniz?')) { try { await deleteTeam(id); showMessage('success', 'Takım silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} />}
-            {activeTab === 'fixtures' && <FixturesTab data={cmsData.fixtures} teams={cmsData.teamData} onSave={async (d) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveFixture(d); showMessage('success', 'Fikstür kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onReorder={(idx, dir) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Sıralama değiştirilemez.'); return; } handleReorder('fixtures', cmsData.fixtures, idx, dir); }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} />}
-            {activeTab === 'gallery' && <GalleryTab data={cmsData.galleryData} onSave={async (d) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveGalleryImage(d); showMessage('success', 'Görsel eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } if(confirm('Emin misiniz?')) { try { await deleteGalleryImage(id); showMessage('success', 'Görsel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Sıralama değiştirilemez.'); return; } handleReorder('gallery', cmsData.galleryData, idx, dir); }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} />}
-            {activeTab === 'staff' && <StaffTab data={cmsData.staffData} onSave={async (d, id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveStaffMember(d, id); showMessage('success', 'Personel kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } if(confirm('Emin misiniz?')) { try { await deleteStaffMember(id); showMessage('success', 'Personel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } } }} onReorder={(idx, dir) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Sıralama değiştirilemez.'); return; } handleReorder('staff', cmsData.staffData, idx, dir); }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} />}
-            {activeTab === 'about' && <AboutTab data={cmsData.missionVision} onSave={async (d) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await updateMissionVision(d); showMessage('success', 'Kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} isFallback={cmsData.isFallback} />}
-            {activeTab === 'users' && <UsersTab admins={admins} currentUser={user} onAdd={async (e, u) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Yetkili eklenemez.'); return; } try { await addAdmin(e, u); showMessage('success', 'Yetkili eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); } }} onRemove={async (u) => { if (cmsData.isFallback) { alert('Veritabanı bağlantısı yok. Yetkili kaldırılamaz.'); return; } if(confirm('Bu yetkiliyi kaldırmak istediğinize emin misiniz?')) { try { await removeAdmin(u); showMessage('success', 'Yetkili kaldırıldı'); } catch(e) { showMessage('error', 'Kaldırılamadı'); } } }} isFallback={cmsData.isFallback} />}
-            {activeTab === 'export' && <WebflowExportTab cmsData={cmsData} />}
+            {activeTab === 'settings' && <SettingsTab data={cmsData.siteSettings} onSave={async (d) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await updateSettings(d); showMessage('success', 'Ayarlar kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} showMessage={showMessage} />}
+            {activeTab === 'homepage' && <HomepageTab data={cmsData.homePageHero} onSave={async (d) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await updateHomepage(d); showMessage('success', 'Ana sayfa güncellendi'); } catch(e) { showMessage('error', 'Güncellenemedi'); throw e; } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} showMessage={showMessage} setConfirmModal={setConfirmModal} />}
+            {activeTab === 'news' && <NewsTab data={cmsData.newsData} onSave={async (d, id) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveNewsArticle(d, id); showMessage('success', 'Haber kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } try { await deleteNewsArticle(id); showMessage('success', 'Haber silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } }} onReorder={(idx, dir) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Sıralama değiştirilemez.'); return; } handleReorder('news', cmsData.newsData, idx, dir); }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} showMessage={showMessage} />}
+            {activeTab === 'pages' && <PagesTab data={cmsData.pagesData} onSave={async (d, id) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await savePage(d, id); showMessage('success', 'Sayfa kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } try { await deletePage(id); showMessage('success', 'Sayfa silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} showMessage={showMessage} isFallback={cmsData.isFallback} />}
+            {activeTab === 'teams' && <TeamsTab data={cmsData.teamData} onSave={async (d, id) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveTeam(d, id); showMessage('success', 'Takım kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } try { await deleteTeam(id); showMessage('success', 'Takım silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} showMessage={showMessage} />}
+            {activeTab === 'fixtures' && <FixturesTab data={cmsData.fixtures} teams={cmsData.teamData} onSave={async (d) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveFixture(d); showMessage('success', 'Fikstür kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onReorder={(idx, dir) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Sıralama değiştirilemez.'); return; } handleReorder('fixtures', cmsData.fixtures, idx, dir); }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} showMessage={showMessage} />}
+            {activeTab === 'gallery' && <GalleryTab data={cmsData.galleryData} onSave={async (d) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveGalleryImage(d); showMessage('success', 'Görsel eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } try { await deleteGalleryImage(id); showMessage('success', 'Görsel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } }} onReorder={(idx, dir) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Sıralama değiştirilemez.'); return; } handleReorder('gallery', cmsData.galleryData, idx, dir); }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} showMessage={showMessage} />}
+            {activeTab === 'staff' && <StaffTab data={cmsData.staffData} onSave={async (d, id) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveStaffMember(d, id); showMessage('success', 'Personel kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } try { await deleteStaffMember(id); showMessage('success', 'Personel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } }} onReorder={(idx, dir) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Sıralama değiştirilemez.'); return; } handleReorder('staff', cmsData.staffData, idx, dir); }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} showMessage={showMessage} />}
+            {activeTab === 'about' && <AboutTab data={cmsData.missionVision} onSave={async (d) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await updateMissionVision(d); showMessage('success', 'Kaydedildi'); } catch(err) { showMessage('error', 'Kaydedilemedi'); throw err; } }} isFallback={cmsData.isFallback} showMessage={showMessage} />}
+            {activeTab === 'users' && <UsersTab admins={admins} currentUser={user} onAdd={async (e, u) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Yetkili eklenemez.'); return; } try { await addAdmin(e, u); showMessage('success', 'Yetkili eklendi'); } catch(err) { showMessage('error', 'Eklenemedi'); } }} onRemove={async (u) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Yetkili kaldırılamaz.'); return; } try { await removeAdmin(u); showMessage('success', 'Yetkili kaldırıldı'); } catch(err) { showMessage('error', 'Kaldırılamadı'); } }} isFallback={cmsData.isFallback} showMessage={showMessage} />}
+            {activeTab === 'export' && <WebflowExportTab cmsData={cmsData} showMessage={showMessage} />}
           </div>
         </main>
+
+        {/* Confirmation Modal */}
+        {confirmModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[200] p-4">
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl animate-in fade-in zoom-in duration-200">
+              <h3 className="text-xl font-bold mb-2">{confirmModal.title}</h3>
+              <p className="text-gray-600 text-sm mb-6 leading-relaxed">{confirmModal.message}</p>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setConfirmModal(null)}
+                  className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all"
+                >
+                  {confirmModal.cancelText || 'Vazgeç'}
+                </button>
+                <button 
+                  onClick={confirmModal.onConfirm}
+                  className={`flex-1 px-4 py-2.5 text-white rounded-xl font-bold transition-all ${confirmModal.type === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-600 hover:bg-orange-700'}`}
+                >
+                  {confirmModal.confirmText || 'Onayla'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Global Message Toast */}
+        {message && (
+          <div className={`fixed bottom-8 right-8 z-[300] px-6 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-4 duration-300 ${
+            message.type === 'success' ? 'bg-emerald-600 text-white' : 
+            message.type === 'error' ? 'bg-red-600 text-white' : 
+            'bg-blue-600 text-white'
+          }`}>
+            {message.type === 'success' ? <CheckCircle size={20} /> : 
+             message.type === 'error' ? <AlertCircle size={20} /> : 
+             <Info size={20} />}
+            <span className="font-bold">{message.text}</span>
+          </div>
+        )}
       </div>
   );
 };
@@ -745,7 +847,7 @@ const MobileTabButton: React.FC<{ active: boolean, onClick: () => void, icon: Re
 
 // --- Tab Components (Simplified for brevity, but functional) ---
 
-const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any, isFallback?: boolean }> = ({ data, onSave, handleUpload, ImageUpload, isFallback }) => {
+const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any, isFallback?: boolean, showMessage: any }> = ({ data, onSave, handleUpload, ImageUpload, isFallback, showMessage }) => {
   const [form, setForm] = useState(data || {
     siteTitle: 'Çangücü SK',
     logo: '',
@@ -780,7 +882,7 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
 
   const handleSave = async () => {
     if (isFallback) {
-      alert('Veritabanı bağlantısı yok. Değişiklikler kaydedilemez.');
+      showMessage('error', 'Veritabanı bağlantısı yok. Değişiklikler kaydedilemez.');
       return;
     }
     setIsSaving(true);
@@ -826,6 +928,8 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
             isLogo={true}
             cropAspect={1}
             circularCrop={true}
+            isFallback={isFallback}
+            showMessage={showMessage}
             onUpload={(url: string) => {
               updateForm({ logo: url });
             }}
@@ -1052,7 +1156,7 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
   );
 };
 
-const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload, isFallback }) => {
+const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean, showMessage: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload, isFallback, showMessage }) => {
   const [editing, setEditing] = useState<Partial<NewsArticle> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const newsList = data || [];
@@ -1060,7 +1164,7 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
   const handleSave = async () => {
     if (!editing) return;
     if (isFallback) {
-      alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
+      showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
       return;
     }
     setIsSaving(true);
@@ -1112,6 +1216,8 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
             path="news"
             isHero={true}
             handleUpload={handleUpload}
+            isFallback={isFallback}
+            showMessage={showMessage}
             onUpload={(url: string) => setEditing({ ...editing, imageUrl: url })}
           />
 
@@ -1166,7 +1272,7 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
 
 // --- Other tabs follow similar pattern... I'll implement a few more key ones ---
 
-const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>, id?: string) => void, onDelete: (id: string) => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any, showMessage: any, isFallback: boolean }> = ({ data, onSave, onDelete, handleUpload, ImageUpload, showMessage, isFallback }) => {
+const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>, id?: string) => void, onDelete: (id: string) => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, showMessage: any, isFallback: boolean }> = ({ data, onSave, onDelete, handleUpload, ImageUpload, showMessage, isFallback }) => {
   const [editing, setEditing] = useState<Partial<DynamicPage> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const pagesList = data || [];
@@ -1174,7 +1280,7 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
   const handleSave = async () => {
     if (!editing) return;
     if (isFallback) {
-      alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
+      showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
       return;
     }
     setIsSaving(true);
@@ -1244,6 +1350,8 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
             path="pages"
             isHero={true}
             handleUpload={handleUpload}
+            isFallback={isFallback}
+            showMessage={showMessage}
             onUpload={(url: string) => setEditing({ ...editing, heroImage: url })}
           />
 
@@ -1263,6 +1371,8 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
               circularCrop={true}
               isSmall={true}
               handleUpload={handleUpload}
+              isFallback={isFallback}
+              showMessage={showMessage}
               onUpload={(url: string) => setEditing({ ...editing, coach: { ...editing.coach!, imageUrl: url } })}
             />
           </div>
@@ -1301,6 +1411,8 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
                     cropAspect={1}
                     isSmall={true}
                     handleUpload={handleUpload}
+                    isFallback={isFallback}
+                    showMessage={showMessage}
                     onUpload={(url: string) => {
                       const players = editing.players?.map(p => p.id === player.id ? { ...p, imageUrl: url } : p);
                       setEditing({ ...editing, players });
@@ -1406,7 +1518,7 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
   );
 };
 
-const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryItem>) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload, isFallback }) => {
+const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryItem>) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean, showMessage: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload, isFallback, showMessage }) => {
   const [newImage, setNewImage] = useState({ imageUrl: '', title: '' });
   const [isSaving, setIsSaving] = useState(false);
   const galleryList = data || [];
@@ -1414,13 +1526,16 @@ const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryIte
   const handleSave = async () => {
     if (!newImage.imageUrl) return;
     if (isFallback) {
-      alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
+      showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
       return;
     }
     setIsSaving(true);
     try {
       await onSave(newImage);
       setNewImage({ imageUrl: '', title: '' });
+    } catch (err) {
+      console.error('[GALLERY_SAVE] Error saving gallery image:', err);
+      showMessage('error', 'Görsel kaydedilirken bir hata oluştu.');
     } finally {
       setIsSaving(false);
     }
@@ -1440,14 +1555,16 @@ const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryIte
       </div>
       <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ImageUpload 
-            label="Görsel Yükle"
-            currentUrl={newImage.imageUrl}
-            path="gallery"
-            cropAspect={4/3}
-            handleUpload={handleUpload}
-            onUpload={(url: string) => setNewImage({ ...newImage, imageUrl: url })}
-          />
+            <ImageUpload 
+              label="Görsel Yükle"
+              currentUrl={newImage.imageUrl}
+              path="gallery"
+              cropAspect={4/3}
+              handleUpload={handleUpload}
+              isFallback={isFallback}
+              showMessage={showMessage}
+              onUpload={(url: string) => setNewImage({ ...newImage, imageUrl: url })}
+            />
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">Başlık (Opsiyonel)</label>
             <input type="text" placeholder="Görsel Başlığı" value={newImage.title} onChange={e => setNewImage({...newImage, title: e.target.value})} className="w-full p-2 border rounded-lg" />
@@ -1493,7 +1610,7 @@ const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryIte
   );
 };
 
-const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean }> = ({ data, onSave, handleUpload, ImageUpload, isFallback }) => {
+const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean, showMessage: any, setConfirmModal: any }> = ({ data, onSave, handleUpload, ImageUpload, isFallback, showMessage, setConfirmModal }) => {
   const [form, setForm] = useState(data || {
     heroImage: '',
     heroTitle: '',
@@ -1510,7 +1627,7 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
 
   const handleSave = async () => {
     if (isFallback) {
-      alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
+      showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
       return;
     }
     setIsSaving(true);
@@ -1566,6 +1683,8 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
             path="homepage"
             isHero={true}
             handleUpload={handleUpload}
+            isFallback={isFallback}
+            showMessage={showMessage}
             onUpload={(url: string) => setForm({ ...form, heroImage: url })}
           />
         </div>
@@ -1627,10 +1746,17 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
                   </label>
                   <button 
                     onClick={() => {
-                      if (confirm('Bu bölümü silmek istediğinize emin misiniz?')) {
-                        const newSecs = form.sections.filter((_, i) => i !== idx);
-                        setForm({...form, sections: newSecs});
-                      }
+                      setConfirmModal({
+                        title: 'Bölümü Sil',
+                        message: 'Bu bölümü silmek istediğinize emin misiniz?',
+                        confirmText: 'Sil',
+                        type: 'danger',
+                        onConfirm: () => {
+                          const newSecs = form.sections.filter((_, i) => i !== idx);
+                          setForm({...form, sections: newSecs});
+                          setConfirmModal(null);
+                        }
+                      });
                     }}
                     className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-all"
                   >
@@ -1653,7 +1779,7 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
   );
 };
 
-const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string) => void, onDelete: (id: string) => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean }> = ({ data, onSave, onDelete, handleUpload, ImageUpload, isFallback }) => {
+const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string) => void, onDelete: (id: string) => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean, showMessage: any }> = ({ data, onSave, onDelete, handleUpload, ImageUpload, isFallback, showMessage }) => {
   const [editing, setEditing] = useState<any | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const teams = data || [];
@@ -1661,7 +1787,7 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
   const handleSave = async () => {
     if (!editing) return;
     if (isFallback) {
-      alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
+      showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
       return;
     }
     setIsSaving(true);
@@ -1676,13 +1802,13 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
       
       if (size > 900 * 1024) { // Warning at 900KB
         if (hasBase64) {
-          alert('Uyarı: Takım verisi çok büyük. Bazı oyuncu fotoğrafları veritabanına gömülü (Base64) görünüyor. Lütfen bu fotoğrafları silip tekrar yükleyerek bulut depolamaya taşınmasını sağlayın.');
+          showMessage('warning', 'Uyarı: Takım verisi çok büyük. Bazı oyuncu fotoğrafları veritabanına gömülü (Base64) görünüyor. Lütfen bu fotoğrafları silip tekrar yükleyerek bulut depolamaya taşınmasını sağlayın.');
         } else {
-          alert('Uyarı: Takım verisi çok büyük. Çok fazla oyuncu veya veri eklemiş olabilirsiniz.');
+          showMessage('warning', 'Uyarı: Takım verisi çok büyük. Çok fazla oyuncu veya veri eklemiş olabilirsiniz.');
         }
         
         if (size > 1040 * 1024) { // Hard limit at ~1MB
-          alert('Hata: Takım verisi 1MB limitini aştı. Kaydedilemez. Lütfen bazı oyuncuları kaldırın veya fotoğrafları bulut depolamaya yüklemek için yeniden yükleyin.');
+          showMessage('error', 'Hata: Takım verisi 1MB limitini aştı. Kaydedilemez. Lütfen bazı oyuncuları kaldırın veya fotoğrafları bulut depolamaya yüklemek için yeniden yükleyin.');
           setIsSaving(false);
           return;
         }
@@ -1692,7 +1818,7 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
       setEditing(null);
     } catch (err) {
       console.error('[TEAM_SAVE] Error saving team:', err);
-      alert('Takım kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
+      showMessage('error', 'Takım kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setIsSaving(false);
     }
@@ -1727,6 +1853,8 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
             circularCrop={true}
             isSmall={true}
             handleUpload={handleUpload}
+            isFallback={isFallback}
+            showMessage={showMessage}
             onUpload={(url: string) => setEditing({ ...editing, coach: { ...(editing.coach || {}), imageUrl: url } })}
           />
           
@@ -1736,6 +1864,8 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
             path="teams"
             isHero={true}
             handleUpload={handleUpload}
+            isFallback={isFallback}
+            showMessage={showMessage}
             onUpload={(url: string) => setEditing({ ...editing, heroImage: url })}
           />
 
@@ -1805,6 +1935,8 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
                     cropAspect={1}
                     isSmall={true}
                     handleUpload={handleUpload}
+                    isFallback={isFallback}
+                    showMessage={showMessage}
                     onUpload={(url: string) => {
                       const newPlayers = [...editing.players];
                       newPlayers[idx].imageUrl = url;
@@ -1865,8 +1997,9 @@ const FixturesTab: React.FC<{
   onReorder: (idx: number, dir: 'up' | 'down') => void,
   handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>,
   ImageUpload: any,
-  isFallback: boolean
-}> = ({ data, teams, onSave, onReorder, handleUpload, ImageUpload, isFallback }) => {
+  isFallback: boolean,
+  showMessage: any
+}> = ({ data, teams, onSave, onReorder, handleUpload, ImageUpload, isFallback, showMessage }) => {
   const [editing, setEditing] = useState<any | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const fixtures = data || [];
@@ -1874,7 +2007,7 @@ const FixturesTab: React.FC<{
   const handleSave = async () => {
     if (!editing) return;
     if (isFallback) {
-      alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
+      showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
       return;
     }
     setIsSaving(true);
@@ -1882,7 +2015,7 @@ const FixturesTab: React.FC<{
       // Check total size
       const size = new Blob([JSON.stringify(editing)]).size;
       if (size > 950 * 1024) {
-        alert('Uyarı: Fikstür verisi çok büyük. Lütfen logoları daha küçük boyutlu seçin.');
+        showMessage('error', 'Uyarı: Fikstür verisi çok büyük. Lütfen logoları daha küçük boyutlu seçin.');
         if (size > 1024 * 1024) {
           setIsSaving(false);
           return;
@@ -1892,7 +2025,7 @@ const FixturesTab: React.FC<{
       setEditing(null);
     } catch (err) {
       console.error('[FIXTURE_SAVE] Error saving fixture:', err);
-      alert('Fikstür kaydedilirken bir hata oluştu.');
+      showMessage('error', 'Fikstür kaydedilirken bir hata oluştu.');
     } finally {
       setIsSaving(false);
     }
@@ -1978,6 +2111,8 @@ const FixturesTab: React.FC<{
                     path="match-logos"
                     isSmall={true}
                     handleUpload={handleUpload}
+                    isFallback={isFallback}
+                    showMessage={showMessage}
                     onUpload={(url: string) => {
                       const newMatches = [...editing.matches!];
                       newMatches[idx].homeLogo = url;
@@ -1990,6 +2125,8 @@ const FixturesTab: React.FC<{
                     path="match-logos"
                     isSmall={true}
                     handleUpload={handleUpload}
+                    isFallback={isFallback}
+                    showMessage={showMessage}
                     onUpload={(url: string) => {
                       const newMatches = [...editing.matches!];
                       newMatches[idx].awayLogo = url;
@@ -2055,7 +2192,7 @@ const FixturesTab: React.FC<{
   );
 };
 
-const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload, isFallback }) => {
+const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean, showMessage: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload, isFallback, showMessage }) => {
   const [editing, setEditing] = useState<Partial<StaffMember> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const staff = data || [];
@@ -2063,7 +2200,7 @@ const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>
   const handleSave = async () => {
     if (!editing) return;
     if (isFallback) {
-      alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
+      showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
       return;
     }
     setIsSaving(true);
@@ -2071,7 +2208,7 @@ const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>
       // Check total size
       const size = new Blob([JSON.stringify(editing)]).size;
       if (size > 950 * 1024) {
-        alert('Uyarı: Personel verisi çok büyük. Lütfen fotoğrafı daha küçük boyutlu seçin.');
+        showMessage('error', 'Uyarı: Personel verisi çok büyük. Lütfen fotoğrafı daha küçük boyutlu seçin.');
         if (size > 1024 * 1024) {
           setIsSaving(false);
           return;
@@ -2081,7 +2218,7 @@ const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>
       setEditing(null);
     } catch (err) {
       console.error('[STAFF_SAVE] Error saving staff:', err);
-      alert('Personel kaydedilirken bir hata oluştu.');
+      showMessage('error', 'Personel kaydedilirken bir hata oluştu.');
     } finally {
       setIsSaving(false);
     }
@@ -2109,6 +2246,8 @@ const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>
             circularCrop={true}
             isSmall={true}
             handleUpload={handleUpload}
+            isFallback={isFallback}
+            showMessage={showMessage}
             onUpload={(url: string) => setEditing({ ...editing, imageUrl: url })}
           />
 
@@ -2164,7 +2303,7 @@ const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>
   );
 };
 
-const AboutTab: React.FC<{ data: MissionVision, onSave: (d: MissionVision) => void, isFallback: boolean }> = ({ data, onSave, isFallback }) => {
+const AboutTab: React.FC<{ data: MissionVision, onSave: (d: MissionVision) => void, isFallback: boolean, showMessage: any }> = ({ data, onSave, isFallback, showMessage }) => {
   const [form, setForm] = useState(data || { mission: '', vision: '' });
 
   useEffect(() => {
@@ -2173,7 +2312,7 @@ const AboutTab: React.FC<{ data: MissionVision, onSave: (d: MissionVision) => vo
 
   const handleSave = () => {
     if (isFallback) {
-      alert('Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
+      showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.');
       return;
     }
     onSave(form);
@@ -2205,12 +2344,12 @@ const AboutTab: React.FC<{ data: MissionVision, onSave: (d: MissionVision) => vo
   );
 };
 
-const UsersTab: React.FC<{ admins: any[], currentUser: any, onAdd: (email: string, uid: string) => void, onRemove: (uid: string) => void, isFallback: boolean }> = ({ admins, currentUser, onAdd, onRemove, isFallback }) => {
+const UsersTab: React.FC<{ admins: any[], currentUser: any, onAdd: (email: string, uid: string) => void, onRemove: (uid: string) => void, isFallback: boolean, showMessage: any }> = ({ admins, currentUser, onAdd, onRemove, isFallback, showMessage }) => {
   const [newAdmin, setNewAdmin] = useState({ email: '', uid: '' });
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    alert('Kopyalandı: ' + text);
+    showMessage('success', 'Kopyalandı: ' + text);
   };
 
   return (
@@ -2259,7 +2398,7 @@ const UsersTab: React.FC<{ admins: any[], currentUser: any, onAdd: (email: strin
         </div>
         <button 
           onClick={() => { 
-            if (isFallback) { alert('Veritabanı bağlantısı yok. Yetkili eklenemez.'); return; }
+            if (isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Yetkili eklenemez.'); return; }
             if(newAdmin.email && newAdmin.uid) { onAdd(newAdmin.email, newAdmin.uid); setNewAdmin({ email: '', uid: '' }); } 
           }} 
           disabled={isFallback}
@@ -2324,10 +2463,10 @@ const ExportCard: React.FC<{ title: string, count: number, onDownload: () => voi
   </div>
 );
 
-const WebflowExportTab: React.FC<{ cmsData: CMSData }> = ({ cmsData }) => {
+const WebflowExportTab: React.FC<{ cmsData: CMSData, showMessage: any }> = ({ cmsData, showMessage }) => {
   const downloadCSV = (data: any[], filename: string) => {
     if (!data || data.length === 0) {
-      alert('Dışa aktarılacak veri bulunamadı.');
+      showMessage('warning', 'Dışa aktarılacak veri bulunamadı.');
       return;
     }
 

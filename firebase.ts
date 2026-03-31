@@ -27,6 +27,7 @@ if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "undefined") {
     auth = getAuth(app);
     db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
     storage = getStorage(app);
+    console.log('[FIREBASE] Storage initialized with bucket:', firebaseConfig.storageBucket);
 
     // Enable offline persistence
     import('firebase/firestore').then(({ enableIndexedDbPersistence }) => {
