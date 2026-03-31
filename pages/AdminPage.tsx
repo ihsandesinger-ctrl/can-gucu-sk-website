@@ -55,13 +55,17 @@ const compressImage = (f: File, isLogo: boolean = false, isHero: boolean = false
       img.onload = () => {
         clearTimeout(timeout);
         const canvas = document.createElement('canvas');
-        // Logos and small photos (players, staff) don't need to be huge. 200px is plenty for cards.
-        let MAX_WIDTH = 1200;
-        let MAX_HEIGHT = 1200;
+        // Logos and small photos (players, staff) don't need to be huge, but should be high quality.
+        let MAX_WIDTH = 1920;
+        let MAX_HEIGHT = 1080;
         
-        if (isLogo || isSmall) {
-          MAX_WIDTH = 200;
-          MAX_HEIGHT = 200;
+        if (isLogo) {
+          MAX_WIDTH = 400;
+          MAX_HEIGHT = 400;
+        } else if (isSmall) {
+          // 800px is great for player/staff profiles
+          MAX_WIDTH = 800;
+          MAX_HEIGHT = 800;
         }
         
         let width = img.width;
@@ -91,7 +95,7 @@ const compressImage = (f: File, isLogo: boolean = false, isHero: boolean = false
         // Use PNG for logos and hero images to preserve transparency if it's a PNG
         // Use JPEG for others to keep file size small
         const mimeType = (isLogo || isHero) && f.type === 'image/png' ? 'image/png' : 'image/jpeg';
-        const quality = isLogo ? 0.8 : (isSmall ? 0.5 : 0.7); // Much lower quality for small assets to ensure tiny size
+        const quality = 0.85; // High quality for all images
 
         canvas.toBlob((blob) => {
           if (blob) {
@@ -289,10 +293,9 @@ const AdminPage: React.FC = () => {
 
       const isLogo = path === 'settings';
       
-      // If it's a small logo/icon or player/staff photo, use Base64 immediately to bypass Storage issues
-      // This is much more reliable for small critical assets
-      if ((isLogo || isSmall) && file.size < 30 * 1024) {
-        console.log('[STORAGE] Very small asset, using Base64 directly');
+      // Only use Base64 for tiny logos under 20KB to ensure they load instantly
+      if (isLogo && file.size < 20 * 1024) {
+        console.log('[STORAGE] Tiny logo, using Base64');
         return await convertToBase64(file);
       }
 
@@ -303,9 +306,9 @@ const AdminPage: React.FC = () => {
       const finalFile = processedFile instanceof File ? processedFile : new File([processedFile], file.name, { type: (isLogo || isHero) && file.type === 'image/png' ? 'image/png' : 'image/jpeg' });
       console.log(`[STORAGE] Compressed size: ${finalFile.size} bytes`);
 
-      // If compressed file is small enough, prefer Base64 for logos/small assets to avoid Storage issues
-      if ((isLogo || isSmall) && finalFile.size < 50 * 1024) {
-        console.log('[STORAGE] Compressed asset is small enough, using Base64 for maximum reliability');
+      // If compressed file is tiny, use Base64 for logos only
+      if (isLogo && finalFile.size < 30 * 1024) {
+        console.log('[STORAGE] Compressed logo is tiny, using Base64');
         return await convertToBase64(finalFile);
       }
 
@@ -334,18 +337,17 @@ const AdminPage: React.FC = () => {
         showMessage('success', 'Görsel başarıyla yüklendi');
         return url;
       } catch (uploadErr: any) {
-        console.warn('[STORAGE] Storage upload failed or timed out, trying Base64 fallback:', uploadErr.message);
+        console.warn('[STORAGE] Storage upload failed or timed out:', uploadErr.message);
         
-        // Fallback to Base64 if file is small enough (< 900KB)
-        // Firestore has a 1MB limit per document, so Base64 must be smaller.
-        if (finalFile.size < 900 * 1024) {
+        // Only fallback to Base64 if absolutely necessary AND the file is small enough to not break Firestore
+        if (finalFile.size < 100 * 1024) {
           showMessage('info', 'Bulut depolama yavaş, alternatif yöntem kullanılıyor...');
           const b64 = await convertToBase64(finalFile);
           showMessage('success', 'Görsel başarıyla yüklendi (Alternatif)');
           return b64;
         } else {
-          console.error('[STORAGE] File too large for Base64 fallback');
-          throw new Error('Görsel yüklenemedi. Bulut depolama hatası ve dosya çok büyük. Lütfen daha küçük bir dosya deneyin veya internet bağlantınızı kontrol edin.');
+          console.error('[STORAGE] File too large for Base64 fallback or Storage failed');
+          throw new Error('Görsel yüklenemedi. Bulut depolama hatası (Storage). Lütfen internet bağlantınızı kontrol edin veya daha sonra tekrar deneyin.');
         }
       }
     } catch (err) {
