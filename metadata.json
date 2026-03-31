@@ -1,5 +1,5 @@
 {
-  "name": "ÇANGÜCÜ SK Website",
-  "description": "A clone of the ÇANGÜCÜ SK football club website, featuring dynamic content sections for teams, news, fixtures, and more. Built with React and Tailwind CSS.",
+  "name": "Çangücü Spor Kulübü",
+  "description": "Çangücü Spor Kulübü Resmi Web Sitesi. Haberler, Takımlar, Fikstür ve Galeri.",
   "requestFramePermissions": []
 }

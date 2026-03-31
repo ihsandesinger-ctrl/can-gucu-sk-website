@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f27d26;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d96a1a;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="48" fill="url(#grad)" stroke="#1a1a1a" stroke-width="3"/>
+  <path d="M50 15 L85 35 L85 75 L50 95 L15 75 L15 35 Z" fill="none" stroke="#1a1a1a" stroke-width="2" opacity="0.2"/>
+  <text x="50" y="65" font-family="system-ui, -apple-system, sans-serif" font-size="60" font-weight="900" fill="#1a1a1a" text-anchor="middle">Ç</text>
+  <text x="50" y="88" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#1a1a1a" text-anchor="middle" letter-spacing="2">SK</text>
+</svg>

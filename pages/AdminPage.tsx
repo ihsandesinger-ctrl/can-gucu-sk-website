@@ -40,7 +40,7 @@ const convertToBase64 = (f: File | Blob): Promise<string> => {
 };
 
 // Helper to compress image
-const compressImage = (f: File, isLogo: boolean = false, isHero: boolean = false): Promise<Blob | File> => {
+const compressImage = (f: File, isLogo: boolean = false, isHero: boolean = false, isSmall: boolean = false): Promise<Blob | File> => {
   return new Promise((resolve) => {
     const reader = new FileReader();
     const timeout = setTimeout(() => {
@@ -55,9 +55,15 @@ const compressImage = (f: File, isLogo: boolean = false, isHero: boolean = false
       img.onload = () => {
         clearTimeout(timeout);
         const canvas = document.createElement('canvas');
-        // Logos don't need to be huge. 400px is plenty for a logo.
-        const MAX_WIDTH = isLogo ? 400 : 1200;
-        const MAX_HEIGHT = isLogo ? 400 : 1200;
+        // Logos and small photos (players, staff) don't need to be huge. 400px is plenty.
+        let MAX_WIDTH = 1200;
+        let MAX_HEIGHT = 1200;
+        
+        if (isLogo || isSmall) {
+          MAX_WIDTH = 400;
+          MAX_HEIGHT = 400;
+        }
+        
         let width = img.width;
         let height = img.height;
 
@@ -112,14 +118,15 @@ const ImageUpload: React.FC<{
   currentUrl?: string, 
   path: string, 
   label?: string,
-  handleUpload: (file: File, path: string, isHero?: boolean) => Promise<string>,
+  handleUpload: (file: File, path: string, isHero?: boolean, isSmall?: boolean) => Promise<string>,
   isLogo?: boolean,
   isHero?: boolean,
+  isSmall?: boolean,
   onQuickSave?: (url: string) => void,
   cropAspect?: number,
   circularCrop?: boolean,
   isFallback?: boolean
-}> = ({ onUpload, currentUrl, path, label, handleUpload, isLogo, isHero, onQuickSave, cropAspect, circularCrop, isFallback }) => {
+}> = ({ onUpload, currentUrl, path, label, handleUpload, isLogo, isHero, isSmall, onQuickSave, cropAspect, circularCrop, isFallback }) => {
   const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState('');
   const [cropImage, setCropImage] = useState<string | null>(null);
@@ -166,7 +173,7 @@ const ImageUpload: React.FC<{
     setStatus('Yükleniyor...');
     try {
       const croppedFile = new File([croppedBlob], originalFile.name, { type: 'image/jpeg' });
-      const url = await handleUpload(croppedFile, path, isHero);
+      const url = await handleUpload(croppedFile, path, isHero, isSmall);
       if (url) {
         onUpload(url);
         if (onQuickSave) {
@@ -267,7 +274,7 @@ const AdminPage: React.FC = () => {
     setTimeout(() => setMessage(null), 3000);
   };
 
-  const handleFileUpload = async (file: File, path: string, isHero: boolean = false) => {
+  const handleFileUpload = async (file: File, path: string, isHero: boolean = false, isSmall: boolean = false) => {
     if (!storage) {
       console.error('[STORAGE] Storage instance is not initialized');
       return await convertToBase64(file);
@@ -282,24 +289,23 @@ const AdminPage: React.FC = () => {
 
       const isLogo = path === 'settings';
       
-      // If it's a small logo/icon, use Base64 immediately to bypass Storage issues
+      // If it's a small logo/icon or player/staff photo, use Base64 immediately to bypass Storage issues
       // This is much more reliable for small critical assets
-      if (isLogo && file.size < 150 * 1024) {
-        console.log('[STORAGE] Small logo, using Base64 directly');
+      if ((isLogo || isSmall) && file.size < 150 * 1024) {
+        console.log('[STORAGE] Small asset, using Base64 directly');
         return await convertToBase64(file);
       }
 
       // Compress before upload
       console.log(`[STORAGE] Original size: ${file.size} bytes`);
       showMessage('info', 'Görsel optimize ediliyor...');
-      const processedFile = await compressImage(file, isLogo, isHero);
+      const processedFile = await compressImage(file, isLogo, isHero, isSmall);
       const finalFile = processedFile instanceof File ? processedFile : new File([processedFile], file.name, { type: (isLogo || isHero) && file.type === 'image/png' ? 'image/png' : 'image/jpeg' });
       console.log(`[STORAGE] Compressed size: ${finalFile.size} bytes`);
 
-      // If compressed file is small enough, prefer Base64 for logos to avoid Storage issues
-      // Increased limit to 800KB for logos to ensure they almost always use Base64
-      if (isLogo && finalFile.size < 800 * 1024) {
-        console.log('[STORAGE] Compressed logo is small enough, using Base64 for maximum reliability');
+      // If compressed file is small enough, prefer Base64 for logos/small assets to avoid Storage issues
+      if ((isLogo || isSmall) && finalFile.size < 800 * 1024) {
+        console.log('[STORAGE] Compressed asset is small enough, using Base64 for maximum reliability');
         return await convertToBase64(finalFile);
       }
 
@@ -1639,7 +1645,7 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
   );
 };
 
-const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string) => void, onDelete: (id: string) => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean }> = ({ data, onSave, onDelete, handleUpload, ImageUpload, isFallback }) => {
+const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string) => void, onDelete: (id: string) => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean }> = ({ data, onSave, onDelete, handleUpload, ImageUpload, isFallback }) => {
   const [editing, setEditing] = useState<any | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const teams = data || [];
@@ -1652,8 +1658,23 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
     }
     setIsSaving(true);
     try {
+      // Check total size to avoid Firestore 1MB limit
+      const size = new Blob([JSON.stringify(editing)]).size;
+      console.log(`[TEAM_SAVE] Total team object size: ${size} bytes`);
+      
+      if (size > 950 * 1024) { // Close to 1MB
+        alert('Uyarı: Takım verisi çok büyük (1MB limitine yakın). Lütfen oyuncu fotoğraflarını daha küçük boyutlu seçin veya bazılarını kaldırın.');
+        if (size > 1024 * 1024) {
+          setIsSaving(false);
+          return;
+        }
+      }
+
       await onSave(editing, editing.id?.toString());
       setEditing(null);
+    } catch (err) {
+      console.error('[TEAM_SAVE] Error saving team:', err);
+      alert('Takım kaydedilirken bir hata oluştu. Lütfen tekrar deneyin.');
     } finally {
       setIsSaving(false);
     }
@@ -1763,6 +1784,7 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
                     currentUrl={player.imageUrl}
                     path="players"
                     cropAspect={1}
+                    isSmall={true}
                     handleUpload={handleUpload}
                     onUpload={(url: string) => {
                       const newPlayers = [...editing.players];
@@ -1822,7 +1844,7 @@ const FixturesTab: React.FC<{
   teams: Team[], 
   onSave: (d: Fixture) => void, 
   onReorder: (idx: number, dir: 'up' | 'down') => void,
-  handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>,
+  handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>,
   ImageUpload: any,
   isFallback: boolean
 }> = ({ data, teams, onSave, onReorder, handleUpload, ImageUpload, isFallback }) => {
@@ -1838,8 +1860,20 @@ const FixturesTab: React.FC<{
     }
     setIsSaving(true);
     try {
+      // Check total size
+      const size = new Blob([JSON.stringify(editing)]).size;
+      if (size > 950 * 1024) {
+        alert('Uyarı: Fikstür verisi çok büyük. Lütfen logoları daha küçük boyutlu seçin.');
+        if (size > 1024 * 1024) {
+          setIsSaving(false);
+          return;
+        }
+      }
       await onSave(editing as Fixture);
       setEditing(null);
+    } catch (err) {
+      console.error('[FIXTURE_SAVE] Error saving fixture:', err);
+      alert('Fikstür kaydedilirken bir hata oluştu.');
     } finally {
       setIsSaving(false);
     }
@@ -1923,6 +1957,7 @@ const FixturesTab: React.FC<{
                     label="Ev Sahibi Logo (Opsiyonel)"
                     currentUrl={match.homeLogo}
                     path="match-logos"
+                    isSmall={true}
                     handleUpload={handleUpload}
                     onUpload={(url: string) => {
                       const newMatches = [...editing.matches!];
@@ -1934,6 +1969,7 @@ const FixturesTab: React.FC<{
                     label="Deplasman Logo (Opsiyonel)"
                     currentUrl={match.awayLogo}
                     path="match-logos"
+                    isSmall={true}
                     handleUpload={handleUpload}
                     onUpload={(url: string) => {
                       const newMatches = [...editing.matches!];
@@ -2000,7 +2036,7 @@ const FixturesTab: React.FC<{
   );
 };
 
-const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload, isFallback }) => {
+const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload, isFallback }) => {
   const [editing, setEditing] = useState<Partial<StaffMember> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const staff = data || [];
@@ -2013,8 +2049,20 @@ const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>
     }
     setIsSaving(true);
     try {
+      // Check total size
+      const size = new Blob([JSON.stringify(editing)]).size;
+      if (size > 950 * 1024) {
+        alert('Uyarı: Personel verisi çok büyük. Lütfen fotoğrafı daha küçük boyutlu seçin.');
+        if (size > 1024 * 1024) {
+          setIsSaving(false);
+          return;
+        }
+      }
       await onSave(editing, editing.id?.toString());
       setEditing(null);
+    } catch (err) {
+      console.error('[STAFF_SAVE] Error saving staff:', err);
+      alert('Personel kaydedilirken bir hata oluştu.');
     } finally {
       setIsSaving(false);
     }
@@ -2040,6 +2088,7 @@ const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>
             path="staff"
             cropAspect={1}
             circularCrop={true}
+            isSmall={true}
             handleUpload={handleUpload}
             onUpload={(url: string) => setEditing({ ...editing, imageUrl: url })}
           />

@@ -78,8 +78,24 @@ const App: React.FC = () => {
       // Favicon
       if (cmsData.siteSettings.logo) {
         const favicon = document.getElementById('favicon') as HTMLLinkElement;
+        const appleIcon = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement;
+        
         if (favicon) {
           favicon.href = cmsData.siteSettings.logo;
+          // Set type based on logo format (base64 or URL)
+          if (cmsData.siteSettings.logo.startsWith('data:image/svg+xml')) {
+            favicon.type = 'image/svg+xml';
+          } else if (cmsData.siteSettings.logo.startsWith('data:image/png')) {
+            favicon.type = 'image/png';
+          } else if (cmsData.siteSettings.logo.endsWith('.svg')) {
+            favicon.type = 'image/svg+xml';
+          } else {
+            favicon.type = 'image/png';
+          }
+        }
+
+        if (appleIcon) {
+          appleIcon.href = cmsData.siteSettings.logo;
         }
       }
 
