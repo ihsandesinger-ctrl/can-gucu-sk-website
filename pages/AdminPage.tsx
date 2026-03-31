@@ -380,6 +380,7 @@ const AdminPage: React.FC = () => {
       const storageRef = ref(storage, `${path}/${fileName}`);
       
       console.log(`[STORAGE] Attempting upload: ${file.name} to ${path}`);
+      console.log(`[STORAGE] File type: ${finalFile.type}, Size: ${finalFile.size}`);
 
       // Use uploadBytesResumable for progress and better reliability
       const { uploadBytesResumable } = await import('firebase/storage');
@@ -387,6 +388,7 @@ const AdminPage: React.FC = () => {
 
       return new Promise<string>((resolve, reject) => {
         const timeout = setTimeout(() => {
+          console.error(`[STORAGE] Upload timeout for ${file.name}`);
           uploadTask.cancel();
           reject(new Error('timeout'));
         }, 120000); // 2 minutes timeout
@@ -394,11 +396,12 @@ const AdminPage: React.FC = () => {
         uploadTask.on('state_changed', 
           (snapshot) => {
             const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            console.log(`[STORAGE] Upload progress for ${file.name}: ${Math.round(progress)}%`);
             if (onProgress) onProgress(Math.round(progress));
           }, 
           (error: any) => {
             clearTimeout(timeout);
-            console.warn('[STORAGE] Storage upload failed:', error.code, error.message);
+            console.error('[STORAGE] Storage upload failed:', error.code, error.message, error);
             
             if (error.code === 'storage/quota-exceeded') {
               reject(new Error('Ücretsiz depolama kotanız dolmuş (5GB). Lütfen eski fotoğrafları silin veya Firebase planınızı yükseltin.'));
@@ -809,7 +812,19 @@ const AdminPage: React.FC = () => {
               onSave={async (d, id) => { 
                 if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } 
                 try { await savePage(d, id); showMessage('success', 'Sayfa kaydedildi'); } 
-                catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } 
+                catch(e: any) { 
+                  let msg = 'Sayfa kaydedilirken bir hata oluştu.';
+                  try {
+                    const errObj = JSON.parse(e.message);
+                    if (errObj.error.includes('insufficient permissions')) {
+                      msg = 'Yetki hatası: Firebase Console üzerinden Firestore kurallarını (rules) güncellemeniz gerekiyor.';
+                    } else {
+                      msg = `Hata: ${errObj.error}`;
+                    }
+                  } catch(parseErr) {}
+                  showMessage('error', msg); 
+                  throw e; 
+                } 
               }} 
               onDelete={async (id) => { 
                 if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } 
@@ -827,7 +842,19 @@ const AdminPage: React.FC = () => {
               onSave={async (d, id) => { 
                 if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } 
                 try { await saveTeam(d, id); showMessage('success', 'Takım kaydedildi'); } 
-                catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } 
+                catch(e: any) { 
+                  let msg = 'Takım kaydedilirken bir hata oluştu.';
+                  try {
+                    const errObj = JSON.parse(e.message);
+                    if (errObj.error.includes('insufficient permissions')) {
+                      msg = 'Yetki hatası: Firebase Console üzerinden Firestore kurallarını (rules) güncellemeniz gerekiyor.';
+                    } else {
+                      msg = `Hata: ${errObj.error}`;
+                    }
+                  } catch(parseErr) {}
+                  showMessage('error', msg); 
+                  throw e; 
+                } 
               }} 
               onDelete={async (id) => { 
                 if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } 
@@ -1350,14 +1377,19 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
     }
     setIsSaving(true);
     try {
-      // Check for Base64 images in all fields
-      const hasBase64 = 
-        editing.heroImage?.startsWith('data:image/') ||
-        editing.coach?.imageUrl?.startsWith('data:image/') ||
-        editing.players?.some((p: any) => p.imageUrl?.startsWith('data:image/'));
+      // Check for Base64 images in all fields and identify which one
+      let base64Field = '';
+      if (editing.heroImage?.startsWith('data:image/')) base64Field = 'Kapak Fotoğrafı';
+      else if (editing.coach?.imageUrl?.startsWith('data:image/')) base64Field = 'Antrenör Fotoğrafı';
+      else {
+        const playerIdx = editing.players?.findIndex((p: any) => p.imageUrl?.startsWith('data:image/'));
+        if (playerIdx !== undefined && playerIdx !== -1) {
+          base64Field = `${playerIdx + 1}. Sporcu Fotoğrafı`;
+        }
+      }
 
-      if (hasBase64) {
-        showMessage('warning', 'Bazı fotoğraflar hala buluta yüklenmemiş (Base64 formatında). Lütfen bu fotoğrafları silip tekrar yükleyin. Sorun devam ederse Firebase Storage ayarlarınızı kontrol edin.');
+      if (base64Field) {
+        showMessage('warning', `"${base64Field}" hala buluta yüklenmemiş (Base64 formatında). Lütfen bu fotoğrafı silip tekrar yükleyin. Sorun devam ederse Firebase Storage ayarlarınızı kontrol edin.`);
         setIsSaving(false);
         return;
       }
@@ -1882,14 +1914,19 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
     }
     setIsSaving(true);
     try {
-      // Check for Base64 images in all fields
-      const hasBase64 = 
-        editing.heroImage?.startsWith('data:image/') ||
-        editing.coach?.imageUrl?.startsWith('data:image/') ||
-        editing.players?.some((p: any) => p.imageUrl?.startsWith('data:image/'));
+      // Check for Base64 images in all fields and identify which one
+      let base64Field = '';
+      if (editing.heroImage?.startsWith('data:image/')) base64Field = 'Takım Fotoğrafı';
+      else if (editing.coach?.imageUrl?.startsWith('data:image/')) base64Field = 'Teknik Sorumlu Fotoğrafı';
+      else {
+        const playerIdx = editing.players?.findIndex((p: any) => p.imageUrl?.startsWith('data:image/'));
+        if (playerIdx !== undefined && playerIdx !== -1) {
+          base64Field = `${playerIdx + 1}. Oyuncu Fotoğrafı`;
+        }
+      }
 
-      if (hasBase64) {
-        showMessage('warning', 'Bazı fotoğraflar hala buluta yüklenmemiş (Base64 formatında). Lütfen bu fotoğrafları silip tekrar yükleyin. Sorun devam ederse Firebase Storage ayarlarınızı kontrol edin.');
+      if (base64Field) {
+        showMessage('warning', `"${base64Field}" hala buluta yüklenmemiş (Base64 formatında). Lütfen bu fotoğrafı silip tekrar yükleyin. Sorun devam ederse Firebase Storage ayarlarınızı kontrol edin.`);
         setIsSaving(false);
         return;
       }

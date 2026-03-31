@@ -65,6 +65,10 @@ service cloud.firestore {
     match /teams/{docId} {
       allow read: if true;
       allow write: if isAdmin();
+      match /players/{playerId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
     }
     match /fixtures/{docId} {
       allow read: if true;
@@ -81,6 +85,10 @@ service cloud.firestore {
     match /pages/{docId} {
       allow read: if true;
       allow write: if isAdmin();
+      match /players/{playerId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
     }
     match /missionVision/{docId} {
       allow read: if true;
