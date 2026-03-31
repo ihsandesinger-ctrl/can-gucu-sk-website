@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '../lib/cropImage';
 import { X, Check, RotateCcw } from 'lucide-react';
@@ -23,6 +23,16 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [aspect, setAspect] = useState<number | undefined>(aspectRatio);
+  const [imageAspect, setImageAspect] = useState<number>(1);
+
+  useEffect(() => {
+    const img = new Image();
+    img.src = image;
+    img.onload = () => {
+      setImageAspect(img.width / img.height);
+    };
+  }, [image]);
 
   const onCropChange = (crop: { x: number; y: number }) => {
     setCrop(crop);
@@ -71,7 +81,7 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
             crop={crop}
             zoom={zoom}
             rotation={rotation}
-            aspect={aspectRatio}
+            aspect={aspect}
             onCropChange={onCropChange}
             onCropComplete={onCropCompleteInternal}
             onZoomChange={onZoomChange}
@@ -81,39 +91,72 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
           />
         </div>
 
-        <div className="p-6 space-y-4 bg-white">
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm font-medium text-gray-600">
-              <span>Yakınlaştır</span>
-              <span>{Math.round(zoom * 100)}%</span>
+        <div className="p-6 space-y-4 bg-white overflow-y-auto">
+          {!circularCrop && (
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">En-Boy Oranı</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { label: '1:1', value: 1 },
+                  { label: '4:3', value: 4/3 },
+                  { label: '16:9', value: 16/9 },
+                  { label: 'Orijinal', value: imageAspect },
+                  { label: 'Serbest', value: undefined },
+                ].map((opt) => (
+                  <button
+                    key={opt.label}
+                    onClick={() => {
+                      setAspect(opt.value);
+                      setZoom(1);
+                      setCrop({ x: 0, y: 0 });
+                    }}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
+                      aspect === opt.value 
+                        ? 'bg-[var(--primary-color)] text-white border-[var(--primary-color)] shadow-sm' 
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-[var(--primary-color)] hover:text-[var(--primary-color)]'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <input
-              type="range"
-              value={zoom}
-              min={1}
-              max={3}
-              step={0.1}
-              aria-labelledby="Zoom"
-              onChange={(e) => setZoom(Number(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[var(--primary-color)]"
-            />
-          </div>
+          )}
 
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm font-medium text-gray-600">
-              <span>Döndür</span>
-              <span>{rotation}°</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <span>Yakınlaştır</span>
+                <span>{Math.round(zoom * 100)}%</span>
+              </div>
+              <input
+                type="range"
+                value={zoom}
+                min={1}
+                max={3}
+                step={0.1}
+                aria-labelledby="Zoom"
+                onChange={(e) => setZoom(Number(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[var(--primary-color)]"
+              />
             </div>
-            <input
-              type="range"
-              value={rotation}
-              min={0}
-              max={360}
-              step={1}
-              aria-labelledby="Rotation"
-              onChange={(e) => setRotation(Number(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[var(--primary-color)]"
-            />
+
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs font-bold text-gray-500 uppercase tracking-wider">
+                <span>Döndür</span>
+                <span>{rotation}°</span>
+              </div>
+              <input
+                type="range"
+                value={rotation}
+                min={0}
+                max={360}
+                step={1}
+                aria-labelledby="Rotation"
+                onChange={(e) => setRotation(Number(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[var(--primary-color)]"
+              />
+            </div>
           </div>
 
           <div className="flex gap-3 pt-2">
