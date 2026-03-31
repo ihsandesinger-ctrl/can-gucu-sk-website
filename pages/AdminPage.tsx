@@ -58,16 +58,16 @@ const compressImage = (f: File, isLogo: boolean = false, isHero: boolean = false
         clearTimeout(timeout);
         const canvas = document.createElement('canvas');
         // Logos and small photos (players, staff) don't need to be huge, but should be high quality.
-        let MAX_WIDTH = 1920;
-        let MAX_HEIGHT = 1080;
+        let MAX_WIDTH = 1600;
+        let MAX_HEIGHT = 1200;
         
         if (isLogo) {
           MAX_WIDTH = 400;
           MAX_HEIGHT = 400;
         } else if (isSmall) {
-          // 800px is great for player/staff profiles
-          MAX_WIDTH = 800;
-          MAX_HEIGHT = 800;
+          // 600px is enough for player/staff profiles and keeps Base64 size small
+          MAX_WIDTH = 600;
+          MAX_HEIGHT = 600;
         }
         
         let width = img.width;
@@ -97,7 +97,7 @@ const compressImage = (f: File, isLogo: boolean = false, isHero: boolean = false
         // Use PNG for logos and hero images to preserve transparency if it's a PNG
         // Use JPEG for others to keep file size small
         const mimeType = (isLogo || isHero) && f.type === 'image/png' ? 'image/png' : 'image/jpeg';
-        const quality = 0.85; // High quality for all images
+        const quality = isSmall ? 0.75 : 0.85; // Slightly lower quality for small photos to save space
 
         canvas.toBlob((blob) => {
           if (blob) {
@@ -124,7 +124,7 @@ const ImageUpload: React.FC<{
   currentUrl?: string, 
   path: string, 
   label?: string,
-  handleUpload: (file: File, path: string, isHero?: boolean, isSmall?: boolean) => Promise<string>,
+  handleUpload: (file: File, path: string, isHero?: boolean, isSmall?: boolean, onProgress?: (p: number) => void) => Promise<string>,
   isLogo?: boolean,
   isHero?: boolean,
   isSmall?: boolean,
@@ -181,21 +181,26 @@ const ImageUpload: React.FC<{
     if (!originalFile) return;
 
     setUploading(true);
-    setStatus('Yükleniyor...');
+    setStatus('Hazırlanıyor...');
     try {
       const croppedFile = new File([croppedBlob], originalFile.name, { type: 'image/jpeg' });
-      const url = await handleUpload(croppedFile, path, isHero, isSmall);
+      const url = await handleUpload(croppedFile, path, isHero, isSmall, (progress) => {
+        if (progress === -1) {
+          setStatus('Optimize ediliyor...');
+        } else {
+          setStatus(`Yükleniyor %${progress}`);
+        }
+      });
       if (url) {
         onUpload(url);
         if (onQuickSave) {
           setStatus('Kaydediliyor...');
           await onQuickSave(url);
         }
+        showMessage('success', 'Görsel başarıyla yüklendi');
       }
     } catch (err: any) {
       console.error("Upload error in component:", err);
-      // The error message is already shown by showMessage in handleFileUpload, 
-      // but we show it here too just in case handleFileUpload didn't catch it.
       const msg = err.message || 'Görsel yüklenirken bir hata oluştu.';
       showMessage('error', `Yükleme hatası: ${msg}`);
     } finally {
@@ -322,15 +327,27 @@ const AdminPage: React.FC = () => {
     setTimeout(() => setMessage(null), 3000);
   };
 
-  const handleFileUpload = async (file: File, path: string, isHero: boolean = false, isSmall: boolean = false) => {
-    if (!storage || !storage.app.options.storageBucket) {
-      console.error('[STORAGE] Storage instance or storageBucket is missing');
-      // Only fallback to Base64 for tiny logos if storage is missing
-      if (path === 'settings' && file.size < 50 * 1024) {
-        return await convertToBase64(file);
+  const handleFileUpload = async (file: File, path: string, isHero: boolean = false, isSmall: boolean = false, onProgress?: (p: number) => void) => {
+    const isLogo = path === 'settings';
+    
+    // Check if storage is available
+    const isStorageAvailable = storage && storage.app.options.storageBucket && storage.app.options.storageBucket !== "undefined";
+
+    if (!isStorageAvailable) {
+      console.warn('[STORAGE] Storage not configured or bucket missing. Falling back to Base64.');
+      
+      // If it's a large file, compress it heavily for Base64
+      if (file.size > 100 * 1024) {
+        if (onProgress) onProgress(-1);
+        const compressed = await compressImage(file, isLogo, isHero, isSmall);
+        const finalFile = compressed instanceof File ? compressed : new File([compressed], file.name, { type: 'image/jpeg' });
+        
+        if (finalFile.size > 800 * 1024) {
+          throw new Error('Görsel çok büyük. Lütfen daha küçük bir dosya seçin veya Firebase planınızı yükseltin.');
+        }
+        return await convertToBase64(finalFile);
       }
-      const missingConfig = !storage ? 'başlatılamadı' : 'yapılandırılmamış (storageBucket eksik)';
-      throw new Error(`Bulut depolama (Firebase Storage) sistemi ${missingConfig}. Lütfen yönetici ile iletişime geçin.`);
+      return await convertToBase64(file);
     }
 
     try {
@@ -339,8 +356,6 @@ const AdminPage: React.FC = () => {
         throw new Error('Lütfen geçerli bir görsel dosyası seçin.');
       }
 
-      const isLogo = path === 'settings';
-      
       // Only use Base64 for tiny logos under 20KB to ensure they load instantly
       if (isLogo && file.size < 20 * 1024) {
         console.log('[STORAGE] Tiny logo, using Base64');
@@ -349,7 +364,7 @@ const AdminPage: React.FC = () => {
 
       // Compress before upload
       console.log(`[STORAGE] Original size: ${file.size} bytes`);
-      showMessage('info', 'Görsel optimize ediliyor...');
+      if (onProgress) onProgress(-1); // Signal compression
       const processedFile = await compressImage(file, isLogo, isHero, isSmall);
       const finalFile = processedFile instanceof File ? processedFile : new File([processedFile], file.name, { type: (isLogo || isHero) && file.type === 'image/png' ? 'image/png' : 'image/jpeg' });
       console.log(`[STORAGE] Compressed size: ${finalFile.size} bytes`);
@@ -360,8 +375,8 @@ const AdminPage: React.FC = () => {
         return await convertToBase64(finalFile);
       }
 
-      if (finalFile.size > 10 * 1024 * 1024) { // 10MB limit for storage
-        throw new Error('Görsel çok büyük. Lütfen 10MB\'dan daha küçük bir dosya seçin.');
+      if (finalFile.size > 15 * 1024 * 1024) { // 15MB limit for storage
+        throw new Error('Görsel çok büyük. Lütfen 15MB\'dan daha küçük bir dosya seçin.');
       }
 
       // Sanitize filename
@@ -371,56 +386,58 @@ const AdminPage: React.FC = () => {
       
       console.log(`[STORAGE] Attempting upload: ${file.name} to ${path}`);
 
-      // Use a longer timeout (30s) for the upload to be more patient with slow connections
-      const uploadPromise = uploadBytes(storageRef, finalFile);
-      const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('timeout')), 60000)
-      );
+      // Use uploadBytesResumable for progress and better reliability
+      const { uploadBytesResumable } = await import('firebase/storage');
+      const uploadTask = uploadBytesResumable(storageRef, finalFile);
 
-      try {
-        const uploadResult = await Promise.race([uploadPromise, timeoutPromise]);
-        console.log('[STORAGE] Upload successful:', (uploadResult as any).metadata.fullPath);
-        const url = await getDownloadURL(storageRef);
-        showMessage('success', 'Görsel başarıyla yüklendi');
-        return url;
-      } catch (uploadErr: any) {
-        console.warn('[STORAGE] Storage upload failed or timed out:', uploadErr.message);
-        
-        // Handle specific Firebase Storage errors
-        if (uploadErr.code === 'storage/quota-exceeded') {
-          const quotaMsg = 'Ücretsiz depolama kotanız dolmuş (5GB). Lütfen eski fotoğrafları silin veya Firebase planınızı yükseltin.';
-          showMessage('error', quotaMsg);
-          throw new Error(quotaMsg);
-        }
+      return new Promise<string>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          uploadTask.cancel();
+          reject(new Error('timeout'));
+        }, 120000); // 2 minutes timeout
 
-        if (uploadErr.code === 'storage/unauthorized') {
-          const authMsg = 'Depolama izniniz yok. Lütfen Firebase Storage kurallarını kontrol edin.';
-          showMessage('error', authMsg);
-          throw new Error(authMsg);
-        }
-        
-        // Only fallback to Base64 for tiny logos. 
-        // For players/staff/news, we MUST use Storage to avoid 1MB Firestore limit.
-        if (isLogo && finalFile.size < 50 * 1024) {
-          showMessage('info', 'Bulut depolama yavaş, alternatif yöntem kullanılıyor...');
-          const b64 = await convertToBase64(finalFile);
-          showMessage('success', 'Görsel başarıyla yüklendi (Alternatif)');
-          return b64;
-        } else {
-          console.error('[STORAGE] Upload failed and no fallback allowed for this type/size');
-          const errorMsg = uploadErr.message === 'timeout' 
-            ? 'Yükleme zaman aşımına uğradı. İnternet bağlantınızı kontrol edin.' 
-            : 'Bulut depolama hatası (Storage). Lütfen yönetici ile iletişime geçin veya daha sonra tekrar deneyin.';
-          throw new Error(errorMsg);
-        }
-      }
+        uploadTask.on('state_changed', 
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            if (onProgress) onProgress(Math.round(progress));
+          }, 
+          (error: any) => {
+            clearTimeout(timeout);
+            console.warn('[STORAGE] Storage upload failed:', error.code, error.message);
+            
+            // If upload fails, try Base64 fallback as a last resort
+            // This is especially important if the user hasn't enabled Storage in Console
+            if (finalFile.size < 800 * 1024) {
+              console.log('[STORAGE] Upload failed, falling back to Base64');
+              convertToBase64(finalFile).then(resolve).catch(() => reject(error));
+              return;
+            }
+
+            if (error.code === 'storage/quota-exceeded') {
+              reject(new Error('Ücretsiz depolama kotanız dolmuş (5GB). Lütfen eski fotoğrafları silin veya Firebase planınızı yükseltin.'));
+            } else if (error.code === 'storage/unauthorized') {
+              reject(new Error('Depolama izniniz yok. Firebase Console -> Storage kısmından "Get Started" butonuna basıp kuralları yayınladığınızdan emin olun.'));
+            } else if (error.code === 'storage/canceled') {
+              reject(new Error('Yükleme zaman aşımına uğradı veya iptal edildi.'));
+            } else if (error.code === 'storage/retry-limit-exceeded') {
+              reject(new Error('Yükleme başarısız oldu. İnternet bağlantınızı kontrol edin.'));
+            } else {
+              reject(new Error(`Yükleme hatası (${error.code}): ${error.message}`));
+            }
+          }, 
+          async () => {
+            clearTimeout(timeout);
+            try {
+              const url = await getDownloadURL(storageRef);
+              resolve(url);
+            } catch (urlErr) {
+              reject(urlErr);
+            }
+          }
+        );
+      });
     } catch (err) {
       console.error('[STORAGE] All upload methods failed:', err);
-      let errorMessage = 'Görsel yüklenemedi.';
-      if (err instanceof Error) {
-        errorMessage = err.message;
-      }
-      showMessage('error', errorMessage);
       throw err;
     }
   };
@@ -896,7 +913,7 @@ const MobileTabButton: React.FC<{ active: boolean, onClick: () => void, icon: Re
 
 // --- Tab Components (Simplified for brevity, but functional) ---
 
-const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => void, handleUpload: (f: File, p: string, isHero?: boolean) => Promise<string>, ImageUpload: any, isFallback?: boolean, showMessage: any }> = ({ data, onSave, handleUpload, ImageUpload, isFallback, showMessage }) => {
+const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean, onProgress?: (p: number) => void) => Promise<string>, ImageUpload: any, isFallback?: boolean, showMessage: any }> = ({ data, onSave, handleUpload, ImageUpload, isFallback, showMessage }) => {
   const [form, setForm] = useState(data || {
     siteTitle: 'Çangücü SK',
     logo: '',
@@ -1205,7 +1222,7 @@ const SettingsTab: React.FC<{ data: SiteSettings, onSave: (d: SiteSettings) => v
   );
 };
 
-const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean, showMessage: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload, isFallback, showMessage }) => {
+const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean, onProgress?: (p: number) => void) => Promise<string>, ImageUpload: any, isFallback: boolean, showMessage: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload, isFallback, showMessage }) => {
   const [editing, setEditing] = useState<Partial<NewsArticle> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const newsList = data || [];
@@ -1321,7 +1338,7 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
 
 // --- Other tabs follow similar pattern... I'll implement a few more key ones ---
 
-const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>, id?: string) => void, onDelete: (id: string) => void, onDeletePlayer: (pageId: string, playerId: string) => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, showMessage: any, isFallback: boolean }> = ({ data, onSave, onDelete, onDeletePlayer, handleUpload, ImageUpload, showMessage, isFallback }) => {
+const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>, id?: string) => void, onDelete: (id: string) => void, onDeletePlayer: (pageId: string, playerId: string) => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean, onProgress?: (p: number) => void) => Promise<string>, ImageUpload: any, showMessage: any, isFallback: boolean }> = ({ data, onSave, onDelete, onDeletePlayer, handleUpload, ImageUpload, showMessage, isFallback }) => {
   const [editing, setEditing] = useState<Partial<DynamicPage> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const pagesList = data || [];
@@ -1588,7 +1605,7 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
   );
 };
 
-const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryItem>) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean, showMessage: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload, isFallback, showMessage }) => {
+const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryItem>) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean, onProgress?: (p: number) => void) => Promise<string>, ImageUpload: any, isFallback: boolean, showMessage: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload, isFallback, showMessage }) => {
   const [newImage, setNewImage] = useState({ imageUrl: '', title: '' });
   const [isSaving, setIsSaving] = useState(false);
   const galleryList = data || [];
@@ -1680,7 +1697,7 @@ const GalleryTab: React.FC<{ data: GalleryItem[], onSave: (d: Partial<GalleryIte
   );
 };
 
-const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean, showMessage: any, setConfirmModal: any }> = ({ data, onSave, handleUpload, ImageUpload, isFallback, showMessage, setConfirmModal }) => {
+const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean, onProgress?: (p: number) => void) => Promise<string>, ImageUpload: any, isFallback: boolean, showMessage: any, setConfirmModal: any }> = ({ data, onSave, handleUpload, ImageUpload, isFallback, showMessage, setConfirmModal }) => {
   const [form, setForm] = useState(data || {
     heroImage: '',
     heroTitle: '',
@@ -1849,7 +1866,7 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
   );
 };
 
-const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string) => void, onDelete: (id: string) => void, onDeletePlayer: (teamId: string, playerId: string) => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean, showMessage: any }> = ({ data, onSave, onDelete, onDeletePlayer, handleUpload, ImageUpload, isFallback, showMessage }) => {
+const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string) => void, onDelete: (id: string) => void, onDeletePlayer: (teamId: string, playerId: string) => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean, onProgress?: (p: number) => void) => Promise<string>, ImageUpload: any, isFallback: boolean, showMessage: any }> = ({ data, onSave, onDelete, onDeletePlayer, handleUpload, ImageUpload, isFallback, showMessage }) => {
   const [editing, setEditing] = useState<any | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const teams = data || [];
@@ -2058,7 +2075,7 @@ const FixturesTab: React.FC<{
   teams: Team[], 
   onSave: (d: Fixture) => void, 
   onReorder: (idx: number, dir: 'up' | 'down') => void,
-  handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>,
+  handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean, onProgress?: (p: number) => void) => Promise<string>,
   ImageUpload: any,
   isFallback: boolean,
   showMessage: any
@@ -2255,7 +2272,7 @@ const FixturesTab: React.FC<{
   );
 };
 
-const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean, showMessage: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload, isFallback, showMessage }) => {
+const StaffTab: React.FC<{ data: StaffMember[], onSave: (d: Partial<StaffMember>, id?: string) => void, onDelete: (id: string) => void, onReorder: (idx: number, dir: 'up' | 'down') => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean, onProgress?: (p: number) => void) => Promise<string>, ImageUpload: any, isFallback: boolean, showMessage: any }> = ({ data, onSave, onDelete, onReorder, handleUpload, ImageUpload, isFallback, showMessage }) => {
   const [editing, setEditing] = useState<Partial<StaffMember> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const staff = data || [];
