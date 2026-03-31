@@ -334,20 +334,15 @@ const AdminPage: React.FC = () => {
     const isStorageAvailable = storage && storage.app.options.storageBucket && storage.app.options.storageBucket !== "undefined";
 
     if (!isStorageAvailable) {
-      console.warn('[STORAGE] Storage not configured or bucket missing. Falling back to Base64.');
+      console.warn('[STORAGE] Storage not configured or bucket missing.');
       
-      // If it's a large file, compress it heavily for Base64
-      if (file.size > 100 * 1024) {
-        if (onProgress) onProgress(-1);
-        const compressed = await compressImage(file, isLogo, isHero, isSmall);
-        const finalFile = compressed instanceof File ? compressed : new File([compressed], file.name, { type: 'image/jpeg' });
-        
-        if (finalFile.size > 800 * 1024) {
-          throw new Error('Görsel çok büyük. Lütfen daha küçük bir dosya seçin veya Firebase planınızı yükseltin.');
-        }
-        return await convertToBase64(finalFile);
+      // If it's a small logo, we can allow Base64 as a convenience
+      if (isLogo && file.size < 50 * 1024) {
+        return await convertToBase64(file);
       }
-      return await convertToBase64(file);
+
+      // Otherwise, we MUST inform the user that Storage is required
+      throw new Error('Bulut depolama (Firebase Storage) yapılandırması eksik. Lütfen platform ayarlarından VITE_FIREBASE_STORAGE_BUCKET değişkenini ekleyin.');
     }
 
     try {
@@ -405,18 +400,10 @@ const AdminPage: React.FC = () => {
             clearTimeout(timeout);
             console.warn('[STORAGE] Storage upload failed:', error.code, error.message);
             
-            // If upload fails, try Base64 fallback as a last resort
-            // This is especially important if the user hasn't enabled Storage in Console
-            if (finalFile.size < 800 * 1024) {
-              console.log('[STORAGE] Upload failed, falling back to Base64');
-              convertToBase64(finalFile).then(resolve).catch(() => reject(error));
-              return;
-            }
-
             if (error.code === 'storage/quota-exceeded') {
               reject(new Error('Ücretsiz depolama kotanız dolmuş (5GB). Lütfen eski fotoğrafları silin veya Firebase planınızı yükseltin.'));
             } else if (error.code === 'storage/unauthorized') {
-              reject(new Error('Depolama izniniz yok. Firebase Console -> Storage kısmından "Get Started" butonuna basıp kuralları yayınladığınızdan emin olun.'));
+              reject(new Error('Depolama izniniz yok. Firebase Console -> Storage kısmından "Get Started" butonuna basıp kuralları yayınladığınızdan emin olun. Ayrıca kuralları "Publish" ettiğinizden emin olun.'));
             } else if (error.code === 'storage/canceled') {
               reject(new Error('Yükleme zaman aşımına uğradı veya iptal edildi.'));
             } else if (error.code === 'storage/retry-limit-exceeded') {
@@ -798,6 +785,18 @@ const AdminPage: React.FC = () => {
               >
                 Yeniden Bağlan
               </button>
+            </div>
+          )}
+
+          {storage && !storage.app.options.storageBucket && (
+            <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-center gap-4 text-orange-700">
+              <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center shrink-0">
+                <Database className="text-orange-600" size={24} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold">Bulut Depolama Yapılandırması Eksik</h3>
+                <p className="text-sm">Firebase Storage (Bulut Depolama) için 'storageBucket' ayarı yapılmamış. Fotoğraflar buluta yüklenemez. Lütfen platform ayarlarından VITE_FIREBASE_STORAGE_BUCKET değişkenini ekleyin.</p>
+              </div>
             </div>
           )}
 
@@ -1351,10 +1350,14 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
     }
     setIsSaving(true);
     try {
-      // Check for Base64 images in players
-      const hasBase64 = editing.players?.some((p: any) => p.imageUrl?.startsWith('data:image/'));
+      // Check for Base64 images in all fields
+      const hasBase64 = 
+        editing.heroImage?.startsWith('data:image/') ||
+        editing.coach?.imageUrl?.startsWith('data:image/') ||
+        editing.players?.some((p: any) => p.imageUrl?.startsWith('data:image/'));
+
       if (hasBase64) {
-        showMessage('warning', 'Bazı oyuncu fotoğrafları buluta yüklenmemiş. Lütfen bu fotoğrafları silip tekrar yükleyin.');
+        showMessage('warning', 'Bazı fotoğraflar hala buluta yüklenmemiş (Base64 formatında). Lütfen bu fotoğrafları silip tekrar yükleyin. Sorun devam ederse Firebase Storage ayarlarınızı kontrol edin.');
         setIsSaving(false);
         return;
       }
@@ -1879,10 +1882,14 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
     }
     setIsSaving(true);
     try {
-      // Check for Base64 images in players
-      const hasBase64 = editing.players?.some((p: any) => p.imageUrl?.startsWith('data:image/'));
+      // Check for Base64 images in all fields
+      const hasBase64 = 
+        editing.heroImage?.startsWith('data:image/') ||
+        editing.coach?.imageUrl?.startsWith('data:image/') ||
+        editing.players?.some((p: any) => p.imageUrl?.startsWith('data:image/'));
+
       if (hasBase64) {
-        showMessage('warning', 'Bazı oyuncu fotoğrafları buluta yüklenmemiş. Lütfen bu fotoğrafları silip tekrar yükleyin.');
+        showMessage('warning', 'Bazı fotoğraflar hala buluta yüklenmemiş (Base64 formatında). Lütfen bu fotoğrafları silip tekrar yükleyin. Sorun devam ederse Firebase Storage ayarlarınızı kontrol edin.');
         setIsSaving(false);
         return;
       }
