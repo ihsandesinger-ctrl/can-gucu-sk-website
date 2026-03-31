@@ -55,13 +55,13 @@ const compressImage = (f: File, isLogo: boolean = false, isHero: boolean = false
       img.onload = () => {
         clearTimeout(timeout);
         const canvas = document.createElement('canvas');
-        // Logos and small photos (players, staff) don't need to be huge. 400px is plenty.
+        // Logos and small photos (players, staff) don't need to be huge. 200px is plenty for cards.
         let MAX_WIDTH = 1200;
         let MAX_HEIGHT = 1200;
         
         if (isLogo || isSmall) {
-          MAX_WIDTH = 400;
-          MAX_HEIGHT = 400;
+          MAX_WIDTH = 200;
+          MAX_HEIGHT = 200;
         }
         
         let width = img.width;
@@ -91,7 +91,7 @@ const compressImage = (f: File, isLogo: boolean = false, isHero: boolean = false
         // Use PNG for logos and hero images to preserve transparency if it's a PNG
         // Use JPEG for others to keep file size small
         const mimeType = (isLogo || isHero) && f.type === 'image/png' ? 'image/png' : 'image/jpeg';
-        const quality = isLogo ? 0.8 : 0.7; // Slightly lower quality for logo to ensure small size
+        const quality = isLogo ? 0.8 : (isSmall ? 0.5 : 0.7); // Much lower quality for small assets to ensure tiny size
 
         canvas.toBlob((blob) => {
           if (blob) {
@@ -291,8 +291,8 @@ const AdminPage: React.FC = () => {
       
       // If it's a small logo/icon or player/staff photo, use Base64 immediately to bypass Storage issues
       // This is much more reliable for small critical assets
-      if ((isLogo || isSmall) && file.size < 150 * 1024) {
-        console.log('[STORAGE] Small asset, using Base64 directly');
+      if ((isLogo || isSmall) && file.size < 30 * 1024) {
+        console.log('[STORAGE] Very small asset, using Base64 directly');
         return await convertToBase64(file);
       }
 
@@ -304,7 +304,7 @@ const AdminPage: React.FC = () => {
       console.log(`[STORAGE] Compressed size: ${finalFile.size} bytes`);
 
       // If compressed file is small enough, prefer Base64 for logos/small assets to avoid Storage issues
-      if ((isLogo || isSmall) && finalFile.size < 800 * 1024) {
+      if ((isLogo || isSmall) && finalFile.size < 50 * 1024) {
         console.log('[STORAGE] Compressed asset is small enough, using Base64 for maximum reliability');
         return await convertToBase64(finalFile);
       }
@@ -321,10 +321,10 @@ const AdminPage: React.FC = () => {
       
       console.log(`[STORAGE] Attempting upload: ${file.name} to ${path}`);
 
-      // Use a longer timeout (15s) for the upload to be more patient with slow connections
+      // Use a longer timeout (30s) for the upload to be more patient with slow connections
       const uploadPromise = uploadBytes(storageRef, finalFile);
       const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('timeout')), 15000)
+        setTimeout(() => reject(new Error('timeout')), 30000)
       );
 
       try {
@@ -1255,6 +1255,7 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
               path="pages/coaches"
               cropAspect={1}
               circularCrop={true}
+              isSmall={true}
               handleUpload={handleUpload}
               onUpload={(url: string) => setEditing({ ...editing, coach: { ...editing.coach!, imageUrl: url } })}
             />
@@ -1292,6 +1293,7 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
                     currentUrl={player.imageUrl}
                     path="pages/players"
                     cropAspect={1}
+                    isSmall={true}
                     handleUpload={handleUpload}
                     onUpload={(url: string) => {
                       const players = editing.players?.map(p => p.id === player.id ? { ...p, imageUrl: url } : p);
@@ -1707,6 +1709,7 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
             path="coaches"
             cropAspect={1}
             circularCrop={true}
+            isSmall={true}
             handleUpload={handleUpload}
             onUpload={(url: string) => setEditing({ ...editing, coach: { ...(editing.coach || {}), imageUrl: url } })}
           />
