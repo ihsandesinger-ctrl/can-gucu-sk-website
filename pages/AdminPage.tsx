@@ -16,6 +16,8 @@ import {
   deleteStaffMember, 
   savePage,
   deletePage,
+  deletePlayer,
+  deletePagePlayer,
   updateOrder,
   saveFixture,
   migrateDataToFirestore,
@@ -383,6 +385,19 @@ const AdminPage: React.FC = () => {
         return url;
       } catch (uploadErr: any) {
         console.warn('[STORAGE] Storage upload failed or timed out:', uploadErr.message);
+        
+        // Handle specific Firebase Storage errors
+        if (uploadErr.code === 'storage/quota-exceeded') {
+          const quotaMsg = 'Ücretsiz depolama kotanız dolmuş (5GB). Lütfen eski fotoğrafları silin veya Firebase planınızı yükseltin.';
+          showMessage('error', quotaMsg);
+          throw new Error(quotaMsg);
+        }
+
+        if (uploadErr.code === 'storage/unauthorized') {
+          const authMsg = 'Depolama izniniz yok. Lütfen Firebase Storage kurallarını kontrol edin.';
+          showMessage('error', authMsg);
+          throw new Error(authMsg);
+        }
         
         // Only fallback to Base64 for tiny logos. 
         // For players/staff/news, we MUST use Storage to avoid 1MB Firestore limit.
@@ -773,8 +788,42 @@ const AdminPage: React.FC = () => {
             {activeTab === 'settings' && <SettingsTab data={cmsData.siteSettings} onSave={async (d) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await updateSettings(d); showMessage('success', 'Ayarlar kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} showMessage={showMessage} />}
             {activeTab === 'homepage' && <HomepageTab data={cmsData.homePageHero} onSave={async (d) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await updateHomepage(d); showMessage('success', 'Ana sayfa güncellendi'); } catch(e) { showMessage('error', 'Güncellenemedi'); throw e; } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} showMessage={showMessage} setConfirmModal={setConfirmModal} />}
             {activeTab === 'news' && <NewsTab data={cmsData.newsData} onSave={async (d, id) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveNewsArticle(d, id); showMessage('success', 'Haber kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } try { await deleteNewsArticle(id); showMessage('success', 'Haber silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } }} onReorder={(idx, dir) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Sıralama değiştirilemez.'); return; } handleReorder('news', cmsData.newsData, idx, dir); }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} showMessage={showMessage} />}
-            {activeTab === 'pages' && <PagesTab data={cmsData.pagesData} onSave={async (d, id) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await savePage(d, id); showMessage('success', 'Sayfa kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } try { await deletePage(id); showMessage('success', 'Sayfa silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} showMessage={showMessage} isFallback={cmsData.isFallback} />}
-            {activeTab === 'teams' && <TeamsTab data={cmsData.teamData} onSave={async (d, id) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveTeam(d, id); showMessage('success', 'Takım kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } try { await deleteTeam(id); showMessage('success', 'Takım silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} showMessage={showMessage} />}
+            {activeTab === 'pages' && <PagesTab 
+              data={cmsData.pagesData} 
+              onSave={async (d, id) => { 
+                if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } 
+                try { await savePage(d, id); showMessage('success', 'Sayfa kaydedildi'); } 
+                catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } 
+              }} 
+              onDelete={async (id) => { 
+                if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } 
+                try { await deletePage(id); showMessage('success', 'Sayfa silindi'); } 
+                catch(e) { showMessage('error', 'Silinemedi'); } 
+              }} 
+              onDeletePlayer={deletePagePlayer}
+              handleUpload={handleFileUpload} 
+              ImageUpload={ImageUpload} 
+              showMessage={showMessage} 
+              isFallback={cmsData.isFallback} 
+            />}
+            {activeTab === 'teams' && <TeamsTab 
+              data={cmsData.teamData} 
+              onSave={async (d, id) => { 
+                if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } 
+                try { await saveTeam(d, id); showMessage('success', 'Takım kaydedildi'); } 
+                catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } 
+              }} 
+              onDelete={async (id) => { 
+                if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } 
+                try { await deleteTeam(id); showMessage('success', 'Takım silindi'); } 
+                catch(e) { showMessage('error', 'Silinemedi'); } 
+              }} 
+              onDeletePlayer={deletePlayer}
+              handleUpload={handleFileUpload} 
+              ImageUpload={ImageUpload} 
+              isFallback={cmsData.isFallback} 
+              showMessage={showMessage} 
+            />}
             {activeTab === 'fixtures' && <FixturesTab data={cmsData.fixtures} teams={cmsData.teamData} onSave={async (d) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveFixture(d); showMessage('success', 'Fikstür kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onReorder={(idx, dir) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Sıralama değiştirilemez.'); return; } handleReorder('fixtures', cmsData.fixtures, idx, dir); }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} showMessage={showMessage} />}
             {activeTab === 'gallery' && <GalleryTab data={cmsData.galleryData} onSave={async (d) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveGalleryImage(d); showMessage('success', 'Görsel eklendi'); } catch(e) { showMessage('error', 'Eklenemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } try { await deleteGalleryImage(id); showMessage('success', 'Görsel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } }} onReorder={(idx, dir) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Sıralama değiştirilemez.'); return; } handleReorder('gallery', cmsData.galleryData, idx, dir); }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} showMessage={showMessage} />}
             {activeTab === 'staff' && <StaffTab data={cmsData.staffData} onSave={async (d, id) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Kayıt işlemi yapılamaz.'); return; } try { await saveStaffMember(d, id); showMessage('success', 'Personel kaydedildi'); } catch(e) { showMessage('error', 'Kaydedilemedi'); throw e; } }} onDelete={async (id) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Silme işlemi yapılamaz.'); return; } try { await deleteStaffMember(id); showMessage('success', 'Personel silindi'); } catch(e) { showMessage('error', 'Silinemedi'); } }} onReorder={(idx, dir) => { if (cmsData.isFallback) { showMessage('error', 'Veritabanı bağlantısı yok. Sıralama değiştirilemez.'); return; } handleReorder('staff', cmsData.staffData, idx, dir); }} handleUpload={handleFileUpload} ImageUpload={ImageUpload} isFallback={cmsData.isFallback} showMessage={showMessage} />}
@@ -1272,7 +1321,7 @@ const NewsTab: React.FC<{ data: NewsArticle[], onSave: (d: Partial<NewsArticle>,
 
 // --- Other tabs follow similar pattern... I'll implement a few more key ones ---
 
-const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>, id?: string) => void, onDelete: (id: string) => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, showMessage: any, isFallback: boolean }> = ({ data, onSave, onDelete, handleUpload, ImageUpload, showMessage, isFallback }) => {
+const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>, id?: string) => void, onDelete: (id: string) => void, onDeletePlayer: (pageId: string, playerId: string) => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, showMessage: any, isFallback: boolean }> = ({ data, onSave, onDelete, onDeletePlayer, handleUpload, ImageUpload, showMessage, isFallback }) => {
   const [editing, setEditing] = useState<Partial<DynamicPage> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const pagesList = data || [];
@@ -1285,6 +1334,14 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
     }
     setIsSaving(true);
     try {
+      // Check for Base64 images in players
+      const hasBase64 = editing.players?.some((p: any) => p.imageUrl?.startsWith('data:image/'));
+      if (hasBase64) {
+        showMessage('warning', 'Bazı oyuncu fotoğrafları buluta yüklenmemiş. Lütfen bu fotoğrafları silip tekrar yükleyin.');
+        setIsSaving(false);
+        return;
+      }
+
       await onSave(editing, editing.id);
       setEditing(null);
     } finally {
@@ -1388,7 +1445,20 @@ const PagesTab: React.FC<{ data: DynamicPage[], onSave: (d: Partial<DynamicPage>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {editing.players?.map((player) => (
                 <div key={player.id} className="bg-white p-3 rounded-lg border relative space-y-2">
-                  <button onClick={() => removePlayer(player.id)} className="absolute top-2 right-2 text-red-400 hover:text-red-600">
+                  <button 
+                    onClick={async () => {
+                      if (editing.id && typeof player.id === 'string') {
+                        try {
+                          await onDeletePlayer(editing.id, player.id);
+                        } catch (err) {
+                          console.error('Error deleting player from subcollection:', err);
+                        }
+                      }
+                      const players = editing.players?.filter(p => p.id !== player.id);
+                      setEditing({ ...editing, players });
+                    }} 
+                    className="absolute top-2 right-2 text-red-400 hover:text-red-600"
+                  >
                     <Trash2 size={14} />
                   </button>
                   <input type="text" placeholder="İsim" value={player.name} onChange={e => {
@@ -1779,7 +1849,7 @@ const HomepageTab: React.FC<{ data: HomePageHero, onSave: (d: HomePageHero) => v
   );
 };
 
-const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string) => void, onDelete: (id: string) => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean, showMessage: any }> = ({ data, onSave, onDelete, handleUpload, ImageUpload, isFallback, showMessage }) => {
+const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string) => void, onDelete: (id: string) => void, onDeletePlayer: (teamId: string, playerId: string) => void, handleUpload: (f: File, p: string, isHero?: boolean, isSmall?: boolean) => Promise<string>, ImageUpload: any, isFallback: boolean, showMessage: any }> = ({ data, onSave, onDelete, onDeletePlayer, handleUpload, ImageUpload, isFallback, showMessage }) => {
   const [editing, setEditing] = useState<any | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const teams = data || [];
@@ -1792,26 +1862,12 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
     }
     setIsSaving(true);
     try {
-      // Check total size to avoid Firestore 1MB limit
-      const jsonString = JSON.stringify(editing);
-      const size = new Blob([jsonString]).size;
-      console.log(`[TEAM_SAVE] Total team object size: ${size} bytes`);
-      
-      // Identify Base64 images that are causing size issues
-      const hasBase64 = jsonString.includes('data:image/');
-      
-      if (size > 900 * 1024) { // Warning at 900KB
-        if (hasBase64) {
-          showMessage('warning', 'Uyarı: Takım verisi çok büyük. Bazı oyuncu fotoğrafları veritabanına gömülü (Base64) görünüyor. Lütfen bu fotoğrafları silip tekrar yükleyerek bulut depolamaya taşınmasını sağlayın.');
-        } else {
-          showMessage('warning', 'Uyarı: Takım verisi çok büyük. Çok fazla oyuncu veya veri eklemiş olabilirsiniz.');
-        }
-        
-        if (size > 1040 * 1024) { // Hard limit at ~1MB
-          showMessage('error', 'Hata: Takım verisi 1MB limitini aştı. Kaydedilemez. Lütfen bazı oyuncuları kaldırın veya fotoğrafları bulut depolamaya yüklemek için yeniden yükleyin.');
-          setIsSaving(false);
-          return;
-        }
+      // Check for Base64 images in players
+      const hasBase64 = editing.players?.some((p: any) => p.imageUrl?.startsWith('data:image/'));
+      if (hasBase64) {
+        showMessage('warning', 'Bazı oyuncu fotoğrafları buluta yüklenmemiş. Lütfen bu fotoğrafları silip tekrar yükleyin.');
+        setIsSaving(false);
+        return;
       }
 
       await onSave(editing, editing.id?.toString());
@@ -1918,7 +1974,14 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
                         className="p-2 border rounded-lg text-sm w-full" 
                       />
                       <button 
-                        onClick={() => {
+                        onClick={async () => {
+                          if (editing.id && typeof player.id === 'string') {
+                            try {
+                              await onDeletePlayer(editing.id.toString(), player.id);
+                            } catch (err) {
+                              console.error('Error deleting player from subcollection:', err);
+                            }
+                          }
                           const newPlayers = editing.players.filter((_: any, i: number) => i !== idx);
                           setEditing({...editing, players: newPlayers});
                         }}
