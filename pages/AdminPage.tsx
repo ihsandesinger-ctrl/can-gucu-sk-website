@@ -339,15 +339,19 @@ const AdminPage: React.FC = () => {
       } catch (uploadErr: any) {
         console.warn('[STORAGE] Storage upload failed or timed out:', uploadErr.message);
         
-        // Only fallback to Base64 if absolutely necessary AND the file is small enough to not break Firestore
-        if (finalFile.size < 100 * 1024) {
+        // Only fallback to Base64 for tiny logos. 
+        // For players/staff/news, we MUST use Storage to avoid 1MB Firestore limit.
+        if (isLogo && finalFile.size < 50 * 1024) {
           showMessage('info', 'Bulut depolama yavaş, alternatif yöntem kullanılıyor...');
           const b64 = await convertToBase64(finalFile);
           showMessage('success', 'Görsel başarıyla yüklendi (Alternatif)');
           return b64;
         } else {
-          console.error('[STORAGE] File too large for Base64 fallback or Storage failed');
-          throw new Error('Görsel yüklenemedi. Bulut depolama hatası (Storage). Lütfen internet bağlantınızı kontrol edin veya daha sonra tekrar deneyin.');
+          console.error('[STORAGE] Upload failed and no fallback allowed for this type/size');
+          const errorMsg = uploadErr.message === 'timeout' 
+            ? 'Yükleme zaman aşımına uğradı. İnternet bağlantınızı kontrol edin.' 
+            : 'Bulut depolama hatası (Storage). Lütfen yönetici ile iletişime geçin veya daha sonra tekrar deneyin.';
+          throw new Error(errorMsg);
         }
       }
     } catch (err) {
@@ -1663,12 +1667,22 @@ const TeamsTab: React.FC<{ data: Team[], onSave: (d: Partial<Team>, id?: string)
     setIsSaving(true);
     try {
       // Check total size to avoid Firestore 1MB limit
-      const size = new Blob([JSON.stringify(editing)]).size;
+      const jsonString = JSON.stringify(editing);
+      const size = new Blob([jsonString]).size;
       console.log(`[TEAM_SAVE] Total team object size: ${size} bytes`);
       
-      if (size > 950 * 1024) { // Close to 1MB
-        alert('Uyarı: Takım verisi çok büyük (1MB limitine yakın). Lütfen oyuncu fotoğraflarını daha küçük boyutlu seçin veya bazılarını kaldırın.');
-        if (size > 1024 * 1024) {
+      // Identify Base64 images that are causing size issues
+      const hasBase64 = jsonString.includes('data:image/');
+      
+      if (size > 900 * 1024) { // Warning at 900KB
+        if (hasBase64) {
+          alert('Uyarı: Takım verisi çok büyük. Bazı oyuncu fotoğrafları veritabanına gömülü (Base64) görünüyor. Lütfen bu fotoğrafları silip tekrar yükleyerek bulut depolamaya taşınmasını sağlayın.');
+        } else {
+          alert('Uyarı: Takım verisi çok büyük. Çok fazla oyuncu veya veri eklemiş olabilirsiniz.');
+        }
+        
+        if (size > 1040 * 1024) { // Hard limit at ~1MB
+          alert('Hata: Takım verisi 1MB limitini aştı. Kaydedilemez. Lütfen bazı oyuncuları kaldırın veya fotoğrafları bulut depolamaya yüklemek için yeniden yükleyin.');
           setIsSaving(false);
           return;
         }
