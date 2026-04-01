@@ -49,6 +49,106 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 }
 
 // Data Fetching
+export const getCMSData = async (): Promise<CMSData> => {
+  if (!db) throw new Error("Firebase not initialized");
+
+  const collections = [
+    { path: 'settings/site', key: 'siteSettings' },
+    { path: 'homepage/hero', key: 'homePageHero' },
+    { path: 'missionVision/content', key: 'missionVision' },
+    { path: 'news', key: 'newsData', isCollection: true, query: query(collection(db, 'news'), orderBy('order', 'desc'), limit(50)) },
+    { path: 'teams', key: 'teamData', isCollection: true },
+    { path: 'fixtures', key: 'fixtures', isCollection: true, query: query(collection(db, 'fixtures'), orderBy('order', 'desc')) },
+    { path: 'gallery', key: 'galleryData', isCollection: true, query: query(collection(db, 'gallery'), orderBy('order', 'desc'), limit(50)) },
+    { path: 'staff', key: 'staffData', isCollection: true, query: query(collection(db, 'staff'), orderBy('order', 'desc')) },
+    { path: 'pages', key: 'pagesData', isCollection: true }
+  ];
+
+  const data: Partial<CMSData> = {};
+
+  try {
+    // Try to load from cache first for instant UI
+    console.log('[FIRESTORE] Attempting to load from cache...');
+    const cachePromises = collections.map(async (col) => {
+      try {
+        if (col.isCollection) {
+          const q = col.query || collection(db, col.path);
+          const snap = await getDocs(q); // Firestore handles cache automatically if persistence is enabled
+          data[col.key as keyof CMSData] = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any;
+        } else {
+          const snap = await getDoc(doc(db, col.path.split('/')[0], col.path.split('/')[1]));
+          if (snap.exists()) {
+            data[col.key as keyof CMSData] = snap.data() as any;
+          }
+        }
+      } catch (e) {
+        console.warn(`[FIRESTORE] Cache load failed for ${col.path}:`, e);
+      }
+    });
+
+    await Promise.all(cachePromises);
+
+    // If we have enough data from cache, return it immediately
+    if (data.siteSettings && data.homePageHero) {
+      console.log('[FIRESTORE] Loaded from cache successfully');
+      // We still want to trigger a background fetch to update the cache
+      // but we return the cached data for speed
+      return { ...data, isFallback: false } as CMSData;
+    }
+
+    // Fallback to server if cache is empty
+    console.log('[FIRESTORE] Cache empty or incomplete, fetching from server...');
+    const [settingsSnap, heroSnap, missionSnap, newsSnap, teamsSnap, fixturesSnap, gallerySnap, staffSnap, pagesSnap] = await Promise.all([
+      getDoc(doc(db, 'settings', 'site')),
+      getDoc(doc(db, 'homepage', 'hero')),
+      getDoc(doc(db, 'missionVision', 'content')),
+      getDocs(query(collection(db, 'news'), orderBy('order', 'desc'), limit(50))),
+      getDocs(collection(db, 'teams')),
+      getDocs(query(collection(db, 'fixtures'), orderBy('order', 'desc'))),
+      getDocs(query(collection(db, 'gallery'), orderBy('order', 'desc'), limit(50))),
+      getDocs(query(collection(db, 'staff'), orderBy('order', 'desc'))),
+      getDocs(collection(db, 'pages'))
+    ]);
+
+    const serverData: Partial<CMSData> = {
+      siteSettings: settingsSnap.exists() ? settingsSnap.data() as SiteSettings : undefined,
+      homePageHero: heroSnap.exists() ? heroSnap.data() as HomePageHero : undefined,
+      missionVision: missionSnap.exists() ? missionSnap.data() as MissionVision : undefined,
+      newsData: newsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any,
+      fixtures: fixturesSnap.docs.map(d => d.data()) as any,
+      galleryData: gallerySnap.docs.map(d => ({ id: d.id, ...d.data() })) as any,
+      staffData: staffSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any,
+      teamData: teamsSnap.docs.map(d => ({ id: d.id, ...d.data(), players: [] })) as any,
+      pagesData: pagesSnap.docs.map(d => ({ id: d.id, ...d.data(), players: [] })) as any
+    };
+
+    return { ...serverData, isFallback: false } as CMSData;
+  } catch (err) {
+    console.error('[FIRESTORE] Error fetching CMS data:', err);
+    throw err;
+  }
+};
+
+export const getTeamPlayers = async (teamId: string) => {
+  try {
+    const playersSnap = await getDocs(query(collection(db, 'teams', teamId, 'players'), orderBy('number', 'asc')));
+    return playersSnap.docs.map(pd => ({ id: pd.id, ...pd.data() }));
+  } catch (err) {
+    handleFirestoreError(err, OperationType.LIST, `teams/${teamId}/players`);
+    return [];
+  }
+};
+
+export const getPagePlayers = async (pageId: string) => {
+  try {
+    const playersSnap = await getDocs(query(collection(db, 'pages', pageId, 'players'), orderBy('number', 'asc')));
+    return playersSnap.docs.map(pd => ({ id: pd.id, ...pd.data() }));
+  } catch (err) {
+    handleFirestoreError(err, OperationType.LIST, `pages/${pageId}/players`);
+    return [];
+  }
+};
+
 export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
   if (!db) {
     console.warn("Firebase not initialized. CMS data subscription skipped.");
@@ -67,25 +167,12 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
   };
   const totalCollections = 9;
   const unsubscribes: (() => void)[] = [];
+  const playerUnsubscribes = new Map<string, () => void>();
   const loadedCollections = new Set<string>();
 
   const checkAndEmit = (collectionName: string) => {
     loadedCollections.add(collectionName);
-    // Emit data if all collections have been attempted (either success or error)
     if (loadedCollections.size === totalCollections) {
-      // Calculate total docs for debugging quota
-      const totalDocs = 
-        (data.newsData?.length || 0) + 
-        (data.teamData?.length || 0) + 
-        (data.galleryData?.length || 0) + 
-        (data.staffData?.length || 0) + 
-        (data.fixtures?.length || 0) + 
-        (data.pagesData?.length || 0) + 
-        3; // settings, homepage, missionVision
-      
-      console.log(`[FIRESTORE] Initial load complete. Total documents: ${totalDocs}`);
-      
-      // If critical data is missing (due to errors), mark as fallback
       const isFallback = !data.siteSettings || !data.homePageHero || !data.missionVision;
       callback({ ...data, isFallback } as CMSData);
     }
@@ -93,76 +180,65 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
 
   const handleError = (err: any, collectionName: string, path: string) => {
     console.error(`Error loading ${collectionName}:`, err);
-    // Still mark as "loaded" so we don't get stuck, but we might have missing data
     checkAndEmit(collectionName);
-    // We don't throw here to avoid breaking the entire subscription process
   };
 
   // Settings
   unsubscribes.push(onSnapshot(doc(db, 'settings', 'site'), (snapshot) => {
-    if (!snapshot.exists()) {
-      console.warn('Settings document does not exist in Firestore');
-      checkAndEmit('settings');
-      return;
+    if (snapshot.exists()) {
+      data.siteSettings = { id: snapshot.id, ...snapshot.data() } as any;
     }
-    const docData = snapshot.data();
-    data.siteSettings = {
-      logo: '',
-      address: '',
-      email: '',
-      phone: '',
-      socialMedia: { facebook: '', instagram: '', twitter: '', youtube: '' },
-      maintenanceMode: false,
-      navigation: [],
-      globalStyles: { primaryColor: '#f27d26', secondaryColor: '#1a1a1a', fontFamily: 'Inter', baseFontSize: '16px' },
-      ...docData
-    } as SiteSettings;
     checkAndEmit('settings');
   }, (err) => handleError(err, 'settings', 'settings/site')));
 
   // Homepage
   unsubscribes.push(onSnapshot(doc(db, 'homepage', 'hero'), (snapshot) => {
-    const docData = snapshot.data();
-    data.homePageHero = {
-      heroImage: '',
-      heroTitle: '',
-      heroSubtitle: '',
-      sections: [],
-      ...docData
-    } as HomePageHero;
+    if (snapshot.exists()) {
+      data.homePageHero = { id: snapshot.id, ...snapshot.data() } as any;
+    }
     checkAndEmit('homepage');
   }, (err) => handleError(err, 'homepage', 'homepage/hero')));
 
   // News
   unsubscribes.push(onSnapshot(query(collection(db, 'news'), orderBy('order', 'desc'), limit(50)), (snapshot) => {
-    if (snapshot.metadata.fromCache) console.log('[FIRESTORE] News loaded from cache');
     data.newsData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
     checkAndEmit('news');
   }, (err) => handleError(err, 'news', 'news')));
 
   // Teams
   unsubscribes.push(onSnapshot(collection(db, 'teams'), (snapshot) => {
-    if (snapshot.metadata.fromCache) console.log('[FIRESTORE] Teams loaded from cache');
-    const teams = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
-    
-    // For each team, we also need to subscribe to its players subcollection
+    const teams = snapshot.docs.map(d => ({ id: d.id, ...d.data(), players: [] })) as any[];
+    data.teamData = teams;
+
+    // Manage player sub-subscriptions
     teams.forEach(team => {
-      const playersRef = collection(db, 'teams', team.id, 'players');
-      const unsubPlayers = onSnapshot(query(playersRef, orderBy('number', 'asc')), (playerSnapshot) => {
-        const players = playerSnapshot.docs.map(pd => ({ id: pd.id, ...pd.data() })) as any[];
-        // Update the team in our local data
-        const teamIdx = data.teamData?.findIndex(t => t.id === team.id);
-        if (teamIdx !== undefined && teamIdx !== -1) {
-          const updatedTeamData = [...(data.teamData || [])];
-          updatedTeamData[teamIdx] = { ...updatedTeamData[teamIdx], players };
-          data.teamData = updatedTeamData;
-          callback({ ...data } as CMSData);
-        }
-      }, (err) => console.error(`Error loading players for team ${team.id}:`, err));
-      unsubscribes.push(unsubPlayers);
+      if (!playerUnsubscribes.has(`team_${team.id}`)) {
+        const unsub = onSnapshot(query(collection(db, 'teams', team.id, 'players'), orderBy('number', 'asc')), (pSnap) => {
+          const players = pSnap.docs.map(pd => ({ id: pd.id, ...pd.data() }));
+          const teamIdx = data.teamData?.findIndex(t => t.id === team.id);
+          if (teamIdx !== undefined && teamIdx !== -1) {
+            const updated = [...(data.teamData || [])];
+            updated[teamIdx] = { ...updated[teamIdx], players: players as any };
+            data.teamData = updated;
+            callback({ ...data } as CMSData);
+          }
+        });
+        playerUnsubscribes.set(`team_${team.id}`, unsub);
+      }
     });
 
-    data.teamData = teams;
+    // Cleanup unsubscribes for deleted teams
+    const teamIds = new Set(teams.map(t => t.id));
+    for (const key of playerUnsubscribes.keys()) {
+      if (key.startsWith('team_')) {
+        const id = key.replace('team_', '');
+        if (!teamIds.has(id)) {
+          playerUnsubscribes.get(key)?.();
+          playerUnsubscribes.delete(key);
+        }
+      }
+    }
+
     checkAndEmit('teams');
   }, (err) => handleError(err, 'teams', 'teams')));
 
@@ -174,7 +250,6 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
 
   // Gallery
   unsubscribes.push(onSnapshot(query(collection(db, 'gallery'), orderBy('order', 'desc'), limit(50)), (snapshot) => {
-    if (snapshot.metadata.fromCache) console.log('[FIRESTORE] Gallery loaded from cache');
     data.galleryData = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any;
     checkAndEmit('gallery');
   }, (err) => handleError(err, 'gallery', 'gallery')));
@@ -187,40 +262,51 @@ export const subscribeToCMSData = (callback: (data: CMSData) => void) => {
 
   // Mission/Vision
   unsubscribes.push(onSnapshot(doc(db, 'missionVision', 'content'), (snapshot) => {
-    const docData = snapshot.data();
-    data.missionVision = {
-      mission: '',
-      vision: '',
-      ...docData
-    } as MissionVision;
+    if (snapshot.exists()) {
+      data.missionVision = snapshot.data() as any;
+    }
     checkAndEmit('missionVision');
   }, (err) => handleError(err, 'missionVision', 'missionVision/content')));
 
   // Pages
   unsubscribes.push(onSnapshot(collection(db, 'pages'), (snapshot) => {
-    const pages = snapshot.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
-    
-    // Subscribe to players subcollection for each page
+    const pages = snapshot.docs.map(d => ({ id: d.id, ...d.data(), players: [] })) as any[];
+    data.pagesData = pages;
+
     pages.forEach(page => {
-      const playersRef = collection(db, 'pages', page.id, 'players');
-      const unsubPlayers = onSnapshot(query(playersRef, orderBy('number', 'asc')), (playerSnapshot) => {
-        const players = playerSnapshot.docs.map(pd => ({ id: pd.id, ...pd.data() })) as any[];
-        const pageIdx = data.pagesData?.findIndex(p => p.id === page.id);
-        if (pageIdx !== undefined && pageIdx !== -1) {
-          const updatedPagesData = [...(data.pagesData || [])];
-          updatedPagesData[pageIdx] = { ...updatedPagesData[pageIdx], players };
-          data.pagesData = updatedPagesData;
-          callback({ ...data } as CMSData);
-        }
-      }, (err) => console.error(`Error loading players for page ${page.id}:`, err));
-      unsubscribes.push(unsubPlayers);
+      if (!playerUnsubscribes.has(`page_${page.id}`)) {
+        const unsub = onSnapshot(query(collection(db, 'pages', page.id, 'players'), orderBy('number', 'asc')), (pSnap) => {
+          const players = pSnap.docs.map(pd => ({ id: pd.id, ...pd.data() }));
+          const pageIdx = data.pagesData?.findIndex(p => p.id === page.id);
+          if (pageIdx !== undefined && pageIdx !== -1) {
+            const updated = [...(data.pagesData || [])];
+            updated[pageIdx] = { ...updated[pageIdx], players: players as any };
+            data.pagesData = updated;
+            callback({ ...data } as CMSData);
+          }
+        });
+        playerUnsubscribes.set(`page_${page.id}`, unsub);
+      }
     });
 
-    data.pagesData = pages;
+    const pageIds = new Set(pages.map(p => p.id));
+    for (const key of playerUnsubscribes.keys()) {
+      if (key.startsWith('page_')) {
+        const id = key.replace('page_', '');
+        if (!pageIds.has(id)) {
+          playerUnsubscribes.get(key)?.();
+          playerUnsubscribes.delete(key);
+        }
+      }
+    }
+
     checkAndEmit('pages');
   }, (err) => handleError(err, 'pages', 'pages')));
 
-  return () => unsubscribes.forEach(unsub => unsub());
+  return () => {
+    unsubscribes.forEach(unsub => unsub());
+    playerUnsubscribes.forEach(unsub => unsub());
+  };
 };
 
 // Migration Function

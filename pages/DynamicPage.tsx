@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
-import { DynamicPage as DynamicPageType } from '../types';
+import { DynamicPage as DynamicPageType, Player } from '../types';
 import { motion } from 'motion/react';
 import { Calendar, User, Users, Info } from 'lucide-react';
+import { getPagePlayers } from '../firebaseService';
 
 interface DynamicPageProps {
   pages?: DynamicPageType[];
@@ -14,6 +15,8 @@ const DynamicPage: React.FC<DynamicPageProps> = ({ pages = [] }) => {
   const { slug } = useParams<{ slug: string }>();
   const [page, setPage] = useState<DynamicPageType | null>(null);
   const [loading, setLoading] = useState(true);
+  const [localPlayers, setLocalPlayers] = useState<Player[]>([]);
+  const [loadingPlayers, setLoadingPlayers] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -44,6 +47,18 @@ const DynamicPage: React.FC<DynamicPageProps> = ({ pages = [] }) => {
     }
   }, [slug, pages]);
 
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      if (page && (!page.players || page.players.length === 0)) {
+        setLoadingPlayers(true);
+        const players = await getPagePlayers(page.id);
+        setLocalPlayers(players as unknown as Player[]);
+        setLoadingPlayers(false);
+      }
+    };
+    fetchPlayers();
+  }, [page]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -61,30 +76,25 @@ const DynamicPage: React.FC<DynamicPageProps> = ({ pages = [] }) => {
     );
   }
 
+  const displayPlayers = page.players && page.players.length > 0 ? page.players : localPlayers;
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
-      <div className="relative h-[40vh] md:h-[60vh] overflow-hidden bg-[var(--primary-color)]">
-        {/* Gradient background for depth */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary-color)] via-black/40 to-black z-0"></div>
+      <div className="relative h-[40vh] md:h-[60vh] overflow-hidden bg-gray-900">
+        <img 
+          src={page.heroImage || 'https://picsum.photos/seed/sports/1920/1080'} 
+          alt={page.title}
+          className="absolute inset-0 w-full h-full object-cover"
+          referrerPolicy="no-referrer"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent z-20"></div>
         
-        {/* Blurred background to fill gaps */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center blur-2xl scale-110 opacity-30"
-          style={{ backgroundImage: `url('${page.heroImage || 'https://picsum.photos/seed/sports/1920/1080'}')` }}
-        ></div>
-        
-        {/* Main image - contain to show full crop */}
-        <div 
-          className="absolute inset-0 bg-contain bg-center bg-no-repeat z-10"
-          style={{ backgroundImage: `url('${page.heroImage || 'https://picsum.photos/seed/sports/1920/1080'}')` }}
-        ></div>
-
-        <div className="absolute inset-0 bg-black/20 flex items-center justify-center z-20">
+        <div className="absolute inset-0 flex items-center justify-center z-30">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-6xl font-bold text-white text-center px-4 drop-shadow-2xl"
+            className="text-4xl md:text-6xl font-bold text-white text-center px-4 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]"
           >
             {page.title}
           </motion.h1>
@@ -135,7 +145,7 @@ const DynamicPage: React.FC<DynamicPageProps> = ({ pages = [] }) => {
             )}
 
             {/* Players Section */}
-            {page.players && page.players.length > 0 && (
+            {(displayPlayers.length > 0 || loadingPlayers) && (
               <section className="bg-white rounded-2xl p-8 shadow-sm border border-slate-100">
                 <div className="flex items-center gap-3 mb-8">
                   <div className="p-2 bg-amber-100 rounded-lg">
@@ -143,29 +153,33 @@ const DynamicPage: React.FC<DynamicPageProps> = ({ pages = [] }) => {
                   </div>
                   <h2 className="text-2xl font-bold text-slate-800">Sporcular</h2>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-                  {page.players.map((player) => (
-                    <motion.div
-                      key={player.id}
-                      whileHover={{ y: -5 }}
-                      className="group"
-                    >
-                      <div className="relative aspect-[3/4] rounded-xl overflow-hidden shadow-sm mb-3">
-                        <img
-                          src={player.imageUrl || 'https://picsum.photos/seed/player/300/400'}
-                          alt={player.name}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                          referrerPolicy="no-referrer"
-                        />
-                        <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-emerald-600">
-                          #{player.number}
+                {loadingPlayers ? (
+                  <div className="text-center py-10 text-gray-500">Sporcular yükleniyor...</div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+                    {displayPlayers.map((player) => (
+                      <motion.div
+                        key={player.id}
+                        whileHover={{ y: -5 }}
+                        className="group"
+                      >
+                        <div className="relative aspect-[3/4] rounded-xl overflow-hidden shadow-sm mb-3">
+                          <img
+                            src={player.imageUrl || 'https://picsum.photos/seed/player/300/400'}
+                            alt={player.name}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                            referrerPolicy="no-referrer"
+                          />
+                          <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-bold text-emerald-600">
+                            #{player.number}
+                          </div>
                         </div>
-                      </div>
-                      <h4 className="font-bold text-slate-800 text-center">{player.name}</h4>
-                      <p className="text-xs text-slate-500 text-center">{player.position}</p>
-                    </motion.div>
-                  ))}
-                </div>
+                        <h4 className="font-bold text-slate-800 text-center">{player.name}</h4>
+                        <p className="text-xs text-slate-500 text-center">{player.position}</p>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </section>
             )}
           </div>

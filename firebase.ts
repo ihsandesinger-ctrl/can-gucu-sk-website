@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 // Environment variables from Netlify/Vite
@@ -14,9 +14,7 @@ const firebaseConfig = {
   firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID
 };
 
-// If environment variables are missing (likely local dev), 
-// you should create a .env file with VITE_FIREBASE_* variables.
-let app;
+let app: any;
 let auth: any;
 let db: any;
 let storage: any;
@@ -25,20 +23,17 @@ if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "undefined") {
   try {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
-    db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+    
+    // Initialize Firestore with persistent local cache
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+      })
+    }, firebaseConfig.firestoreDatabaseId);
+    
     storage = getStorage(app);
     console.log('[FIREBASE] Storage initialized with bucket:', firebaseConfig.storageBucket);
-
-    // Enable offline persistence
-    import('firebase/firestore').then(({ enableIndexedDbPersistence }) => {
-      enableIndexedDbPersistence(db).catch((err) => {
-        if (err.code === 'failed-precondition') {
-          console.warn('Firestore persistence failed: Multiple tabs open');
-        } else if (err.code === 'unimplemented') {
-          console.warn('Firestore persistence failed: Browser not supported');
-        }
-      });
-    });
+    console.log('[FIREBASE] Firestore initialized with persistent cache');
   } catch (error) {
     console.error("Firebase initialization failed:", error);
   }
