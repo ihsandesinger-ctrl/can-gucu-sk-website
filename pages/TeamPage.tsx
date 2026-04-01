@@ -46,27 +46,18 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
     <div className="bg-gray-50">
       {/* Hero Image */}
       <div className="relative h-64 md:h-[500px] overflow-hidden bg-[var(--primary-color)]">
-        {/* Gradient background for depth */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary-color)] via-black/40 to-black z-0"></div>
-        
-        {/* Blurred background to fill gaps */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center blur-2xl scale-110 opacity-30"
-          style={{ backgroundImage: `url('${team.heroImage || 'https://picsum.photos/seed/sports/1920/1080'}')` }}
-        ></div>
-        
-        {/* Main image - object-cover to fill the frame */}
-        <div className="absolute inset-0 z-10">
+        {/* Main image - object-contain to support transparent images and avoid cropping */}
+        <div className="absolute inset-0 z-10 flex items-center justify-center">
           <img 
             src={team.heroImage || 'https://picsum.photos/seed/sports/1920/1080'} 
             alt={team.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain p-4 md:p-8"
             referrerPolicy="no-referrer"
           />
         </div>
 
-        <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
-          <h1 className="text-4xl md:text-5xl font-bold text-white drop-shadow-2xl">{team.name}</h1>
+        <div className="absolute inset-0 bg-black/10 flex items-center justify-center z-20">
+          <h1 className="text-4xl md:text-5xl font-bold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">{team.name}</h1>
         </div>
       </div>
 

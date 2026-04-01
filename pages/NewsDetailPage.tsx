@@ -25,29 +25,24 @@ const NewsDetailPage: React.FC<NewsDetailPageProps> = ({ news }) => {
     <div className="bg-white min-h-screen pb-20">
       {/* Hero Section */}
       <div className="relative h-[40vh] md:h-[60vh] bg-[var(--primary-color)] overflow-hidden">
-        {/* Gradient background for depth */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary-color)] via-black/40 to-black z-0"></div>
-        
-        {/* Blurred background to fill gaps */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center blur-2xl scale-110 opacity-30"
-          style={{ backgroundImage: `url('${article.imageUrl}')` }}
-        ></div>
-        
         {/* Main image - contained so nothing is missing */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat z-10"
-          style={{ backgroundImage: `url('${article.imageUrl}')` }}
-        ></div>
+        <div className="absolute inset-0 z-10 flex items-center justify-center">
+          <img 
+            src={article.imageUrl} 
+            alt={article.title}
+            className="w-full h-full object-contain p-4 md:p-8"
+            referrerPolicy="no-referrer"
+          />
+        </div>
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-20"></div>
+        <div className="absolute inset-0 bg-black/10 z-20"></div>
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-12 text-white z-30">
           <div className="container mx-auto max-w-4xl">
             <div className="flex items-center gap-3 mb-4">
               <span className="px-3 py-1 bg-orange-600 text-white text-xs font-bold rounded-full uppercase tracking-widest">Haber</span>
-              <p className="text-sm font-medium opacity-90">{new Date(article.date).toLocaleDateString('tr-TR')}</p>
+              <p className="text-sm font-medium opacity-90 drop-shadow-md">{new Date(article.date).toLocaleDateString('tr-TR')}</p>
             </div>
-            <h1 className="text-3xl md:text-5xl font-extrabold leading-tight drop-shadow-2xl">
+            <h1 className="text-3xl md:text-5xl font-extrabold leading-tight drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
               {article.title}
             </h1>
           </div>

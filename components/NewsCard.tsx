@@ -13,19 +13,19 @@ const NewsCard: React.FC<NewsCardProps> = ({ article, large = false }) => {
         ? "md:col-span-2 md:row-span-2 flex-col"
         : "flex-col";
     
-    const imageContainerClasses = large ? "h-64 sm:h-96" : "h-56";
+    const imageContainerClasses = large ? "aspect-[16/10] sm:aspect-video" : "aspect-video";
     const contentClasses = large ? "p-6" : "p-5";
 
     return (
         <Link to={`/haber/${article.id}`} className={`bg-white rounded-2xl shadow-md overflow-hidden transform hover:-translate-y-2 transition-all duration-300 flex h-full border border-gray-100 ${cardClasses}`}>
-            <div className={`relative w-full ${imageContainerClasses} bg-gray-100`}>
+            <div className={`relative w-full ${imageContainerClasses} bg-gray-50 overflow-hidden`}>
+                {/* Main Image (Contain) */}
                 <img 
-                    className="absolute inset-0 w-full h-full object-cover" 
-                    src={article.imageUrl} 
+                    className="absolute inset-0 w-full h-full object-contain p-2 z-10" 
+                    src={article.imageUrl || 'https://picsum.photos/seed/news/800/600'} 
                     alt={article.title} 
                     referrerPolicy="no-referrer"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
             </div>
             <div className={`w-full ${contentClasses} flex flex-col flex-grow`}>
                 <div className="flex items-center gap-2 mb-3">
