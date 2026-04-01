@@ -125,7 +125,7 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news,
                                             <img 
                                                 src={photo.imageUrl} 
                                                 alt={photo.title || 'Galeri Fotoğrafı'} 
-                                                className="absolute inset-0 w-full h-full object-contain p-2 transform group-hover:scale-105 transition-transform duration-300" 
+                                                className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" 
                                             />
                                         ) : (
                                             <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400">
@@ -150,7 +150,7 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news,
 
     return (
         <div>
-            <div className="relative h-[50vh] md:h-[70vh] overflow-hidden bg-gray-100">
+            <div className="relative h-[50vh] md:h-[70vh] overflow-hidden bg-[var(--primary-color)]">
                 {/* Main Image (Contain) - Transparent friendly */}
                 <div className="absolute inset-0 z-10 flex items-center justify-center">
                     <img 

@@ -21,7 +21,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ article, large = false }) => {
             <div className={`relative w-full ${imageContainerClasses} bg-gray-50 overflow-hidden`}>
                 {/* Main Image (Contain) */}
                 <img 
-                    className="absolute inset-0 w-full h-full object-contain p-2 z-10" 
+                    className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300 z-10" 
                     src={article.imageUrl || 'https://picsum.photos/seed/news/800/600'} 
                     alt={article.title} 
                     referrerPolicy="no-referrer"

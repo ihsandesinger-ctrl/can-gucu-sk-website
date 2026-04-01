@@ -10,7 +10,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ player }) => {
     return (
         <div className="relative aspect-[3/4] rounded-xl overflow-hidden shadow-lg group bg-gray-50 border border-gray-100">
             <img 
-                className="w-full h-full object-contain p-2 transform group-hover:scale-105 transition-transform duration-300 z-10" 
+                className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300 z-10" 
                 src={player.imageUrl || 'https://picsum.photos/seed/player/400/600'} 
                 alt={player.name} 
                 referrerPolicy="no-referrer"

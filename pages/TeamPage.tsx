@@ -45,7 +45,7 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
   return (
     <div className="bg-gray-50">
       {/* Hero Image */}
-      <div className="relative h-64 md:h-[500px] overflow-hidden bg-gray-100">
+      <div className="relative h-64 md:h-[500px] overflow-hidden bg-[var(--primary-color)]">
         {/* Main image - object-contain to support transparent images and avoid cropping */}
         <div className="absolute inset-0 z-10 flex items-center justify-center">
           <img 
