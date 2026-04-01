@@ -1,6 +1,6 @@
 
 export interface Player {
-  id: string | number;
+  id: number;
   name: string;
   position: string;
   number: number;
@@ -39,7 +39,7 @@ export interface Fixture {
 }
 
 export interface NewsArticle {
-  id: string | number;
+  id: number;
   title: string;
   summary: string;
   content: string;
@@ -49,14 +49,14 @@ export interface NewsArticle {
 }
 
 export interface GalleryItem {
-  id: string | number;
+  id: number;
   imageUrl: string;
   title?: string;
   order?: number;
 }
 
 export interface StaffMember {
-  id: string | number;
+  id: number;
   name: string;
   role: string;
   imageUrl: string;

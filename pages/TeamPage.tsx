@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useParams } from 'react-router-dom';
 import { User } from 'lucide-react';
-import type { Team, Fixture, Player } from '../types';
+import type { Team, Fixture } from '../types';
 import PlayerCard from '../components/PlayerCard';
 import FixtureTable from '../components/FixtureTable';
-import { getTeamPlayers } from '../firebaseService';
 
 interface TeamPageProps {
   teams: Team[];
@@ -13,23 +12,9 @@ interface TeamPageProps {
 
 const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
   const { teamSlug } = useParams<{ teamSlug: string }>();
-  const [localPlayers, setLocalPlayers] = useState<Player[]>([]);
-  const [loadingPlayers, setLoadingPlayers] = useState(false);
 
   const team = teams.find(t => t.slug === teamSlug);
   const teamFixtures = fixtures.find(f => f.teamSlug === teamSlug);
-
-  useEffect(() => {
-    const fetchPlayers = async () => {
-      if (team && (!team.players || team.players.length === 0)) {
-        setLoadingPlayers(true);
-        const players = await getTeamPlayers(team.id);
-        setLocalPlayers(players as unknown as Player[]);
-        setLoadingPlayers(false);
-      }
-    };
-    fetchPlayers();
-  }, [team]);
 
   // FIX: Only check if the team exists. The fixture is optional.
   if (!team) {
@@ -40,22 +25,31 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
     );
   }
 
-  const displayPlayers = team.players && team.players.length > 0 ? team.players : localPlayers;
-
   return (
     <div className="bg-gray-50">
       {/* Hero Image */}
-      <div className="relative h-64 md:h-[500px] overflow-hidden bg-gray-900">
-        <img 
-          src={team.heroImage || 'https://picsum.photos/seed/sports/1920/1080'} 
-          alt={team.name}
-          className="absolute inset-0 w-full h-full object-cover"
-          referrerPolicy="no-referrer"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent z-20"></div>
+      <div className="relative h-64 md:h-[500px] overflow-hidden bg-[var(--primary-color)]">
+        {/* Gradient background for depth */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary-color)] via-black/40 to-black z-0"></div>
         
-        <div className="absolute inset-0 flex items-center justify-center z-30">
-          <h1 className="text-4xl md:text-5xl font-bold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">{team.name}</h1>
+        {/* Blurred background to fill gaps */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center blur-2xl scale-110 opacity-30"
+          style={{ backgroundImage: `url('${team.heroImage || 'https://picsum.photos/seed/sports/1920/1080'}')` }}
+        ></div>
+        
+        {/* Main image - contain to show full crop */}
+        <div className="absolute inset-0 z-10">
+          <img 
+            src={team.heroImage || 'https://picsum.photos/seed/sports/1920/1080'} 
+            alt={team.name}
+            className="w-full h-full object-contain"
+            referrerPolicy="no-referrer"
+          />
+        </div>
+
+        <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
+          <h1 className="text-4xl md:text-5xl font-bold text-white drop-shadow-2xl">{team.name}</h1>
         </div>
       </div>
 
@@ -88,18 +82,11 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
         {/* Oyuncu Kadrosu */}
         <section className="mb-12">
           <h2 className="text-3xl font-bold text-gray-800 mb-6">Oyuncular Kadrosu</h2>
-          {loadingPlayers ? (
-            <div className="text-center py-10 text-gray-500">Oyuncular yükleniyor...</div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-              {displayPlayers.map((player, index) => (
-                <PlayerCard key={index} player={player} />
-              ))}
-              {displayPlayers.length === 0 && (
-                <div className="col-span-full text-center py-10 text-gray-500">Bu takım için henüz oyuncu bilgisi girilmemiştir.</div>
-              )}
-            </div>
-          )}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            {team.players.map((player, index) => (
+              <PlayerCard key={index} player={player} />
+            ))}
+          </div>
         </section>
 
         {/* Fikstür ve Sonuçlar */}

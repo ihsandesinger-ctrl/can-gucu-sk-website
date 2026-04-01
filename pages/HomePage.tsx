@@ -120,19 +120,19 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news,
                             </div>
                             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
                                 {recentPhotos.map((photo, index) => (
-                                     <Link to="/galeri" key={index} className="block relative rounded-lg overflow-hidden shadow-md group h-48 cursor-pointer bg-gray-50 border border-gray-100">
+                                     <Link to="/galeri" key={index} className="block relative rounded-lg overflow-hidden shadow-md group h-48 cursor-pointer">
                                         {photo.imageUrl ? (
                                             <img 
                                                 src={photo.imageUrl} 
                                                 alt={photo.title || 'Galeri Fotoğrafı'} 
-                                                className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" 
+                                                className="w-full h-full object-contain p-2 transform group-hover:scale-105 transition-transform duration-300" 
                                             />
                                         ) : (
                                             <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400">
                                                 <span className="text-xs">Görsel Yok</span>
                                             </div>
                                         )}
-                                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center z-20">
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                                             <i className="fa fa-eye text-white text-2xl"></i>
                                         </div>
                                     </Link>
@@ -150,22 +150,34 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news,
 
     return (
         <div>
-            <div className="relative h-[50vh] md:h-[70vh] overflow-hidden bg-gray-900">
-                {/* Main Image */}
-                <img 
-                    src={heroContent.heroImage} 
-                    alt={heroContent.heroTitle}
-                    className="absolute inset-0 w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                />
-                {/* Dark Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent z-20"></div>
+            {/* Hero Section */}
+            <div className="relative h-[50vh] md:h-[70vh] overflow-hidden bg-[var(--primary-color)]">
+                {/* Gradient background for depth */}
+                <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary-color)] via-black/40 to-black z-0"></div>
+                
+                {/* Blurred background to fill gaps */}
+                <div 
+                    className="absolute inset-0 bg-cover bg-center blur-2xl scale-110 opacity-30"
+                    style={{ backgroundImage: `url('${heroContent.heroImage}')` }}
+                ></div>
+                
+                {/* Main image - contained on mobile, cover on desktop */}
+                <div className="absolute inset-0 z-10">
+                    <img 
+                        src={heroContent.heroImage} 
+                        alt={heroContent.heroTitle}
+                        className="w-full h-full object-contain"
+                        referrerPolicy="no-referrer"
+                    />
+                </div>
 
+                {/* Overlay for text readability */}
+                <div className="absolute inset-0 bg-black/20 z-20"></div>
                 <div className="relative z-30 flex flex-col items-center justify-center h-full text-white text-center px-4">
-                    <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-4 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                    <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-4 drop-shadow-xl">
                         {heroContent.heroTitle}
                     </h1>
-                    <p className="text-lg md:text-xl max-w-2xl drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)] font-medium opacity-95">
+                    <p className="text-lg md:text-xl max-w-2xl drop-shadow-lg font-medium">
                         {heroContent.heroSubtitle}
                     </p>
                 </div>

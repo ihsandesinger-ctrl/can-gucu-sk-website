@@ -14,7 +14,7 @@ import AdminPage from './pages/AdminPage';
 import DynamicPage from './pages/DynamicPage';
 import ScrollToTop from './components/ScrollToTop';
 import type { CMSData } from './types';
-import { subscribeToCMSData, getCMSData, migrateDataToFirestore } from './firebaseService';
+import { subscribeToCMSData, migrateDataToFirestore } from './firebaseService';
 import { db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
@@ -41,17 +41,18 @@ const App: React.FC = () => {
           return;
         }
 
-        // Use one-time fetch for public site to save quota
-        const data = await getCMSData();
-        clearTimeout(timeout);
-        
-        if (data.isFallback && !data.siteSettings) {
-          setError('Site henüz kurulmamış veya veritabanı boş. Lütfen yönetici panelinden kurulum yapın.');
-        } else {
-          setCmsData(data);
-          setError(null);
-        }
-        setLoading(false);
+        const unsub = subscribeToCMSData((data) => {
+          clearTimeout(timeout);
+          if (data.isFallback && !data.siteSettings) {
+            setError('Site henüz kurulmamış veya veritabanı boş. Lütfen yönetici panelinden kurulum yapın.');
+          } else {
+            setCmsData(data);
+            setError(null);
+          }
+          setLoading(false);
+        });
+
+        return unsub;
 
       } catch (err: any) {
         console.error('App initialization error:', err);
@@ -61,7 +62,14 @@ const App: React.FC = () => {
       }
     };
 
-    initApp();
+    let unsubscribe: (() => void) | undefined;
+    initApp().then(unsub => {
+      unsubscribe = unsub;
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   // Update favicon and global styles dynamically
