@@ -150,7 +150,7 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news,
 
     return (
         <div>
-            <div className="relative h-[50vh] md:h-[70vh] overflow-hidden bg-[var(--primary-color)]">
+            <div className="relative h-[50vh] md:h-[70vh] overflow-hidden bg-gray-100">
                 {/* Main Image (Contain) - Transparent friendly */}
                 <div className="absolute inset-0 z-10 flex items-center justify-center">
                     <img 

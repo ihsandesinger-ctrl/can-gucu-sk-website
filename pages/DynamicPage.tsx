@@ -81,7 +81,7 @@ const DynamicPage: React.FC<DynamicPageProps> = ({ pages = [] }) => {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
-      <div className="relative h-[40vh] md:h-[60vh] overflow-hidden bg-[var(--primary-color)]">
+      <div className="relative h-[40vh] md:h-[60vh] overflow-hidden bg-gray-100">
         {/* Main image - object-contain to support transparent images and avoid cropping */}
         <div className="absolute inset-0 z-10 flex items-center justify-center">
           <img 

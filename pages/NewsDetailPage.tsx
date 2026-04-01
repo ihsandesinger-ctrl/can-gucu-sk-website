@@ -24,7 +24,7 @@ const NewsDetailPage: React.FC<NewsDetailPageProps> = ({ news }) => {
   return (
     <div className="bg-white min-h-screen pb-20">
       {/* Hero Section */}
-      <div className="relative h-[40vh] md:h-[60vh] bg-[var(--primary-color)] overflow-hidden">
+      <div className="relative h-[40vh] md:h-[60vh] bg-gray-100 overflow-hidden">
         {/* Main image - contained so nothing is missing */}
         <div className="absolute inset-0 z-10 flex items-center justify-center">
           <img 
