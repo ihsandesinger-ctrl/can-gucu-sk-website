@@ -81,7 +81,9 @@ const DynamicPage: React.FC<DynamicPageProps> = ({ pages = [] }) => {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
-      <div className="relative h-[40vh] md:h-[60vh] overflow-hidden bg-[var(--primary-color)]">
+      <div className="relative h-[40vh] md:h-[60vh] overflow-hidden bg-slate-950">
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 z-0"></div>
         {/* Main image - object-contain to support transparent images and avoid cropping */}
         <div className="absolute inset-0 z-10 flex items-center justify-center">
           <img 

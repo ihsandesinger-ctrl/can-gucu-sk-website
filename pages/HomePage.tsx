@@ -150,7 +150,9 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news,
 
     return (
         <div>
-            <div className="relative h-[50vh] md:h-[70vh] overflow-hidden bg-[var(--primary-color)]">
+            <div className="relative h-[50vh] md:h-[70vh] overflow-hidden bg-slate-950">
+                {/* Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 z-0"></div>
                 {/* Main Image (Contain) - Transparent friendly */}
                 <div className="absolute inset-0 z-10 flex items-center justify-center">
                     <img 
