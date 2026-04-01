@@ -150,20 +150,18 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news,
 
     return (
         <div>
-            <div className="relative h-[50vh] md:h-[70vh] overflow-hidden bg-slate-950">
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 z-0"></div>
-                {/* Main Image (Contain) - Transparent friendly */}
-                <div className="absolute inset-0 z-10 flex items-center justify-center">
-                    <img 
-                        src={heroContent.heroImage} 
-                        alt={heroContent.heroTitle}
-                        className="w-full h-full object-contain p-4 md:p-8"
-                        referrerPolicy="no-referrer"
-                    />
-                </div>
+            <div className="relative h-[50vh] md:h-[70vh] overflow-hidden bg-gray-900">
+                {/* Main Image */}
+                <img 
+                    src={heroContent.heroImage} 
+                    alt={heroContent.heroTitle}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                />
+                {/* Dark Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent z-20"></div>
 
-                <div className="relative z-30 flex flex-col items-center justify-center h-full text-white text-center px-4 bg-black/5">
+                <div className="relative z-30 flex flex-col items-center justify-center h-full text-white text-center px-4">
                     <h1 className="text-4xl md:text-6xl font-extrabold leading-tight mb-4 drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
                         {heroContent.heroTitle}
                     </h1>

@@ -45,20 +45,16 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
   return (
     <div className="bg-gray-50">
       {/* Hero Image */}
-      <div className="relative h-64 md:h-[500px] overflow-hidden bg-slate-950">
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 z-0"></div>
-        {/* Main image - object-contain to support transparent images and avoid cropping */}
-        <div className="absolute inset-0 z-10 flex items-center justify-center">
-          <img 
-            src={team.heroImage || 'https://picsum.photos/seed/sports/1920/1080'} 
-            alt={team.name}
-            className="w-full h-full object-contain p-4 md:p-8"
-            referrerPolicy="no-referrer"
-          />
-        </div>
-
-        <div className="absolute inset-0 bg-black/10 flex items-center justify-center z-20">
+      <div className="relative h-64 md:h-[500px] overflow-hidden bg-gray-900">
+        <img 
+          src={team.heroImage || 'https://picsum.photos/seed/sports/1920/1080'} 
+          alt={team.name}
+          className="absolute inset-0 w-full h-full object-cover"
+          referrerPolicy="no-referrer"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent z-20"></div>
+        
+        <div className="absolute inset-0 flex items-center justify-center z-30">
           <h1 className="text-4xl md:text-5xl font-bold text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">{team.name}</h1>
         </div>
       </div>

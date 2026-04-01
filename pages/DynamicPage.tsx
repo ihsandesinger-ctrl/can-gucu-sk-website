@@ -81,20 +81,16 @@ const DynamicPage: React.FC<DynamicPageProps> = ({ pages = [] }) => {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
-      <div className="relative h-[40vh] md:h-[60vh] overflow-hidden bg-slate-950">
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60 z-0"></div>
-        {/* Main image - object-contain to support transparent images and avoid cropping */}
-        <div className="absolute inset-0 z-10 flex items-center justify-center">
-          <img 
-            src={page.heroImage || 'https://picsum.photos/seed/sports/1920/1080'} 
-            alt={page.title}
-            className="w-full h-full object-contain p-4 md:p-8"
-            referrerPolicy="no-referrer"
-          />
-        </div>
-
-        <div className="absolute inset-0 bg-black/10 flex items-center justify-center z-20">
+      <div className="relative h-[40vh] md:h-[60vh] overflow-hidden bg-gray-900">
+        <img 
+          src={page.heroImage || 'https://picsum.photos/seed/sports/1920/1080'} 
+          alt={page.title}
+          className="absolute inset-0 w-full h-full object-cover"
+          referrerPolicy="no-referrer"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent z-20"></div>
+        
+        <div className="absolute inset-0 flex items-center justify-center z-30">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
