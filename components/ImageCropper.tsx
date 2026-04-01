@@ -10,7 +10,6 @@ interface ImageCropperProps {
   onCropComplete: (croppedImage: Blob) => void;
   onCancel: () => void;
   circularCrop?: boolean;
-  mimeType?: string;
 }
 
 const ImageCropper: React.FC<ImageCropperProps> = ({ 
@@ -18,8 +17,7 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
   aspectRatio, 
   onCropComplete, 
   onCancel,
-  circularCrop = false,
-  mimeType = 'image/jpeg'
+  circularCrop = false
 }) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -57,9 +55,7 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
       const croppedImage = await getCroppedImg(
         image,
         croppedAreaPixels,
-        rotation,
-        { horizontal: false, vertical: false },
-        mimeType
+        rotation
       );
       if (croppedImage) {
         onCropComplete(croppedImage);

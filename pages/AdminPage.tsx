@@ -94,15 +94,14 @@ const compressImage = (f: File, isLogo: boolean = false, isHero: boolean = false
         }
         ctx.drawImage(img, 0, 0, width, height);
         
-        // Use WebP for better compression, fallback to original type if needed
-        const mimeType = 'image/webp';
-        const quality = isSmall ? 0.75 : 0.85; 
+        // Use PNG for logos and hero images to preserve transparency if it's a PNG
+        // Use JPEG for others to keep file size small
+        const mimeType = (isLogo || isHero) && f.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        const quality = isSmall ? 0.75 : 0.85; // Slightly lower quality for small photos to save space
 
         canvas.toBlob((blob) => {
           if (blob) {
-            // Change extension to .webp
-            const baseName = f.name.substring(0, f.name.lastIndexOf('.')) || f.name;
-            resolve(new File([blob], `${baseName}.webp`, { type: mimeType }));
+            resolve(new File([blob], f.name, { type: mimeType }));
           } else {
             resolve(f);
           }
@@ -184,7 +183,7 @@ const ImageUpload: React.FC<{
     setUploading(true);
     setStatus('Hazırlanıyor...');
     try {
-      const croppedFile = new File([croppedBlob], originalFile.name, { type: originalFile.type });
+      const croppedFile = new File([croppedBlob], originalFile.name, { type: 'image/jpeg' });
       const url = await handleUpload(croppedFile, path, isHero, isSmall, (progress) => {
         if (progress === -1) {
           setStatus('Optimize ediliyor...');
@@ -217,7 +216,8 @@ const ImageUpload: React.FC<{
       <div className="flex flex-wrap items-center gap-4">
         {currentUrl && (
           <div className="flex flex-col items-center gap-2">
-            <div className={`relative ${isHero ? 'w-full max-w-md aspect-video bg-gray-50' : 'w-24 h-24 bg-gray-50'} rounded-xl overflow-hidden border-2 border-gray-100 shadow-sm`}>
+            <div className={`relative ${isHero ? 'w-full max-w-md aspect-video bg-[var(--primary-color)]' : 'w-24 h-24 bg-gray-50'} rounded-xl overflow-hidden border-2 border-gray-100 shadow-sm`}>
+              {isHero && <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary-color)] via-black/40 to-black z-0"></div>}
               <img src={currentUrl} alt="Preview" className="relative w-full h-full object-contain p-1 z-10" />
             </div>
             <button 
@@ -290,7 +290,6 @@ const ImageUpload: React.FC<{
           image={cropImage}
           aspectRatio={cropAspect || (isHero ? 16/9 : 1)}
           circularCrop={circularCrop}
-          mimeType={originalFile?.type}
           onCropComplete={onCropComplete}
           onCancel={() => {
             setCropImage(null);
@@ -385,11 +384,7 @@ const AdminPage: React.FC = () => {
 
       // Use uploadBytesResumable for progress and better reliability
       const { uploadBytesResumable } = await import('firebase/storage');
-      const metadata = {
-        cacheControl: 'public,max-age=31536000', // Cache for 1 year
-        contentType: finalFile.type
-      };
-      const uploadTask = uploadBytesResumable(storageRef, finalFile, metadata);
+      const uploadTask = uploadBytesResumable(storageRef, finalFile);
 
       return new Promise<string>((resolve, reject) => {
         const timeout = setTimeout(() => {
