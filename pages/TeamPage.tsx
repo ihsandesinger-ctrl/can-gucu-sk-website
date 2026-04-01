@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { User } from 'lucide-react';
-import type { Team, Fixture } from '../types';
+import type { Team, Fixture, Player } from '../types';
 import PlayerCard from '../components/PlayerCard';
 import FixtureTable from '../components/FixtureTable';
+import { getTeamPlayers } from '../firebaseService';
 
 interface TeamPageProps {
   teams: Team[];
@@ -12,9 +13,23 @@ interface TeamPageProps {
 
 const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
   const { teamSlug } = useParams<{ teamSlug: string }>();
+  const [localPlayers, setLocalPlayers] = useState<Player[]>([]);
+  const [loadingPlayers, setLoadingPlayers] = useState(false);
 
   const team = teams.find(t => t.slug === teamSlug);
   const teamFixtures = fixtures.find(f => f.teamSlug === teamSlug);
+
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      if (team && (!team.players || team.players.length === 0)) {
+        setLoadingPlayers(true);
+        const players = await getTeamPlayers(team.id);
+        setLocalPlayers(players as unknown as Player[]);
+        setLoadingPlayers(false);
+      }
+    };
+    fetchPlayers();
+  }, [team]);
 
   // FIX: Only check if the team exists. The fixture is optional.
   if (!team) {
@@ -24,6 +39,8 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
       </div>
     );
   }
+
+  const displayPlayers = team.players && team.players.length > 0 ? team.players : localPlayers;
 
   return (
     <div className="bg-gray-50">
@@ -38,12 +55,12 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
           style={{ backgroundImage: `url('${team.heroImage || 'https://picsum.photos/seed/sports/1920/1080'}')` }}
         ></div>
         
-        {/* Main image - contain to show full crop */}
+        {/* Main image - object-cover to fill the frame */}
         <div className="absolute inset-0 z-10">
           <img 
             src={team.heroImage || 'https://picsum.photos/seed/sports/1920/1080'} 
             alt={team.name}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-cover"
             referrerPolicy="no-referrer"
           />
         </div>
@@ -82,11 +99,18 @@ const TeamPage: React.FC<TeamPageProps> = ({ teams, fixtures }) => {
         {/* Oyuncu Kadrosu */}
         <section className="mb-12">
           <h2 className="text-3xl font-bold text-gray-800 mb-6">Oyuncular Kadrosu</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            {team.players.map((player, index) => (
-              <PlayerCard key={index} player={player} />
-            ))}
-          </div>
+          {loadingPlayers ? (
+            <div className="text-center py-10 text-gray-500">Oyuncular yükleniyor...</div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+              {displayPlayers.map((player, index) => (
+                <PlayerCard key={index} player={player} />
+              ))}
+              {displayPlayers.length === 0 && (
+                <div className="col-span-full text-center py-10 text-gray-500">Bu takım için henüz oyuncu bilgisi girilmemiştir.</div>
+              )}
+            </div>
+          )}
         </section>
 
         {/* Fikstür ve Sonuçlar */}

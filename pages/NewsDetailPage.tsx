@@ -36,7 +36,7 @@ const NewsDetailPage: React.FC<NewsDetailPageProps> = ({ news }) => {
         
         {/* Main image - contained so nothing is missing */}
         <div 
-          className="absolute inset-0 bg-contain bg-center bg-no-repeat z-10"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat z-10"
           style={{ backgroundImage: `url('${article.imageUrl}')` }}
         ></div>
 

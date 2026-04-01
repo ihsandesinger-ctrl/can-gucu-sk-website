@@ -125,7 +125,7 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news,
                                             <img 
                                                 src={photo.imageUrl} 
                                                 alt={photo.title || 'Galeri Fotoğrafı'} 
-                                                className="w-full h-full object-contain p-2 transform group-hover:scale-105 transition-transform duration-300" 
+                                                className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" 
                                             />
                                         ) : (
                                             <div className="w-full h-full bg-slate-200 flex items-center justify-center text-slate-400">
@@ -166,7 +166,7 @@ const HomePage: React.FC<HomePageProps> = ({ heroContent, fixtures, teams, news,
                     <img 
                         src={heroContent.heroImage} 
                         alt={heroContent.heroTitle}
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-cover"
                         referrerPolicy="no-referrer"
                     />
                 </div>

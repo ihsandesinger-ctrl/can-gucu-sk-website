@@ -20,7 +20,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ article, large = false }) => {
         <Link to={`/haber/${article.id}`} className={`bg-white rounded-2xl shadow-md overflow-hidden transform hover:-translate-y-2 transition-all duration-300 flex h-full border border-gray-100 ${cardClasses}`}>
             <div className={`relative w-full ${imageContainerClasses} bg-gray-100`}>
                 <img 
-                    className="absolute inset-0 w-full h-full object-contain p-2" 
+                    className="absolute inset-0 w-full h-full object-cover" 
                     src={article.imageUrl} 
                     alt={article.title} 
                     referrerPolicy="no-referrer"
