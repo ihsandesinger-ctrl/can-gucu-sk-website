@@ -40,6 +40,7 @@ interface NavItem {
 
 const AdminNavigation = () => {
   const [navigation, setNavigation] = useState<NavItem[]>([]);
+  const [hasChanges, setHasChanges] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<NavItem | null>(null);
   const [loading, setLoading] = useState(false);
@@ -99,31 +100,55 @@ const AdminNavigation = () => {
     }
   };
 
-  const moveItem = async (index: number, direction: 'up' | 'down') => {
+  const moveItem = (index: number, direction: 'up' | 'down') => {
     const newIndex = direction === 'up' ? index - 1 : index + 1;
     if (newIndex < 0 || newIndex >= navigation.length) return;
 
-    const batch = writeBatch(db);
-    const item1 = navigation[index];
-    const item2 = navigation[newIndex];
+    const newNav = [...navigation];
+    const item1 = { ...newNav[index] };
+    const item2 = { ...newNav[newIndex] };
 
-    batch.update(doc(db, 'navigation', item1.id), { order: item2.order });
-    batch.update(doc(db, 'navigation', item2.id), { order: item1.order });
+    // Swap positions
+    const tempOrder = item1.order;
+    item1.order = item2.order;
+    item2.order = tempOrder;
 
-    try {
-      await batch.commit();
-    } catch (error) {
-      console.error("Error reordering navigation:", error);
-    }
+    newNav[index] = item2;
+    newNav[newIndex] = item1;
+
+    // Sort by order to keep UI consistent
+    newNav.sort((a, b) => a.order - b.order);
+
+    setNavigation(newNav);
+    setHasChanges(true);
   };
 
-  const toggleVisibility = async (item: NavItem) => {
+  const toggleVisibility = (item: NavItem) => {
+    const newNav = navigation.map(n => 
+      n.id === item.id ? { ...n, isHidden: !n.isHidden } : n
+    );
+    setNavigation(newNav);
+    setHasChanges(true);
+  };
+
+  const saveAllChanges = async () => {
+    setLoading(true);
     try {
-      await updateDoc(doc(db, 'navigation', item.id), {
-        isHidden: !item.isHidden
+      const batch = writeBatch(db);
+      navigation.forEach(item => {
+        batch.update(doc(db, 'navigation', item.id), {
+          order: item.order,
+          isHidden: item.isHidden
+        });
       });
+      await batch.commit();
+      setHasChanges(false);
+      alert("Tüm değişiklikler başarıyla kaydedildi.");
     } catch (error) {
-      console.error("Error toggling visibility:", error);
+      console.error("Error saving all changes:", error);
+      alert("Değişiklikler kaydedilirken bir hata oluştu.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -197,6 +222,15 @@ const AdminNavigation = () => {
           <div className="h-2 w-32 bg-[#f97316] mt-4 rounded-full"></div>
         </div>
         <div className="flex gap-4">
+          {hasChanges && (
+            <button
+              onClick={saveAllChanges}
+              disabled={loading}
+              className="bg-green-600 text-white px-8 py-4 rounded-3xl font-black uppercase tracking-widest text-sm flex items-center shadow-2xl shadow-green-600/20 hover:bg-green-700 transition-all duration-300 transform hover:-translate-y-1"
+            >
+              <Save className="w-5 h-5 mr-2" /> {loading ? 'KAYDEDİLİYOR...' : 'DEĞİŞİKLİKLERİ KAYDET'}
+            </button>
+          )}
           <button
             onClick={restoreDefaults}
             className="bg-gray-100 text-gray-500 px-8 py-4 rounded-3xl font-black uppercase tracking-widest text-sm hover:bg-gray-200 transition-all"

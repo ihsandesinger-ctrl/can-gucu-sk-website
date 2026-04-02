@@ -18,6 +18,12 @@ interface AuthContextType {
     instagram?: string;
     facebook?: string;
     twitter?: string;
+    branchesCount?: string;
+    athletesCount?: string;
+    coachesCount?: string;
+    newsCount?: string;
+    heroBgImage?: string;
+    showHeroButtons?: boolean;
   };
   navigation: NavItem[];
 }
@@ -96,6 +102,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           instagram: data.instagram,
           facebook: data.facebook,
           twitter: data.twitter,
+          branchesCount: data.branchesCount,
+          athletesCount: data.athletesCount,
+          coachesCount: data.coachesCount,
+          newsCount: data.newsCount,
+          heroBgImage: data.heroBgImage,
+          showHeroButtons: data.showHeroButtons,
         });
       }
     });

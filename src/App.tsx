@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { motion } from 'motion/react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -34,8 +35,15 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#1a5f6b] flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-[#f97316] border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-[#1a5f6b] flex flex-col items-center justify-center gap-8">
+        <motion.img 
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" 
+          alt="Çangücü SK" 
+          className="h-32 w-auto drop-shadow-[0_0_30px_rgba(249,115,22,0.3)]"
+        />
+        <div className="w-12 h-12 border-4 border-[#f97316] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }

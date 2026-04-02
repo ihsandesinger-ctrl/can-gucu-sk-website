@@ -80,15 +80,19 @@ const Home = () => {
         {/* Dynamic Background */}
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-[#1a5f6b]/40 to-[#1a5f6b] z-10"></div>
-          <motion.img 
-            initial={{ scale: 1.2 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 10, repeat: Infinity, repeatType: "reverse" }}
-            src="https://picsum.photos/seed/stadium/1920/1080" 
-            className="w-full h-full object-cover"
-            referrerPolicy="no-referrer"
-            alt="Stadium Background"
-          />
+          {settings.heroBgImage ? (
+            <motion.img 
+              initial={{ scale: 1.2 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 10, repeat: Infinity, repeatType: "reverse" }}
+              src={settings.heroBgImage} 
+              className="w-full h-full object-cover"
+              referrerPolicy="no-referrer"
+              alt="Stadium Background"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-[#1a5f6b] to-[#0d2f35]"></div>
+          )}
         </div>
 
         <div className="relative z-20 text-center px-4 max-w-5xl mx-auto">
@@ -120,15 +124,17 @@ const Home = () => {
               Geleceğin Yıldızları Burada Yetişiyor
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-              <Link to="/hakkimizda" className="group relative px-10 py-5 bg-[#f97316] text-white font-black uppercase tracking-widest text-sm rounded-2xl overflow-hidden transition-all hover:scale-105 shadow-2xl shadow-[#f97316]/30">
-                <span className="relative z-10">KULÜBÜMÜZÜ TANIYIN</span>
-                <div className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-300 opacity-10"></div>
-              </Link>
-              <Link to="/iletisim" className="px-10 py-5 bg-white/10 backdrop-blur-md text-white border border-white/20 font-black uppercase tracking-widest text-sm rounded-2xl hover:bg-white hover:text-[#1a5f6b] transition-all">
-                BİZE KATILIN
-              </Link>
-            </div>
+            {settings.showHeroButtons !== false && (
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+                <Link to="/hakkimizda" className="group relative px-10 py-5 bg-[#f97316] text-white font-black uppercase tracking-widest text-sm rounded-2xl overflow-hidden transition-all hover:scale-105 shadow-2xl shadow-[#f97316]/30">
+                  <span className="relative z-10">KULÜBÜMÜZÜ TANIYIN</span>
+                  <div className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-300 opacity-10"></div>
+                </Link>
+                <Link to="/iletisim" className="px-10 py-5 bg-white/10 backdrop-blur-md text-white border border-white/20 font-black uppercase tracking-widest text-sm rounded-2xl hover:bg-white hover:text-[#1a5f6b] transition-all">
+                  BİZE KATILIN
+                </Link>
+              </div>
+            )}
           </motion.div>
         </div>
 
@@ -282,10 +288,10 @@ const Home = () => {
       <section className="py-32 px-4">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
           {[
-            { label: 'BRANŞ', value: '5+', icon: Trophy },
-            { label: 'SPORCU', value: '200+', icon: Users },
-            { label: 'ANTRENÖR', value: '12', icon: UserCircle },
-            { label: 'HABER', value: '150+', icon: Newspaper }
+            { label: 'BRANŞ', value: settings.branchesCount || '5+', icon: Trophy },
+            { label: 'SPORCU', value: settings.athletesCount || '200+', icon: Users },
+            { label: 'ANTRENÖR', value: settings.coachesCount || '12', icon: UserCircle },
+            { label: 'HABER', value: settings.newsCount || '150+', icon: Newspaper }
           ].map((stat, i) => (
             <motion.div
               key={i}
