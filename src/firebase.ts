@@ -9,4 +9,10 @@ export const auth = getAuth(app);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 export const storage = getStorage(app);
 
+// For debugging
+if (typeof window !== 'undefined') {
+  (window as any).db = db;
+  (window as any).auth = auth;
+}
+
 export default app;

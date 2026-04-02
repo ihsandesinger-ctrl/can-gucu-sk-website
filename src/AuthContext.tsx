@@ -109,7 +109,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           heroBgImage: data.heroBgImage,
           showHeroButtons: data.showHeroButtons,
         });
+      } else {
+        console.warn("Firestore'da ayar dökümanı bulunamadı. Varsayılanlar kullanılıyor.");
       }
+    }, (error) => {
+      console.error("Ayarlar dinlenirken hata oluştu:", error);
     });
 
     // Listen for navigation

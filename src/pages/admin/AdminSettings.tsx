@@ -62,9 +62,11 @@ const AdminSettings = () => {
       const docRef = doc(db, 'settings', 'global');
       await setDoc(docRef, formData, { merge: true });
       alert("Ayarlar başarıyla kaydedildi.");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving settings:", error);
-      alert("Ayarlar kaydedilirken bir hata oluştu.");
+      let errorMsg = "Ayarlar kaydedilirken bir hata oluştu.";
+      if (error.code === 'permission-denied') errorMsg = "Yazma yetkiniz yok! Lütfen giriş yaptığınızdan emin olun.";
+      alert(errorMsg + "\nDetay: " + error.message);
     } finally {
       setSaving(false);
     }

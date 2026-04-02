@@ -13,14 +13,29 @@ import { db } from '../../firebase';
 import { useAuth } from '../../AuthContext';
 
 const AdminDashboard = () => {
-  const { maintenanceMode: currentMaintenanceMode, isAdmin } = useAuth();
+  const { maintenanceMode: currentMaintenanceMode, isAdmin, settings } = useAuth();
   const [maintenanceMode, setMaintenanceMode] = useState(currentMaintenanceMode);
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [dbStatus, setDbStatus] = useState<'checking' | 'connected' | 'error'>('checking');
 
   useEffect(() => {
     setMaintenanceMode(currentMaintenanceMode);
   }, [currentMaintenanceMode]);
+
+  useEffect(() => {
+    const checkConnection = async () => {
+      try {
+        const docRef = doc(db, 'settings', 'global');
+        await getDoc(docRef);
+        setDbStatus('connected');
+      } catch (error) {
+        console.error("Database connection error:", error);
+        setDbStatus('error');
+      }
+    };
+    checkConnection();
+  }, []);
 
   const restoreDefaultData = async () => {
     if (!window.confirm("Tüm mevcut veriler (Haberler, Oyuncular, Takımlar, Galeri) silinebilir veya üzerine yazılabilir. Devam etmek istiyor musunuz?")) return;
@@ -72,13 +87,21 @@ const AdminDashboard = () => {
     try {
       const settingsRef = doc(db, 'settings', 'global');
       const newStatus = !maintenanceMode;
+      
+      // Önce yazmayı dene
       await setDoc(settingsRef, {
         maintenanceMode: newStatus
       }, { merge: true });
+      
+      // Yazma başarılıysa yerel durumu güncelle
       setMaintenanceMode(newStatus);
-    } catch (error) {
+      alert(`Bakım modu başarıyla ${newStatus ? 'AÇILDI' : 'KAPATILDI'}.`);
+    } catch (error: any) {
       console.error("Error updating maintenance mode:", error);
-      alert("Bakım modu güncellenirken bir hata oluştu: " + (error instanceof Error ? error.message : String(error)));
+      let errorMsg = "Bakım modu güncellenirken bir hata oluştu.";
+      if (error.code === 'permission-denied') errorMsg = "Yazma yetkiniz yok! Lütfen giriş yaptığınızdan emin olun.";
+      if (error.code === 'not-found') errorMsg = "Veritabanı dökümanı bulunamadı.";
+      alert(errorMsg + "\nDetay: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -148,7 +171,12 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {[
           { label: 'SİSTEM DURUMU', value: 'ÇALIŞIYOR', icon: Activity, color: 'text-green-500' },
-          { label: 'VERİTABANI', value: 'BAĞLI', icon: Database, color: 'text-blue-500' },
+          { 
+            label: 'VERİTABANI', 
+            value: dbStatus === 'connected' ? 'BAĞLI' : (dbStatus === 'checking' ? 'KONTROL EDİLİYOR' : 'BAĞLANTI HATASI'), 
+            icon: Database, 
+            color: dbStatus === 'connected' ? 'text-blue-500' : (dbStatus === 'checking' ? 'text-gray-400' : 'text-red-500') 
+          },
           { label: 'GÜVENLİK', value: 'GÜVENLİ', icon: ShieldCheck, color: 'text-[#f97316]' }
         ].map((stat, i) => (
           <motion.div
@@ -189,6 +217,14 @@ const AdminDashboard = () => {
           </div>
         </div>
         <AlertCircle className="absolute -right-12 -bottom-12 w-64 h-64 text-white/5 rotate-12" />
+      </div>
+
+      {/* Debug Info - Sadece Teknik Kontrol İçin */}
+      <div className="p-6 bg-gray-100 rounded-3xl text-[10px] font-mono text-gray-500 flex flex-col gap-2">
+        <p>TEKNİK BİLGİ (BAĞLANTI KONTROLÜ):</p>
+        <p>Database ID: {db.app.options.projectId} / {db.databaseId}</p>
+        <p>Auth User: {isAdmin ? 'Süper Admin Girişi Yapıldı' : 'Giriş Yapılmadı'}</p>
+        <p className="text-red-500 font-bold italic">ÖNEMLİ: Eğer yukarıdaki Database ID "ai-studio-..." ile başlamıyorsa, config dosyanız hatalıdır.</p>
       </div>
     </div>
   );
