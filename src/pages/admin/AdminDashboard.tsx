@@ -31,37 +31,37 @@ const AdminDashboard = () => {
 
       // Sample News
       const news = [
-        { title: "Yeni Sezon Hazırlıkları Başladı", category: "Kulüp", date: new Date().toISOString(), content: "Takımımız yeni sezon hazırlıkları için sahaya indi.", image: "https://picsum.photos/seed/news1/800/600" },
-        { title: "Altyapı Seçmeleri Sonuçlandı", category: "Altyapı", date: new Date().toISOString(), content: "Geleceğin yıldızları Çangücü SK bünyesine katıldı.", image: "https://picsum.photos/seed/news2/800/600" }
+        { title: "Yeni Sezon Hazırlıkları Başladı", category: "Kulüp", date: new Date().toISOString(), content: "Takımımız yeni sezon hazırlıkları için sahaya indi.", image: "https://picsum.photos/seed/news1/800/600", isHidden: false },
+        { title: "Altyapı Seçmeleri Sonuçlandı", category: "Altyapı", date: new Date().toISOString(), content: "Geleceğin yıldızları Çangücü SK bünyesine katıldı.", image: "https://picsum.photos/seed/news2/800/600", isHidden: false }
       ];
       news.forEach(n => batch.set(doc(collection(db, 'news')), n));
 
       // Sample Teams
       const teams = [
-        { name: "A Takım", category: "Futbol", logo: "https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" },
-        { name: "U19", category: "Futbol", logo: "https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" }
+        { name: "A Takım", category: "Futbol", logo: "https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6", isHidden: false },
+        { name: "U19", category: "Futbol", logo: "https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6", isHidden: false }
       ];
       teams.forEach(t => batch.set(doc(collection(db, 'teams')), t));
 
       // Sample Players
       const players = [
-        { name: "Ahmet Yılmaz", position: "Forvet", number: "10", team: "A Takım", photo: "https://picsum.photos/seed/p1/400/400" },
-        { name: "Mehmet Demir", position: "Kaleci", number: "1", team: "A Takım", photo: "https://picsum.photos/seed/p2/400/400" }
+        { name: "Ahmet Yılmaz", position: "Forvet", number: "10", team: "A Takım", photo: "https://picsum.photos/seed/p1/400/400", isHidden: false },
+        { name: "Mehmet Demir", position: "Kaleci", number: "1", team: "A Takım", photo: "https://picsum.photos/seed/p2/400/400", isHidden: false }
       ];
       players.forEach(p => batch.set(doc(collection(db, 'players')), p));
 
       // Sample Gallery
       const gallery = [
-        { title: "Antrenman", category: "Futbol", image: "https://picsum.photos/seed/g1/800/600" },
-        { title: "Maç Günü", category: "Futbol", image: "https://picsum.photos/seed/g2/800/600" }
+        { title: "Antrenman", category: "Futbol", image: "https://picsum.photos/seed/g1/800/600", isHidden: false },
+        { title: "Maç Günü", category: "Futbol", image: "https://picsum.photos/seed/g2/800/600", isHidden: false }
       ];
       gallery.forEach(g => batch.set(doc(collection(db, 'gallery')), g));
 
       await batch.commit();
-      alert("Varsayılan veriler başarıyla yüklendi.");
+      alert("Varsayılan veriler başarıyla yüklendi. Sayfayı yenileyebilirsiniz.");
     } catch (error) {
       console.error("Error restoring data:", error);
-      alert("Veriler yüklenirken bir hata oluştu.");
+      alert("Veriler yüklenirken bir hata oluştu: " + (error instanceof Error ? error.message : String(error)));
     } finally {
       setSyncing(false);
     }
@@ -71,13 +71,14 @@ const AdminDashboard = () => {
     setLoading(true);
     try {
       const settingsRef = doc(db, 'settings', 'global');
+      const newStatus = !maintenanceMode;
       await setDoc(settingsRef, {
-        maintenanceMode: !maintenanceMode
+        maintenanceMode: newStatus
       }, { merge: true });
-      setMaintenanceMode(!maintenanceMode);
+      setMaintenanceMode(newStatus);
     } catch (error) {
       console.error("Error updating maintenance mode:", error);
-      alert("Bakım modu güncellenirken bir hata oluştu.");
+      alert("Bakım modu güncellenirken bir hata oluştu: " + (error instanceof Error ? error.message : String(error)));
     } finally {
       setLoading(false);
     }
@@ -97,7 +98,7 @@ const AdminDashboard = () => {
           </div>
           <div>
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Yönetici Yetkisi</p>
-            <p className="text-sm font-black text-[#1a5f6b] uppercase tracking-tight">AKTİF</p>
+            <p className="text-sm font-black text-[#1a5f6b] uppercase tracking-tight">SÜPER ADMİN</p>
           </div>
         </div>
       </div>
@@ -171,10 +172,10 @@ const AdminDashboard = () => {
       {/* Quick Info */}
       <div className="bg-[#1a5f6b] rounded-[40px] p-10 text-white shadow-2xl relative overflow-hidden">
         <div className="relative z-10">
-          <h3 className="text-3xl font-black uppercase tracking-tighter italic mb-4">HOŞ GELDİN, KRAL!</h3>
+          <h3 className="text-3xl font-black uppercase tracking-tighter italic mb-4">SÜPER ADMİN PANELİ</h3>
           <p className="text-white/70 font-medium max-w-2xl leading-relaxed mb-8">
-            Sitenin tüm kontrolü senin elinde. Branşlar ekleyebilir, haberleri gizleyebilir veya siteyi anında bakım moduna alabilirsin. 
-            Herhangi bir sorun yaşarsan sistem her zaman yedekli çalışmaktadır.
+            Sitenin tüm kontrolü sizin elinizde. Branşlar ekleyebilir, haberleri gizleyebilir veya siteyi anında bakım moduna alabilirsiniz. 
+            Herhangi bir sorun yaşarsanız sistem her zaman yedekli çalışmaktadır.
           </p>
           
           <div className="flex flex-wrap gap-4">

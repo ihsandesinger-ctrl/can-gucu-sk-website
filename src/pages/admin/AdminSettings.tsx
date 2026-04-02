@@ -168,18 +168,6 @@ const AdminSettings = () => {
                   ANA SAYFA BUTONLARINI GÖSTER
                 </label>
               </div>
-              <div className="flex items-center space-x-4 p-6 bg-red-50 rounded-3xl border border-red-100">
-                <input
-                  type="checkbox"
-                  id="maintenanceMode"
-                  checked={formData.maintenanceMode}
-                  onChange={(e) => setFormData({...formData, maintenanceMode: e.target.checked})}
-                  className="w-6 h-6 text-red-600 border-none rounded-lg focus:ring-0 cursor-pointer"
-                />
-                <label htmlFor="maintenanceMode" className="text-sm font-black text-red-600 uppercase tracking-widest cursor-pointer">
-                  SİTEYİ BAKIM MODUNA AL
-                </label>
-              </div>
             </div>
           </div>
         </motion.div>
