@@ -1,142 +1,216 @@
 {
   "entities": {
-    "settings": {
-      "title": "Site Settings",
-      "description": "Global site settings including maintenance mode",
+    "SiteSettings": {
+      "title": "Site Ayarları",
+      "description": "Sitenin genel ayarları, logo, iletişim bilgileri ve navigasyon.",
       "type": "object",
       "properties": {
-        "maintenanceMode": { "type": "boolean", "description": "Is the site in maintenance mode?" },
-        "clubName": { "type": "string" },
-        "logoUrl": { "type": "string" }
-      },
-      "required": ["maintenanceMode"]
+        "logo": { "type": "string", "description": "Logo URL veya base64" },
+        "address": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "socialMedia": {
+          "type": "object",
+          "properties": {
+            "facebook": { "type": "string" },
+            "twitter": { "type": "string" },
+            "instagram": { "type": "string" },
+            "youtube": { "type": "string" }
+          }
+        },
+        "maintenanceMode": { "type": "boolean" },
+        "navigation": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "path": { "type": "string" },
+              "visible": { "type": "boolean" },
+              "isDropdown": { "type": "boolean" },
+              "items": { "type": "array", "items": { "type": "object" } }
+            }
+          }
+        },
+        "globalStyles": {
+          "type": "object",
+          "properties": {
+            "fontFamily": { "type": "string" },
+            "baseFontSize": { "type": "string" },
+            "primaryColor": { "type": "string" },
+            "secondaryColor": { "type": "string" }
+          }
+        }
+      }
     },
-    "news": {
-      "title": "News",
-      "description": "Club news and announcements",
+    "HomePageHero": {
+      "title": "Ana Sayfa Hero",
+      "description": "Ana sayfa kapak görseli ve başlıkları.",
+      "type": "object",
+      "properties": {
+        "heroImage": { "type": "string" },
+        "heroTitle": { "type": "string" },
+        "heroSubtitle": { "type": "string" },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "visible": { "type": "boolean" },
+              "order": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "NewsArticle": {
+      "title": "Haber",
+      "description": "Haber veya duyuru içeriği.",
       "type": "object",
       "properties": {
         "title": { "type": "string" },
         "summary": { "type": "string" },
         "content": { "type": "string" },
-        "image": { "type": "string" },
-        "date": { "type": "string", "format": "date" },
-        "category": { "type": "string" },
-        "isHidden": { "type": "boolean" },
-        "order": { "type": "number" }
+        "date": { "type": "string", "format": "date-time" },
+        "imageUrl": { "type": "string" }
       },
-      "required": ["title", "date", "isHidden"]
+      "required": ["title", "date", "imageUrl"]
     },
-    "branches": {
-      "title": "Branches",
-      "description": "Sports branches like Basketball, Volleyball, etc.",
+    "Team": {
+      "title": "Takım",
+      "description": "Yaş grubu takımı bilgileri.",
       "type": "object",
       "properties": {
         "name": { "type": "string" },
-        "description": { "type": "string" },
-        "coachName": { "type": "string" },
-        "coachContact": { "type": "string" },
-        "isHidden": { "type": "boolean" },
-        "order": { "type": "number" }
-      },
-      "required": ["name", "isHidden"]
+        "slug": { "type": "string" },
+        "heroImage": { "type": "string" },
+        "coach": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "role": { "type": "string" },
+            "imageUrl": { "type": "string" }
+          }
+        },
+        "players": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "number" },
+              "name": { "type": "string" },
+              "position": { "type": "string" },
+              "number": { "type": "number" },
+              "imageUrl": { "type": "string" }
+            }
+          }
+        }
+      }
     },
-    "teams": {
-      "title": "Teams",
-      "description": "Teams within branches (e.g., U-11 Basketball)",
+    "Fixture": {
+      "title": "Fikstür",
+      "description": "Takım bazlı maç fikstürü.",
       "type": "object",
       "properties": {
-        "branchId": { "type": "string" },
-        "name": { "type": "string" },
-        "coachName": { "type": "string" },
-        "isHidden": { "type": "boolean" },
-        "order": { "type": "number" }
-      },
-      "required": ["branchId", "name", "isHidden"]
+        "teamName": { "type": "string" },
+        "teamSlug": { "type": "string" },
+        "matches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "date": { "type": "string" },
+              "opponent": { "type": "string" },
+              "score": { "type": "string" },
+              "location": { "type": "string", "enum": ["Ev", "Deplasman"] }
+            }
+          }
+        }
+      }
     },
-    "players": {
-      "title": "Players",
-      "description": "Players in teams",
+    "GalleryImage": {
+      "title": "Galeri Görseli",
+      "description": "Fotoğraf galerisi öğesi.",
       "type": "object",
       "properties": {
-        "teamId": { "type": "string" },
-        "name": { "type": "string" },
-        "number": { "type": "string" },
-        "position": { "type": "string" },
-        "isHidden": { "type": "boolean" },
-        "order": { "type": "number" }
-      },
-      "required": ["teamId", "name", "isHidden"]
+        "imageUrl": { "type": "string" },
+        "title": { "type": "string" }
+      }
     },
-    "staff": {
-      "title": "Staff",
-      "description": "Club personnel and board members",
+    "StaffMember": {
+      "title": "Personel",
+      "description": "Yönetim veya teknik kadro üyesi.",
       "type": "object",
       "properties": {
         "name": { "type": "string" },
         "role": { "type": "string" },
-        "image": { "type": "string" },
-        "isHidden": { "type": "boolean" },
-        "order": { "type": "number" }
-      },
-      "required": ["name", "role", "isHidden"]
+        "imageUrl": { "type": "string" }
+      }
     },
-    "gallery": {
-      "title": "Gallery",
-      "description": "Club photos and albums",
+    "DynamicPage": {
+      "title": "Dinamik Sayfa",
+      "description": "CMS üzerinden oluşturulan özel sayfalar.",
       "type": "object",
       "properties": {
         "title": { "type": "string" },
-        "imageUrl": { "type": "string" },
-        "category": { "type": "string" },
-        "isHidden": { "type": "boolean" },
-        "order": { "type": "number" }
-      },
-      "required": ["imageUrl", "isHidden"]
+        "slug": { "type": "string" },
+        "content": { "type": "string" },
+        "heroImage": { "type": "string" },
+        "coach": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "role": { "type": "string" },
+            "imageUrl": { "type": "string" }
+          }
+        },
+        "players": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "number" },
+              "name": { "type": "string" },
+              "position": { "type": "string" },
+              "number": { "type": "number" },
+              "imageUrl": { "type": "string" }
+            }
+          }
+        },
+        "announcements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": { "type": "string" },
+              "date": { "type": "string" },
+              "content": { "type": "string" }
+            }
+          }
+        }
+      }
     },
-    "matches": {
-      "title": "Matches",
-      "description": "Upcoming and past matches",
+    "MissionVision": {
+      "title": "Misyon ve Vizyon",
+      "description": "Kulübün misyon ve vizyon metinleri.",
       "type": "object",
       "properties": {
-        "teamId": { "type": "string", "description": "The ID of the local team involved" },
-        "homeTeam": { "type": "string" },
-        "homeLogo": { "type": "string", "description": "Optional logo URL for the home team" },
-        "awayTeam": { "type": "string" },
-        "awayLogo": { "type": "string", "description": "Optional logo URL for the away team" },
-        "date": { "type": "string" },
-        "time": { "type": "string" },
-        "location": { "type": "string" },
-        "category": { "type": "string" },
-        "isHidden": { "type": "boolean" },
-        "order": { "type": "number" }
-      },
-      "required": ["teamId", "homeTeam", "awayTeam", "date", "isHidden"]
-    },
-    "navigation": {
-      "title": "Navigation",
-      "description": "Dynamic site navigation menu items",
-      "type": "object",
-      "properties": {
-        "title": { "type": "string" },
-        "path": { "type": "string" },
-        "order": { "type": "number" },
-        "isHidden": { "type": "boolean" },
-        "isDropdown": { "type": "boolean" },
-        "dropdownType": { "type": "string", "enum": ["static", "branches", "teams", "fixtures"] }
-      },
-      "required": ["title", "path", "order", "isHidden"]
+        "mission": { "type": "string" },
+        "vision": { "type": "string" }
+      }
     }
   },
   "firestore": {
-    "/settings/global": { "schema": "settings", "description": "Global settings document" },
-    "/news/{newsId}": { "schema": "news", "description": "News articles" },
-    "/branches/{branchId}": { "schema": "branches", "description": "Sports branches" },
-    "/teams/{teamId}": { "schema": "teams", "description": "Teams" },
-    "/players/{playerId}": { "schema": "players", "description": "Players" },
-    "/staff/{staffId}": { "schema": "staff", "description": "Club staff" },
-    "/gallery/{photoId}": { "schema": "gallery", "description": "Gallery photos" },
-    "/matches/{matchId}": { "schema": "matches", "description": "Matches" },
-    "/navigation/{navId}": { "schema": "navigation", "description": "Navigation menu items" }
+    "/settings": { "schema": "SiteSettings", "description": "Site genel ayarları" },
+    "/homepage": { "schema": "HomePageHero", "description": "Ana sayfa hero ve bölüm ayarları" },
+    "/news": { "schema": "NewsArticle", "description": "Haberler koleksiyonu" },
+    "/teams": { "schema": "Team", "description": "Takımlar koleksiyonu" },
+    "/fixtures": { "schema": "Fixture", "description": "Fikstürler koleksiyonu" },
+    "/gallery": { "schema": "GalleryImage", "description": "Galeri koleksiyonu" },
+    "/staff": { "schema": "StaffMember", "description": "Personel koleksiyonu" },
+    "/pages": { "schema": "DynamicPage", "description": "Dinamik sayfalar koleksiyonu" },
+    "/missionVision": { "schema": "MissionVision", "description": "Misyon ve vizyon metinleri" }
   }
 }
