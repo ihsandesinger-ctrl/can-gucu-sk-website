@@ -8,7 +8,7 @@ import {
   Database, 
   AlertCircle 
 } from 'lucide-react';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../AuthContext';
 
@@ -28,9 +28,9 @@ const AdminDashboard = () => {
     setLoading(true);
     try {
       const settingsRef = doc(db, 'settings', 'global');
-      await updateDoc(settingsRef, {
+      await setDoc(settingsRef, {
         maintenanceMode: !maintenanceMode
-      });
+      }, { merge: true });
       setMaintenanceMode(!maintenanceMode);
     } catch (error) {
       console.error("Error updating maintenance mode:", error);

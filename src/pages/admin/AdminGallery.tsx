@@ -26,6 +26,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { db } from '../../firebase';
+import ImageUpload from '../../components/admin/ImageUpload';
 
 interface GalleryItem {
   id: string;
@@ -276,15 +277,13 @@ const AdminGallery = () => {
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
-                    <ImageIcon className="w-3 h-3 mr-2 text-[#f97316]" /> Fotoğraf URL
+                    <ImageIcon className="w-3 h-3 mr-2 text-[#f97316]" /> Fotoğraf
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.imageUrl}
-                    onChange={(e) => setFormData({...formData, imageUrl: e.target.value})}
-                    className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
-                    placeholder="https://..."
+                  <ImageUpload 
+                    currentImageUrl={formData.imageUrl}
+                    onUploadComplete={(url) => setFormData({...formData, imageUrl: url})}
+                    folder="gallery"
+                    aspectRatio={4 / 3}
                   />
                 </div>
 

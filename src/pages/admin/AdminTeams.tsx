@@ -26,12 +26,14 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { db } from '../../firebase';
+import ImageUpload from '../../components/admin/ImageUpload';
 
 interface TeamItem {
   id: string;
   branchId: string;
   name: string;
   coachName: string;
+  logo: string;
   isHidden: boolean;
   order: number;
 }
@@ -52,6 +54,7 @@ const AdminTeams = () => {
     branchId: '',
     name: '',
     coachName: '',
+    logo: '',
     isHidden: false,
     order: 0
   });
@@ -153,6 +156,7 @@ const AdminTeams = () => {
         branchId: item.branchId,
         name: item.name,
         coachName: item.coachName,
+        logo: item.logo || '',
         isHidden: item.isHidden,
         order: item.order || 0
       });
@@ -162,6 +166,7 @@ const AdminTeams = () => {
         branchId: branches[0]?.id || '',
         name: '',
         coachName: '',
+        logo: '',
         isHidden: false,
         order: teams.length
       });
@@ -223,8 +228,12 @@ const AdminTeams = () => {
                       <MoveDown className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="w-16 h-16 bg-[#1a5f6b]/10 rounded-2xl flex items-center justify-center text-[#1a5f6b]">
-                    <Users className="w-8 h-8" />
+                  <div className="w-16 h-16 bg-[#1a5f6b]/10 rounded-2xl flex items-center justify-center text-[#1a5f6b] overflow-hidden border border-gray-100">
+                    {item.logo ? (
+                      <img src={item.logo} alt={item.name} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                    ) : (
+                      <Users className="w-8 h-8" />
+                    )}
                   </div>
                 </div>
                 <div className="flex space-x-2">
@@ -311,6 +320,18 @@ const AdminTeams = () => {
                       <option key={b.id} value={b.id}>{b.name}</option>
                     ))}
                   </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
+                    <Users className="w-3 h-3 mr-2 text-[#f97316]" /> Takım Logosu (Opsiyonel)
+                  </label>
+                  <ImageUpload 
+                    currentImageUrl={formData.logo}
+                    onUploadComplete={(url) => setFormData({...formData, logo: url})}
+                    folder="teams"
+                    aspectRatio={1}
+                  />
                 </div>
 
                 <div className="space-y-2">

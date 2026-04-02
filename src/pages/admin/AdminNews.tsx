@@ -28,6 +28,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { db } from '../../firebase';
+import ImageUpload from '../../components/admin/ImageUpload';
 
 interface NewsItem {
   id: string;
@@ -343,14 +344,12 @@ const AdminNews = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
-                      <ImageIcon className="w-3 h-3 mr-2 text-[#f97316]" /> Görsel URL
+                      <ImageIcon className="w-3 h-3 mr-2 text-[#f97316]" /> Haber Görseli
                     </label>
-                    <input
-                      type="text"
-                      value={formData.image}
-                      onChange={(e) => setFormData({...formData, image: e.target.value})}
-                      className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
-                      placeholder="https://..."
+                    <ImageUpload 
+                      currentImageUrl={formData.image}
+                      onUploadComplete={(url) => setFormData({...formData, image: url})}
+                      folder="news"
                     />
                   </div>
                   <div className="space-y-2">

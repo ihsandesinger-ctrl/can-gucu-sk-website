@@ -27,6 +27,7 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { db } from '../../firebase';
+import ImageUpload from '../../components/admin/ImageUpload';
 
 interface PlayerItem {
   id: string;
@@ -34,6 +35,7 @@ interface PlayerItem {
   name: string;
   number: string;
   position: string;
+  photo: string;
   isHidden: boolean;
   order: number;
 }
@@ -56,6 +58,7 @@ const AdminPlayers = () => {
     name: '',
     number: '',
     position: '',
+    photo: '',
     isHidden: false,
     order: 0
   });
@@ -158,6 +161,7 @@ const AdminPlayers = () => {
         name: item.name,
         number: item.number,
         position: item.position,
+        photo: item.photo || '',
         isHidden: item.isHidden,
         order: item.order || 0
       });
@@ -168,6 +172,7 @@ const AdminPlayers = () => {
         name: '',
         number: '',
         position: '',
+        photo: '',
         isHidden: false,
         order: players.length
       });
@@ -247,8 +252,12 @@ const AdminPlayers = () => {
             </div>
 
             <div className="relative mb-6">
-              <div className="w-24 h-24 bg-[#1a5f6b]/10 rounded-full flex items-center justify-center text-[#1a5f6b]">
-                <UserCircle className="w-12 h-12" />
+              <div className="w-24 h-24 bg-[#1a5f6b]/10 rounded-full flex items-center justify-center text-[#1a5f6b] overflow-hidden border-2 border-gray-100">
+                {item.photo ? (
+                  <img src={item.photo} alt={item.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <UserCircle className="w-12 h-12" />
+                )}
               </div>
               <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#f97316] text-white rounded-full flex items-center justify-center font-black text-sm shadow-lg">
                 {item.number || '0'}
@@ -329,6 +338,18 @@ const AdminPlayers = () => {
                       <option key={t.id} value={t.id}>{t.name}</option>
                     ))}
                   </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
+                    <UserCircle className="w-3 h-3 mr-2 text-[#f97316]" /> Oyuncu Fotoğrafı
+                  </label>
+                  <ImageUpload 
+                    currentImageUrl={formData.photo}
+                    onUploadComplete={(url) => setFormData({...formData, photo: url})}
+                    folder="players"
+                    aspectRatio={1}
+                  />
                 </div>
 
                 <div className="space-y-2">

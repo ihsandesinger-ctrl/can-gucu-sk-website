@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
+import ImageUpload from '../../components/admin/ImageUpload';
 
 const AdminSettings = () => {
   const [loading, setLoading] = useState(true);
@@ -103,18 +104,13 @@ const AdminSettings = () => {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Logo URL</label>
-              <div className="flex gap-4">
-                <input
-                  type="text"
-                  value={formData.clubLogo}
-                  onChange={(e) => setFormData({...formData, clubLogo: e.target.value})}
-                  className="flex-grow bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
-                />
-                <div className="w-14 h-14 bg-gray-100 rounded-2xl flex-shrink-0 overflow-hidden border border-gray-200">
-                  <img src={formData.clubLogo} alt="Logo Preview" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
-                </div>
-              </div>
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Kulüp Logosu (PNG Önerilir)</label>
+              <ImageUpload 
+                currentImageUrl={formData.clubLogo}
+                onUploadComplete={(url) => setFormData({...formData, clubLogo: url})}
+                folder="settings"
+                aspectRatio={1}
+              />
             </div>
             <div className="md:col-span-2 space-y-2">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Hakkımızda Metni</label>
