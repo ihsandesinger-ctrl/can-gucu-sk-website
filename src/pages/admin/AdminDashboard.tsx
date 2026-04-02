@@ -8,7 +8,7 @@ import {
   Database, 
   AlertCircle 
 } from 'lucide-react';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, writeBatch } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../AuthContext';
 
@@ -16,13 +16,56 @@ const AdminDashboard = () => {
   const { maintenanceMode: currentMaintenanceMode, isAdmin } = useAuth();
   const [maintenanceMode, setMaintenanceMode] = useState(currentMaintenanceMode);
   const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState({
-    news: 0,
-    branches: 0,
-    teams: 0,
-    players: 0,
-    matches: 0
-  });
+  const [syncing, setSyncing] = useState(false);
+
+  useEffect(() => {
+    setMaintenanceMode(currentMaintenanceMode);
+  }, [currentMaintenanceMode]);
+
+  const restoreDefaultData = async () => {
+    if (!window.confirm("Tüm mevcut veriler (Haberler, Oyuncular, Takımlar, Galeri) silinebilir veya üzerine yazılabilir. Devam etmek istiyor musunuz?")) return;
+    
+    setSyncing(true);
+    try {
+      const batch = writeBatch(db);
+
+      // Sample News
+      const news = [
+        { title: "Yeni Sezon Hazırlıkları Başladı", category: "Kulüp", date: new Date().toISOString(), content: "Takımımız yeni sezon hazırlıkları için sahaya indi.", image: "https://picsum.photos/seed/news1/800/600" },
+        { title: "Altyapı Seçmeleri Sonuçlandı", category: "Altyapı", date: new Date().toISOString(), content: "Geleceğin yıldızları Çangücü SK bünyesine katıldı.", image: "https://picsum.photos/seed/news2/800/600" }
+      ];
+      news.forEach(n => batch.set(doc(collection(db, 'news')), n));
+
+      // Sample Teams
+      const teams = [
+        { name: "A Takım", category: "Futbol", logo: "https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" },
+        { name: "U19", category: "Futbol", logo: "https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" }
+      ];
+      teams.forEach(t => batch.set(doc(collection(db, 'teams')), t));
+
+      // Sample Players
+      const players = [
+        { name: "Ahmet Yılmaz", position: "Forvet", number: "10", team: "A Takım", photo: "https://picsum.photos/seed/p1/400/400" },
+        { name: "Mehmet Demir", position: "Kaleci", number: "1", team: "A Takım", photo: "https://picsum.photos/seed/p2/400/400" }
+      ];
+      players.forEach(p => batch.set(doc(collection(db, 'players')), p));
+
+      // Sample Gallery
+      const gallery = [
+        { title: "Antrenman", category: "Futbol", image: "https://picsum.photos/seed/g1/800/600" },
+        { title: "Maç Günü", category: "Futbol", image: "https://picsum.photos/seed/g2/800/600" }
+      ];
+      gallery.forEach(g => batch.set(doc(collection(db, 'gallery')), g));
+
+      await batch.commit();
+      alert("Varsayılan veriler başarıyla yüklendi.");
+    } catch (error) {
+      console.error("Error restoring data:", error);
+      alert("Veriler yüklenirken bir hata oluştu.");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const toggleMaintenanceMode = async () => {
     setLoading(true);
@@ -129,10 +172,20 @@ const AdminDashboard = () => {
       <div className="bg-[#1a5f6b] rounded-[40px] p-10 text-white shadow-2xl relative overflow-hidden">
         <div className="relative z-10">
           <h3 className="text-3xl font-black uppercase tracking-tighter italic mb-4">HOŞ GELDİN, KRAL!</h3>
-          <p className="text-white/70 font-medium max-w-2xl leading-relaxed">
+          <p className="text-white/70 font-medium max-w-2xl leading-relaxed mb-8">
             Sitenin tüm kontrolü senin elinde. Branşlar ekleyebilir, haberleri gizleyebilir veya siteyi anında bakım moduna alabilirsin. 
             Herhangi bir sorun yaşarsan sistem her zaman yedekli çalışmaktadır.
           </p>
+          
+          <div className="flex flex-wrap gap-4">
+            <button
+              onClick={restoreDefaultData}
+              disabled={syncing}
+              className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-white hover:text-[#1a5f6b] transition-all disabled:opacity-50"
+            >
+              {syncing ? 'VERİLER YÜKLENİYOR...' : 'VARSAYILAN VERİLERİ YÜKLE'}
+            </button>
+          </div>
         </div>
         <AlertCircle className="absolute -right-12 -bottom-12 w-64 h-64 text-white/5 rotate-12" />
       </div>

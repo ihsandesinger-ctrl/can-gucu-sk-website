@@ -4,8 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '../firebase';
 import { LogIn, Mail, Lock, ShieldCheck } from 'lucide-react';
+import { useAuth } from '../AuthContext';
 
 const LoginPage = () => {
+  const { settings } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -46,13 +48,16 @@ const LoginPage = () => {
       >
         <div className="p-10">
           <div className="flex justify-center mb-8">
-            <div className="w-20 h-20 bg-[#1a5f6b] rounded-3xl flex items-center justify-center shadow-xl">
-              <ShieldCheck className="w-10 h-10 text-white" />
-            </div>
+            <img 
+              src={settings.clubLogo} 
+              alt={settings.clubName} 
+              className="h-24 w-auto drop-shadow-2xl"
+              referrerPolicy="no-referrer"
+            />
           </div>
           
           <h1 className="text-3xl font-black text-[#1a5f6b] text-center uppercase tracking-tighter italic mb-2">YÖNETİCİ GİRİŞİ</h1>
-          <p className="text-gray-400 text-center text-xs font-bold uppercase tracking-widest mb-8">Çangücü SK Güvenli Erişim</p>
+          <p className="text-gray-400 text-center text-xs font-bold uppercase tracking-widest mb-8">{settings.clubName} Güvenli Erişim</p>
 
           {error && (
             <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-xs font-bold uppercase tracking-wide mb-6 text-center border border-red-100">

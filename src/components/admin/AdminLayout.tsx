@@ -11,9 +11,11 @@ import {
   Settings,
   List
 } from 'lucide-react';
+import { useAuth } from '../../AuthContext';
 
 const AdminLayout = () => {
   const location = useLocation();
+  const { settings } = useAuth();
 
   const menuItems = [
     { path: '/cangucu-admin', icon: LayoutDashboard, label: 'Panel' },
@@ -32,9 +34,17 @@ const AdminLayout = () => {
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
       <aside className="w-64 bg-[#1a5f6b] text-white hidden md:flex flex-col shadow-2xl">
-        <div className="p-8 border-b border-white/10">
-          <h2 className="text-2xl font-black italic tracking-tighter uppercase">YÖNETİM</h2>
-          <p className="text-white/50 text-[10px] font-bold tracking-widest uppercase mt-1">Çangücü SK Kontrol</p>
+        <div className="p-8 border-b border-white/10 flex items-center space-x-4">
+          <img 
+            src={settings.clubLogo} 
+            alt={settings.clubName} 
+            className="h-10 w-auto drop-shadow-lg"
+            referrerPolicy="no-referrer"
+          />
+          <div>
+            <h2 className="text-xl font-black italic tracking-tighter uppercase leading-tight">YÖNETİM</h2>
+            <p className="text-white/50 text-[8px] font-bold tracking-widest uppercase">{settings.clubName}</p>
+          </div>
         </div>
         
         <nav className="flex-grow p-4 space-y-2">

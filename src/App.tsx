@@ -55,36 +55,49 @@ function App() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <main className="flex-grow">
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Home />} />
-          <Route path="/haberler" element={<News />} />
-          <Route path="/takim/:teamId" element={<Squads />} />
-          <Route path="/brans/:branchId" element={<BranchDetail />} />
-          <Route path="/fikstur/:teamId" element={<Fixture />} />
-          <Route path="/galeri" element={<div className="min-h-screen bg-[#1a5f6b] flex items-center justify-center text-white text-2xl uppercase tracking-widest">Galeri Sayfası Yakında!</div>} />
-          <Route path="/hakkimizda" element={<Hakkimizda />} />
-          <Route path="/iletisim" element={<Iletisim />} />
-          <Route path="/cangucu-login" element={<LoginPage />} />
+      {maintenanceMode && isAdmin && (
+        <div className="bg-red-600 text-white text-[10px] font-black uppercase tracking-[0.3em] py-2 text-center sticky top-0 z-[60] shadow-lg">
+          BAKIM MODU ŞU ANDA AKTİF - SADECE SİZ GÖREBİLİRSİNİZ
+        </div>
+      )}
+      
+      <Routes>
+        {/* Admin Routes - No Navbar/Footer */}
+        <Route path="/cangucu-admin" element={isAdmin ? <AdminLayout /> : <Navigate to="/" />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="haberler" element={<AdminNews />} />
+          <Route path="branslar" element={<AdminBranches />} />
+          <Route path="takimlar" element={<AdminTeams />} />
+          <Route path="oyuncular" element={<AdminPlayers />} />
+          <Route path="personel" element={<AdminStaff />} />
+          <Route path="galeri" element={<AdminGallery />} />
+          <Route path="maclar" element={<AdminMatches />} />
+          <Route path="menu" element={<AdminNavigation />} />
+          <Route path="ayarlar" element={<AdminSettings />} />
+        </Route>
 
-          {/* Admin Routes */}
-          <Route path="/cangucu-admin" element={isAdmin ? <AdminLayout /> : <Navigate to="/" />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="haberler" element={<AdminNews />} />
-            <Route path="branslar" element={<AdminBranches />} />
-            <Route path="takimlar" element={<AdminTeams />} />
-            <Route path="oyuncular" element={<AdminPlayers />} />
-            <Route path="personel" element={<AdminStaff />} />
-            <Route path="galeri" element={<AdminGallery />} />
-            <Route path="maclar" element={<AdminMatches />} />
-            <Route path="menu" element={<AdminNavigation />} />
-            <Route path="ayarlar" element={<AdminSettings />} />
-          </Route>
-        </Routes>
-      </main>
-      <Footer />
+        {/* Public Routes - With Navbar/Footer */}
+        <Route path="*" element={
+          <>
+            <Navbar />
+            <main className="flex-grow">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/haberler" element={<News />} />
+                <Route path="/takim/:teamId" element={<Squads />} />
+                <Route path="/brans/:branchId" element={<BranchDetail />} />
+                <Route path="/fikstur/:teamId" element={<Fixture />} />
+                <Route path="/galeri" element={<div className="min-h-screen bg-[#1a5f6b] flex items-center justify-center text-white text-2xl uppercase tracking-widest">Galeri Sayfası Yakında!</div>} />
+                <Route path="/hakkimizda" element={<Hakkimizda />} />
+                <Route path="/iletisim" element={<Iletisim />} />
+                <Route path="/cangucu-login" element={<LoginPage />} />
+                <Route path="*" element={<Navigate to="/" />} />
+              </Routes>
+            </main>
+            <Footer />
+          </>
+        } />
+      </Routes>
     </div>
   );
 }
