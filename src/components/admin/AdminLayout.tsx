@@ -18,16 +18,16 @@ const AdminLayout = () => {
   const { settings } = useAuth();
 
   const menuItems = [
-    { path: '/cangucu-admin', icon: LayoutDashboard, label: 'Panel' },
-    { path: '/cangucu-admin/haberler', icon: Newspaper, label: 'Haberler' },
-    { path: '/cangucu-admin/branslar', icon: Trophy, label: 'Branşlar' },
-    { path: '/cangucu-admin/takimlar', icon: Users, label: 'Takımlar' },
-    { path: '/cangucu-admin/oyuncular', icon: UserCircle, label: 'Oyuncular' },
-    { path: '/cangucu-admin/personel', icon: Users, label: 'Personel' },
-    { path: '/cangucu-admin/galeri', icon: LayoutDashboard, label: 'Galeri' },
-    { path: '/cangucu-admin/maclar', icon: Calendar, label: 'Maçlar' },
-    { path: '/cangucu-admin/menu', icon: List, label: 'Menü Yönetimi' },
-    { path: '/cangucu-admin/ayarlar', icon: Settings, label: 'Ayarlar' },
+    { path: '/cangucu-panel', icon: LayoutDashboard, label: 'Panel' },
+    { path: '/cangucu-panel/haberler', icon: Newspaper, label: 'Haberler' },
+    { path: '/cangucu-panel/branslar', icon: Trophy, label: 'Branşlar' },
+    { path: '/cangucu-panel/takimlar', icon: Users, label: 'Takımlar' },
+    { path: '/cangucu-panel/oyuncular', icon: UserCircle, label: 'Oyuncular' },
+    { path: '/cangucu-panel/personel', icon: Users, label: 'Personel' },
+    { path: '/cangucu-panel/galeri', icon: LayoutDashboard, label: 'Galeri' },
+    { path: '/cangucu-panel/maclar', icon: Calendar, label: 'Maçlar' },
+    { path: '/cangucu-panel/menu', icon: List, label: 'Menü Yönetimi' },
+    { path: '/cangucu-panel/ayarlar', icon: Settings, label: 'Ayarlar' },
   ];
 
   return (

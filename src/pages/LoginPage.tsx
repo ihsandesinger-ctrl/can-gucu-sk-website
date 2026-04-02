@@ -20,7 +20,7 @@ const LoginPage = () => {
     setError('');
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate('/cangucu-admin');
+      navigate('/cangucu-panel');
     } catch (err: any) {
       setError('Giriş başarısız. Lütfen bilgilerinizi kontrol edin.');
       console.error(err);
@@ -33,7 +33,7 @@ const LoginPage = () => {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      navigate('/cangucu-admin');
+      navigate('/cangucu-panel');
     } catch (err) {
       console.error(err);
     }

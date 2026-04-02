@@ -63,7 +63,7 @@ function App() {
       
       <Routes>
         {/* Admin Routes - No Navbar/Footer */}
-        <Route path="/cangucu-admin" element={isAdmin ? <AdminLayout /> : <Navigate to="/" />}>
+        <Route path="/cangucu-panel" element={isAdmin ? <AdminLayout /> : <Navigate to="/" />}>
           <Route index element={<AdminDashboard />} />
           <Route path="haberler" element={<AdminNews />} />
           <Route path="branslar" element={<AdminBranches />} />
