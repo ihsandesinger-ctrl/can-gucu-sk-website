@@ -112,7 +112,7 @@ const Home = () => {
                 className="absolute inset-0 bg-[#f97316] rounded-full blur-3xl opacity-20"
               ></motion.div>
               <img 
-                src={settings.clubLogo} 
+                src="/logo.png" 
                 alt={settings.clubName} 
                 className="h-48 w-auto relative z-10 drop-shadow-[0_0_30px_rgba(249,115,22,0.4)]"
                 referrerPolicy="no-referrer"
