@@ -8,6 +8,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import News from './pages/News';
 import Squads from './pages/Squads';
@@ -61,6 +62,7 @@ function App() {
         </div>
       )}
       
+      <ScrollToTop />
       <Routes>
         {/* Admin Routes - No Navbar/Footer */}
         <Route path="/cangucu-panel" element={isAdmin ? <AdminLayout /> : <Navigate to="/" />}>

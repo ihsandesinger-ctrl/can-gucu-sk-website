@@ -60,7 +60,7 @@ const Navbar = () => {
               className="flex items-center space-x-3"
             >
               <img 
-                src={settings.clubLogo} 
+                src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" 
                 alt={settings.clubName} 
                 className="h-14 w-auto drop-shadow-[0_0_10px_rgba(249,115,22,0.3)]"
                 referrerPolicy="no-referrer"

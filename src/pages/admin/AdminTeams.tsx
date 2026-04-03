@@ -91,10 +91,6 @@ const AdminTeams = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.branchId) {
-      alert("Lütfen bir branş seçin.");
-      return;
-    }
     setLoading(true);
     try {
       if (editingItem) {
@@ -307,15 +303,14 @@ const AdminTeams = () => {
               <form onSubmit={handleSubmit} className="p-8 space-y-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
-                    <Trophy className="w-3 h-3 mr-2 text-[#f97316]" /> Branş Seçin
+                    <Trophy className="w-3 h-3 mr-2 text-[#f97316]" /> Branş (Opsiyonel)
                   </label>
                   <select
-                    required
                     value={formData.branchId}
                     onChange={(e) => setFormData({...formData, branchId: e.target.value})}
                     className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all appearance-none"
                   >
-                    <option value="" disabled>Branş Seçin...</option>
+                    <option value="">Branş Yok (Genel Takım)</option>
                     {branches.map(b => (
                       <option key={b.id} value={b.id}>{b.name}</option>
                     ))}

@@ -13,7 +13,8 @@ import {
   Save, 
   X,
   MoveUp,
-  MoveDown
+  MoveDown,
+  Trophy
 } from 'lucide-react';
 import { 
   collection, 
@@ -32,6 +33,7 @@ import ImageUpload from '../../components/admin/ImageUpload';
 interface PlayerItem {
   id: string;
   teamId: string;
+  branchId?: string;
   name: string;
   number: string;
   position: string;
@@ -45,9 +47,15 @@ interface TeamItem {
   name: string;
 }
 
+interface BranchItem {
+  id: string;
+  name: string;
+}
+
 const AdminPlayers = () => {
   const [players, setPlayers] = useState<PlayerItem[]>([]);
   const [teams, setTeams] = useState<TeamItem[]>([]);
+  const [branches, setBranches] = useState<BranchItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PlayerItem | null>(null);
   const [loading, setLoading] = useState(false);
@@ -55,6 +63,7 @@ const AdminPlayers = () => {
 
   const [formData, setFormData] = useState({
     teamId: '',
+    branchId: '',
     name: '',
     number: '',
     position: '',
@@ -87,9 +96,20 @@ const AdminPlayers = () => {
       }
     });
 
+    // Fetch branches for selection
+    const qBranches = query(collection(db, 'branches'), orderBy('order', 'asc'));
+    const unsubscribeBranches = onSnapshot(qBranches, (snapshot) => {
+      const branchesData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        name: doc.data().name
+      })) as BranchItem[];
+      setBranches(branchesData);
+    });
+
     return () => {
       unsubscribePlayers();
       unsubscribeTeams();
+      unsubscribeBranches();
     };
   }, []);
 
@@ -158,6 +178,7 @@ const AdminPlayers = () => {
       setEditingItem(item);
       setFormData({
         teamId: item.teamId,
+        branchId: item.branchId || '',
         name: item.name,
         number: item.number,
         position: item.position,
@@ -169,6 +190,7 @@ const AdminPlayers = () => {
       setEditingItem(null);
       setFormData({
         teamId: teams[0]?.id || '',
+        branchId: '',
         name: '',
         number: '',
         position: '',
@@ -323,21 +345,38 @@ const AdminPlayers = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
-                    <Users className="w-3 h-3 mr-2 text-[#f97316]" /> Takım Seçin
-                  </label>
-                  <select
-                    required
-                    value={formData.teamId}
-                    onChange={(e) => setFormData({...formData, teamId: e.target.value})}
-                    className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all appearance-none"
-                  >
-                    <option value="" disabled>Takım Seçin...</option>
-                    {teams.map(t => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
+                      <Users className="w-3 h-3 mr-2 text-[#f97316]" /> Takım Seçin
+                    </label>
+                    <select
+                      required
+                      value={formData.teamId}
+                      onChange={(e) => setFormData({...formData, teamId: e.target.value})}
+                      className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all appearance-none"
+                    >
+                      <option value="" disabled>Takım Seçin...</option>
+                      {teams.map(t => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
+                      <Trophy className="w-3 h-3 mr-2 text-[#f97316]" /> Branş (Opsiyonel)
+                    </label>
+                    <select
+                      value={formData.branchId}
+                      onChange={(e) => setFormData({...formData, branchId: e.target.value})}
+                      className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all appearance-none"
+                    >
+                      <option value="">Branş Yok</option>
+                      {branches.map(b => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 <div className="space-y-2">

@@ -38,9 +38,20 @@ interface Team {
 interface Player {
   id: string;
   teamId: string;
+  branchId?: string;
   name: string;
   number: string;
   position: string;
+  photo?: string;
+}
+
+interface News {
+  id: string;
+  title: string;
+  summary: string;
+  date: string;
+  image: string;
+  branchId?: string;
 }
 
 const BranchDetail = () => {
@@ -48,6 +59,7 @@ const BranchDetail = () => {
   const [branch, setBranch] = useState<Branch | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
   const [players, setPlayers] = useState<Player[]>([]);
+  const [news, setNews] = useState<News[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -67,24 +79,29 @@ const BranchDetail = () => {
     const unsubscribeTeams = onSnapshot(qTeams, (snapshot) => {
       const teamsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Team[];
       setTeams(teamsData);
-      
-      // Fetch players for all teams in this branch
-      if (teamsData.length > 0) {
-        const teamIds = teamsData.map(t => t.id);
-        const qPlayers = query(collection(db, 'players'), where('teamId', 'in', teamIds), where('isHidden', '==', false));
-        const unsubscribePlayers = onSnapshot(qPlayers, (playerSnap) => {
-          const playersData = playerSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Player[];
-          setPlayers(playersData);
-          setLoading(false);
-        });
-        return () => unsubscribePlayers();
-      } else {
-        setLoading(false);
-      }
+    });
+
+    // Fetch players in this branch (either via team or direct branchId)
+    const qPlayers = query(collection(db, 'players'), where('branchId', '==', branchId), where('isHidden', '==', false));
+    const unsubscribePlayers = onSnapshot(qPlayers, (snapshot) => {
+      const playersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Player[];
+      setPlayers(playersData);
+    });
+
+    // Fetch news for this branch
+    const qNews = query(collection(db, 'news'), where('branchId', '==', branchId), where('isHidden', '==', false));
+    const unsubscribeNews = onSnapshot(qNews, (snapshot) => {
+      const newsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as News[];
+      setNews(newsData);
+      setLoading(false);
     });
 
     fetchBranch();
-    return () => unsubscribeTeams();
+    return () => {
+      unsubscribeTeams();
+      unsubscribePlayers();
+      unsubscribeNews();
+    };
   }, [branchId]);
 
   if (loading) {
@@ -185,14 +202,28 @@ const BranchDetail = () => {
             </div>
             
             <div className="space-y-4">
-              <div className="bg-white/5 p-6 rounded-3xl border border-white/5">
-                <p className="text-white font-bold mb-2 uppercase tracking-wide">Yeni Sezon Kayıtları Başladı!</p>
-                <p className="text-gray-400 text-sm">Branşımıza katılmak için antrenörümüzle iletişime geçebilirsiniz.</p>
-              </div>
-              <div className="bg-white/5 p-6 rounded-3xl border border-white/5 opacity-50">
-                <p className="text-white font-bold mb-2 uppercase tracking-wide">Haftalık Antrenman Programı</p>
-                <p className="text-gray-400 text-sm">Pazartesi, Çarşamba ve Cuma günleri saat 18:00'de.</p>
-              </div>
+              {news.length > 0 ? (
+                news.map((item) => (
+                  <Link 
+                    key={item.id} 
+                    to={`/haber/${item.id}`}
+                    className="bg-white/5 p-6 rounded-3xl border border-white/5 hover:bg-white/10 transition-all flex items-center gap-6"
+                  >
+                    <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0">
+                      <img src={item.image} alt={item.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    </div>
+                    <div>
+                      <p className="text-white font-bold mb-1 uppercase tracking-wide line-clamp-1">{item.title}</p>
+                      <p className="text-gray-400 text-xs line-clamp-1">{item.summary}</p>
+                      <p className="text-[#f97316] text-[10px] font-black mt-2">{item.date}</p>
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <div className="bg-white/5 p-6 rounded-3xl border border-white/5 text-center">
+                  <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">Henüz duyuru bulunmuyor.</p>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>
@@ -200,53 +231,72 @@ const BranchDetail = () => {
         {/* Player List */}
         <section>
           <div className="text-center mb-16">
-            <h2 className="text-5xl font-black text-white uppercase tracking-tighter italic">OYUNCU LİSTESİ</h2>
+            <h2 className="text-5xl font-black text-white uppercase tracking-tighter italic">OYUNCULARIMIZ</h2>
             <div className="h-2 w-32 bg-[#f97316] mx-auto mt-6 rounded-full"></div>
           </div>
 
-          <div className="space-y-16">
-            {teams.map((team) => (
-              <div key={team.id} className="space-y-8">
-                <div className="flex items-center space-x-4">
-                  <div className="h-px flex-grow bg-white/10"></div>
-                  <h3 className="text-2xl font-black text-[#f97316] uppercase tracking-widest italic">{team.name}</h3>
-                  <div className="h-px flex-grow bg-white/10"></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {players.map((player, idx) => (
+              <motion.div
+                key={player.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.05 }}
+                viewport={{ once: true }}
+                className="bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 text-center group hover:bg-[#f97316] transition-all duration-500"
+              >
+                <div className="relative inline-block mb-6">
+                  <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center text-white group-hover:bg-white/20 transition-colors overflow-hidden border-2 border-white/10">
+                    {player.photo ? (
+                      <img src={player.photo} alt={player.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <UserCircle className="w-16 h-16" />
+                    )}
+                  </div>
+                  <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#f97316] text-white rounded-full flex items-center justify-center font-black text-sm shadow-xl border-4 border-[#1a5f6b] group-hover:bg-white group-hover:text-[#f97316] transition-all">
+                    {player.number}
+                  </div>
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {players.filter(p => p.teamId === team.id).map((player, idx) => (
-                    <motion.div
-                      key={player.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      viewport={{ once: true }}
-                      className="bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 text-center group hover:bg-[#f97316] transition-all duration-500"
-                    >
-                      <div className="relative inline-block mb-6">
-                        <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center text-white group-hover:bg-white/20 transition-colors">
-                          <UserCircle className="w-12 h-12" />
-                        </div>
-                        <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#f97316] text-white rounded-full flex items-center justify-center font-black text-sm shadow-xl border-4 border-[#1a5f6b] group-hover:bg-white group-hover:text-[#f97316] transition-all">
-                          {player.number}
-                        </div>
-                      </div>
-                      <h4 className="text-xl font-black text-white uppercase tracking-tight mb-1">{player.name}</h4>
-                      <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest group-hover:text-white/70 transition-colors">
-                        {player.position}
-                      </p>
-                    </motion.div>
-                  ))}
-                  {players.filter(p => p.teamId === team.id).length === 0 && (
-                    <div className="col-span-full py-12 text-center text-white/30 font-black uppercase tracking-widest">
-                      Bu takımda henüz oyuncu bulunmuyor.
-                    </div>
-                  )}
-                </div>
+                <h4 className="text-xl font-black text-white uppercase tracking-tight mb-1">{player.name}</h4>
+                <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest group-hover:text-white/70 transition-colors">
+                  {player.position}
+                </p>
+              </motion.div>
+            ))}
+            {players.length === 0 && (
+              <div className="col-span-full py-20 text-center text-white/20 font-black uppercase tracking-[0.5em]">
+                HENÜZ OYUNCU EKLENMEMİŞ
               </div>
+            )}
+          </div>
+        </section>
+
+        {/* Teams List */}
+        <section>
+          <div className="text-center mb-16">
+            <h2 className="text-5xl font-black text-white uppercase tracking-tighter italic">TAKIMLARIMIZ</h2>
+            <div className="h-2 w-32 bg-[#f97316] mx-auto mt-6 rounded-full"></div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {teams.map((team, idx) => (
+              <motion.div
+                key={team.id}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ delay: idx * 0.1 }}
+                viewport={{ once: true }}
+                className="bg-white/5 backdrop-blur-xl p-10 rounded-[48px] border border-white/10 text-center group hover:border-[#f97316] transition-all"
+              >
+                <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:bg-[#f97316]/20 transition-colors">
+                  <Users className="w-10 h-10 text-[#f97316]" />
+                </div>
+                <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-2">{team.name}</h3>
+                <p className="text-gray-400 text-xs font-black uppercase tracking-widest">Antrenör: {team.coachName || 'Atanmamış'}</p>
+              </motion.div>
             ))}
             {teams.length === 0 && (
-              <div className="text-center py-20 text-white/20 font-black uppercase tracking-[0.5em]">
+              <div className="col-span-full text-center py-20 text-white/20 font-black uppercase tracking-[0.5em]">
                 HENÜZ TAKIM OLUŞTURULMAMIŞ
               </div>
             )}

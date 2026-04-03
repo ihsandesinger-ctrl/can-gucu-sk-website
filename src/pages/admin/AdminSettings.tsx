@@ -29,6 +29,8 @@ const AdminSettings = () => {
     facebook: '',
     twitter: '',
     aboutText: 'Çangücü SK, Çan\'ın en köklü spor kulüplerinden biridir.',
+    missionText: 'Sporun birleştirici gücüyle, Çan gençliğini sağlıklı, ahlaklı ve başarılı bireyler olarak yetiştirmek.',
+    visionText: 'Bölgemizin en başarılı ve örnek spor kulübü olarak, ulusal düzeyde sporcular yetiştiren bir marka haline gelmek.',
     maintenanceMode: false,
     branchesCount: '5+',
     athletesCount: '200+',
@@ -126,6 +128,24 @@ const AdminSettings = () => {
                 rows={4}
                 value={formData.aboutText}
                 onChange={(e) => setFormData({...formData, aboutText: e.target.value})}
+                className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Misyonumuz</label>
+              <textarea
+                rows={4}
+                value={formData.missionText}
+                onChange={(e) => setFormData({...formData, missionText: e.target.value})}
+                className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Vizyonumuz</label>
+              <textarea
+                rows={4}
+                value={formData.visionText}
+                onChange={(e) => setFormData({...formData, visionText: e.target.value})}
                 className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
               />
             </div>

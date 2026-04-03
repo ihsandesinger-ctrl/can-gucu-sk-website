@@ -15,6 +15,8 @@ interface AuthContextType {
     phone: string;
     address: string;
     aboutText: string;
+    missionText?: string;
+    visionText?: string;
     instagram?: string;
     facebook?: string;
     twitter?: string;
@@ -50,6 +52,8 @@ const AuthContext = createContext<AuthContextType>({
     phone: '',
     address: '',
     aboutText: '',
+    missionText: 'Sporun her dalında etik değerlere bağlı, disiplinli ve başarılı bireyler yetiştirerek Türk sporuna katkı sağlamak.',
+    visionText: 'Çan\'ın ve bölgenin en prestijli, altyapısı en güçlü ve başarılarıyla örnek gösterilen spor kulübü olmak.',
   },
   navigation: [],
 });
@@ -99,6 +103,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           phone: data.phone || '',
           address: data.address || '',
           aboutText: data.aboutText || '',
+          missionText: data.missionText || 'Sporun her dalında etik değerlere bağlı, disiplinli ve başarılı bireyler yetiştirerek Türk sporuna katkı sağlamak.',
+          visionText: data.visionText || 'Çan\'ın ve bölgenin en prestijli, altyapısı en güçlü ve başarılarıyla örnek gösterilen spor kulübü olmak.',
           instagram: data.instagram,
           facebook: data.facebook,
           twitter: data.twitter,

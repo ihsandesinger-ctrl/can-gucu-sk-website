@@ -9,13 +9,15 @@ interface ImageUploadProps {
   currentImageUrl?: string;
   folder?: string;
   aspectRatio?: number;
+  freeCrop?: boolean;
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({ 
   onUploadComplete, 
   currentImageUrl, 
   folder = 'general',
-  aspectRatio = 16 / 9
+  aspectRatio: initialAspectRatio = 16 / 9,
+  freeCrop: initialFreeCrop = false
 }) => {
   const [image, setImage] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -23,6 +25,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [isCropping, setIsCropping] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isFreeCrop, setIsFreeCrop] = useState(initialFreeCrop);
 
   const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -136,9 +139,25 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-white w-full max-w-4xl rounded-[40px] overflow-hidden shadow-2xl">
             <div className="p-8 border-b border-gray-100 flex justify-between items-center">
-              <div>
-                <h3 className="text-2xl font-black text-[#1a5f6b] uppercase tracking-tighter italic">RESMİ KIRP</h3>
-                <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-1">İstediğiniz alanı seçin</p>
+              <div className="flex items-center space-x-8">
+                <div>
+                  <h3 className="text-2xl font-black text-[#1a5f6b] uppercase tracking-tighter italic">RESMİ KIRP</h3>
+                  <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-1">İstediğiniz alanı seçin</p>
+                </div>
+                <div className="flex items-center bg-gray-100 p-1 rounded-2xl">
+                  <button
+                    onClick={() => setIsFreeCrop(false)}
+                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!isFreeCrop ? 'bg-white text-[#1a5f6b] shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                  >
+                    SABİT ORAN
+                  </button>
+                  <button
+                    onClick={() => setIsFreeCrop(true)}
+                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isFreeCrop ? 'bg-white text-[#1a5f6b] shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                  >
+                    SERBEST
+                  </button>
+                </div>
               </div>
               <button 
                 onClick={() => setIsCropping(false)}
@@ -153,7 +172,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                 image={image}
                 crop={crop}
                 zoom={zoom}
-                aspect={aspectRatio}
+                aspect={isFreeCrop ? undefined : initialAspectRatio}
                 onCropChange={setCrop}
                 onCropComplete={onCropComplete}
                 onZoomChange={setZoom}

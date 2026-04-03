@@ -14,7 +14,8 @@ import {
   Save, 
   X,
   MoveUp,
-  MoveDown
+  MoveDown,
+  Trophy
 } from 'lucide-react';
 import { 
   collection, 
@@ -38,12 +39,19 @@ interface NewsItem {
   image: string;
   date: string;
   category: string;
+  branchId?: string;
   isHidden: boolean;
   order: number;
 }
 
+interface BranchItem {
+  id: string;
+  name: string;
+}
+
 const AdminNews = () => {
   const [news, setNews] = useState<NewsItem[]>([]);
+  const [branches, setBranches] = useState<BranchItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<NewsItem | null>(null);
   const [loading, setLoading] = useState(false);
@@ -55,6 +63,7 @@ const AdminNews = () => {
     image: '',
     date: new Date().toISOString().split('T')[0],
     category: 'Genel',
+    branchId: '',
     isHidden: false,
     order: 0
   });
@@ -68,7 +77,20 @@ const AdminNews = () => {
       })) as NewsItem[];
       setNews(newsData);
     });
-    return () => unsubscribe();
+
+    const qBranches = query(collection(db, 'branches'), orderBy('order', 'asc'));
+    const unsubscribeBranches = onSnapshot(qBranches, (snapshot) => {
+      const branchesData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        name: doc.data().name
+      })) as BranchItem[];
+      setBranches(branchesData);
+    });
+
+    return () => {
+      unsubscribe();
+      unsubscribeBranches();
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -137,6 +159,7 @@ const AdminNews = () => {
         image: item.image,
         date: item.date,
         category: item.category,
+        branchId: item.branchId || '',
         isHidden: item.isHidden,
         order: item.order || 0
       });
@@ -149,6 +172,7 @@ const AdminNews = () => {
         image: '',
         date: new Date().toISOString().split('T')[0],
         category: 'Genel',
+        branchId: '',
         isHidden: false,
         order: news.length
       });
@@ -312,6 +336,21 @@ const AdminNews = () => {
                       className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
                       placeholder="Genel, Maç, Duyuru..."
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
+                      <Trophy className="w-3 h-3 mr-2 text-[#f97316]" /> İlgili Branş (Opsiyonel)
+                    </label>
+                    <select
+                      value={formData.branchId}
+                      onChange={(e) => setFormData({...formData, branchId: e.target.value})}
+                      className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all appearance-none"
+                    >
+                      <option value="">Branş Yok (Genel Haber)</option>
+                      {branches.map(b => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
