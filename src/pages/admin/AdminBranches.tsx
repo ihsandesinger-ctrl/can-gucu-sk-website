@@ -54,13 +54,13 @@ const AdminBranches = () => {
   });
 
   useEffect(() => {
-    const q = query(collection(db, 'branches'), orderBy('order', 'asc'));
+    const q = query(collection(db, 'branches'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const branchesData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as BranchItem[];
-      setBranches(branchesData);
+      setBranches(branchesData.sort((a, b) => (a.order || 0) - (b.order || 0)));
     });
     return () => unsubscribe();
   }, []);

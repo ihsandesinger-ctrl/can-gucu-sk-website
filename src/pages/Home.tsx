@@ -26,8 +26,14 @@ interface NewsItem {
   isHidden: boolean;
 }
 
+interface TeamItem {
+  id: string;
+  name: string;
+}
+
 interface MatchItem {
   id: string;
+  teamId: string;
   homeTeam: string;
   homeLogo?: string;
   awayTeam: string;
@@ -37,41 +43,64 @@ interface MatchItem {
   location?: string;
   category: string;
   isHidden: boolean;
+  order: number;
 }
 
 const Home = () => {
   const { settings } = useAuth();
   const [news, setNews] = useState<NewsItem[]>([]);
   const [matches, setMatches] = useState<MatchItem[]>([]);
+  const [teams, setTeams] = useState<TeamItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Fetch news
-    const qNews = query(
-      collection(db, 'news'), 
-      orderBy('date', 'desc')
-    );
+    const qNews = query(collection(db, 'news'));
     const unsubscribeNews = onSnapshot(qNews, (snapshot) => {
       const allNews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as NewsItem[];
-      setNews(allNews.filter(item => !item.isHidden).slice(0, 3));
+      setNews(allNews.filter(item => !item.isHidden).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3));
+    });
+
+    // Fetch teams
+    const qTeams = query(collection(db, 'teams'));
+    const unsubscribeTeams = onSnapshot(qTeams, (snapshot) => {
+      const allTeams = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as TeamItem[];
+      setTeams(allTeams);
     });
 
     // Fetch matches
-    const qMatches = query(
-      collection(db, 'matches'), 
-      orderBy('order', 'asc')
-    );
+    const qMatches = query(collection(db, 'matches'));
     const unsubscribeMatches = onSnapshot(qMatches, (snapshot) => {
       const allMatches = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as MatchItem[];
-      setMatches(allMatches.filter(item => !item.isHidden).slice(0, 3));
+      
+      // Group by team and pick the first one (based on order or date if possible)
+      // For now, we use the 'order' field as the primary sort, then filter one per team
+      const visibleMatches = allMatches.filter(item => !item.isHidden).sort((a, b) => (a.order || 0) - (b.order || 0));
+      
+      const onePerTeam: MatchItem[] = [];
+      const seenTeams = new Set();
+      
+      for (const match of visibleMatches) {
+        if (!seenTeams.has(match.teamId)) {
+          onePerTeam.push(match);
+          seenTeams.add(match.teamId);
+        }
+      }
+
+      setMatches(onePerTeam.slice(0, 6)); // Show up to 6 matches (one per team)
       setLoading(false);
     });
 
     return () => {
       unsubscribeNews();
+      unsubscribeTeams();
       unsubscribeMatches();
     };
   }, []);
+
+  const getTeamName = (teamId: string) => {
+    return teams.find(t => t.id === teamId)?.name || 'Bilinmeyen Takım';
+  };
 
   return (
     <div className="bg-[#1a5f6b]">
@@ -165,7 +194,7 @@ const Home = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {matches.map((match, idx) => (
               <motion.div
                 key={match.id}
@@ -177,7 +206,7 @@ const Home = () => {
               >
                 <div className="flex justify-between items-center mb-8">
                   <span className="bg-[#f97316] text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest">
-                    {match.category}
+                    {getTeamName(match.teamId)}
                   </span>
                   <Trophy className="text-white/20 w-6 h-6 group-hover:text-[#f97316] transition-colors" />
                 </div>

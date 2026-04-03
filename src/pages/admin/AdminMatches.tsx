@@ -72,23 +72,24 @@ const AdminMatches = () => {
 
   useEffect(() => {
     // Fetch matches
-    const qMatches = query(collection(db, 'matches'), orderBy('order', 'asc'));
+    const qMatches = query(collection(db, 'matches'));
     const unsubscribeMatches = onSnapshot(qMatches, (snapshot) => {
       const matchesData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as MatchItem[];
-      setMatches(matchesData);
+      setMatches(matchesData.sort((a, b) => (a.order || 0) - (b.order || 0)));
     });
 
     // Fetch teams for selection
-    const qTeams = query(collection(db, 'teams'), orderBy('order', 'asc'));
+    const qTeams = query(collection(db, 'teams'));
     const unsubscribeTeams = onSnapshot(qTeams, (snapshot) => {
       const teamsData = snapshot.docs.map(doc => ({
         id: doc.id,
-        name: doc.data().name
-      })) as TeamItem[];
-      setTeams(teamsData);
+        name: doc.data().name,
+        order: doc.data().order || 0
+      })) as (TeamItem & { order: number })[];
+      setTeams(teamsData.sort((a, b) => a.order - b.order));
       if (teamsData.length > 0 && !formData.teamId) {
         setFormData(prev => ({ ...prev, teamId: teamsData[0].id }));
       }

@@ -52,13 +52,13 @@ const AdminGallery = () => {
   });
 
   useEffect(() => {
-    const q = query(collection(db, 'gallery'), orderBy('order', 'asc'));
+    const q = query(collection(db, 'gallery'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const galleryData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as GalleryItem[];
-      setGallery(galleryData);
+      setGallery(galleryData.sort((a, b) => (a.order || 0) - (b.order || 0)));
     });
     return () => unsubscribe();
   }, []);

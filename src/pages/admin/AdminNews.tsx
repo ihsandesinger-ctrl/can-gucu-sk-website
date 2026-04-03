@@ -69,22 +69,23 @@ const AdminNews = () => {
   });
 
   useEffect(() => {
-    const q = query(collection(db, 'news'), orderBy('order', 'asc'));
+    const q = query(collection(db, 'news'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const newsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as NewsItem[];
-      setNews(newsData);
+      setNews(newsData.sort((a, b) => (a.order || 0) - (b.order || 0)));
     });
 
-    const qBranches = query(collection(db, 'branches'), orderBy('order', 'asc'));
+    const qBranches = query(collection(db, 'branches'));
     const unsubscribeBranches = onSnapshot(qBranches, (snapshot) => {
       const branchesData = snapshot.docs.map(doc => ({
         id: doc.id,
-        name: doc.data().name
-      })) as BranchItem[];
-      setBranches(branchesData);
+        name: doc.data().name,
+        order: doc.data().order || 0
+      })) as (BranchItem & { order: number })[];
+      setBranches(branchesData.sort((a, b) => a.order - b.order));
     });
 
     return () => {

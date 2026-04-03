@@ -61,23 +61,24 @@ const AdminTeams = () => {
 
   useEffect(() => {
     // Fetch teams
-    const qTeams = query(collection(db, 'teams'), orderBy('order', 'asc'));
+    const qTeams = query(collection(db, 'teams'));
     const unsubscribeTeams = onSnapshot(qTeams, (snapshot) => {
       const teamsData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as TeamItem[];
-      setTeams(teamsData);
+      setTeams(teamsData.sort((a, b) => (a.order || 0) - (b.order || 0)));
     });
 
     // Fetch branches for selection
-    const qBranches = query(collection(db, 'branches'), orderBy('order', 'asc'));
+    const qBranches = query(collection(db, 'branches'));
     const unsubscribeBranches = onSnapshot(qBranches, (snapshot) => {
       const branchesData = snapshot.docs.map(doc => ({
         id: doc.id,
-        name: doc.data().name
-      })) as BranchItem[];
-      setBranches(branchesData);
+        name: doc.data().name,
+        order: doc.data().order || 0
+      })) as (BranchItem & { order: number })[];
+      setBranches(branchesData.sort((a, b) => a.order - b.order));
       if (branchesData.length > 0 && !formData.branchId) {
         setFormData(prev => ({ ...prev, branchId: branchesData[0].id }));
       }
