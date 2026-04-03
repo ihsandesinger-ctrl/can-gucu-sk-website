@@ -92,6 +92,7 @@ function App() {
                 <Route path="/takim/:teamId" element={<Squads />} />
                 <Route path="/brans/:branchId" element={<BranchDetail />} />
                 <Route path="/fikstur/:teamId" element={<Fixture />} />
+                <Route path="/fikstur" element={<Fixture />} />
                 <Route path="/galeri" element={<Gallery />} />
                 <Route path="/hakkimizda" element={<Hakkimizda />} />
                 <Route path="/iletisim" element={<Iletisim />} />

@@ -189,12 +189,12 @@ const Home = () => {
               <h2 className="text-5xl font-black text-white uppercase tracking-tighter italic">SIRADAKİ MAÇLAR</h2>
               <div className="h-2 w-32 bg-[#f97316] mt-4 rounded-full mx-auto md:mx-0"></div>
             </div>
-            <Link to="/haberler" className="flex items-center text-[#f97316] font-black uppercase tracking-widest text-sm group">
+            <Link to="/fikstur" className="flex items-center text-[#f97316] font-black uppercase tracking-widest text-sm group">
               TÜM FİKSTÜR <ChevronRight className="ml-2 group-hover:translate-x-2 transition-transform" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="flex flex-wrap justify-center gap-8">
             {matches.map((match, idx) => (
               <motion.div
                 key={match.id}
@@ -202,7 +202,7 @@ const Home = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
                 viewport={{ once: true }}
-                className="bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 hover:bg-white/10 transition-all duration-500 group"
+                className="w-full md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.35rem)] bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 hover:bg-white/10 transition-all duration-500 group"
               >
                 <div className="flex justify-between items-center mb-8">
                   <span className="bg-[#f97316] text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest">

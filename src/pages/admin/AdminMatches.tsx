@@ -28,13 +28,17 @@ import {
 } from 'firebase/firestore';
 import { db } from '../../firebase';
 
+import ImageUpload from '../../components/admin/ImageUpload';
+
 interface MatchItem {
   id: string;
   teamId: string;
   homeTeam: string;
   homeLogo?: string;
+  homeScore?: string;
   awayTeam: string;
   awayLogo?: string;
+  awayScore?: string;
   date: string;
   time: string;
   location: string;
@@ -60,8 +64,10 @@ const AdminMatches = () => {
     teamId: '',
     homeTeam: '',
     homeLogo: '',
+    homeScore: '',
     awayTeam: '',
     awayLogo: '',
+    awayScore: '',
     date: '',
     time: '',
     location: '',
@@ -168,8 +174,10 @@ const AdminMatches = () => {
         teamId: item.teamId,
         homeTeam: item.homeTeam,
         homeLogo: item.homeLogo || '',
+        homeScore: item.homeScore || '',
         awayTeam: item.awayTeam,
         awayLogo: item.awayLogo || '',
+        awayScore: item.awayScore || '',
         date: item.date,
         time: item.time || '',
         location: item.location || '',
@@ -183,9 +191,11 @@ const AdminMatches = () => {
         teamId: selectedTeamId !== 'all' ? selectedTeamId : (teams[0]?.id || ''),
         homeTeam: '',
         homeLogo: '',
+        homeScore: '',
         awayTeam: '',
         awayLogo: '',
-        date: '',
+        awayScore: '',
+        date: new Date().toISOString().split('T')[0],
         time: '',
         location: '',
         category: '',
@@ -287,8 +297,18 @@ const AdminMatches = () => {
                   <img src={item.homeLogo} alt={item.homeTeam} className="w-10 h-10 object-contain" referrerPolicy="no-referrer" />
                 )}
               </div>
-              <div className="w-12 h-12 bg-[#f97316] text-white rounded-full flex items-center justify-center font-black italic shadow-lg">
-                VS
+              <div className="flex items-center gap-3">
+                {item.homeScore !== undefined && item.awayScore !== undefined && item.homeScore !== '' && item.awayScore !== '' ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-black text-[#1a5f6b]">{item.homeScore}</span>
+                    <span className="text-lg font-black text-[#f97316]">-</span>
+                    <span className="text-2xl font-black text-[#1a5f6b]">{item.awayScore}</span>
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 bg-[#f97316] text-white rounded-full flex items-center justify-center font-black italic shadow-lg">
+                    VS
+                  </div>
+                )}
               </div>
               <div className="text-left flex-1 flex items-center justify-start gap-4">
                 {item.awayLogo && (
@@ -379,50 +399,70 @@ const AdminMatches = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Ev Sahibi Takım</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.homeTeam}
-                      onChange={(e) => setFormData({...formData, homeTeam: e.target.value})}
-                      className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
-                      placeholder="Örn: Çangücü SK"
-                    />
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Ev Sahibi Takım</label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.homeTeam}
+                        onChange={(e) => setFormData({...formData, homeTeam: e.target.value})}
+                        className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
+                        placeholder="Örn: Çangücü SK"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Ev Sahibi Logo</label>
+                      <ImageUpload
+                        onUploadComplete={(url) => setFormData({...formData, homeLogo: url})}
+                        currentImageUrl={formData.homeLogo}
+                        folder="teams"
+                        aspectRatio={1}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Ev Sahibi Skor (Opsiyonel)</label>
+                      <input
+                        type="number"
+                        value={formData.homeScore}
+                        onChange={(e) => setFormData({...formData, homeScore: e.target.value})}
+                        className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Ev Sahibi Logo URL (Opsiyonel)</label>
-                    <input
-                      type="text"
-                      value={formData.homeLogo}
-                      onChange={(e) => setFormData({...formData, homeLogo: e.target.value})}
-                      className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
-                      placeholder="Örn: https://.../logo.png"
-                    />
-                  </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Rakip Takım</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.awayTeam}
-                      onChange={(e) => setFormData({...formData, awayTeam: e.target.value})}
-                      className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
-                      placeholder="Örn: Rakip Takım"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Rakip Logo URL (Opsiyonel)</label>
-                    <input
-                      type="text"
-                      value={formData.awayLogo}
-                      onChange={(e) => setFormData({...formData, awayLogo: e.target.value})}
-                      className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
-                      placeholder="Örn: https://.../logo.png"
-                    />
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Rakip Takım</label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.awayTeam}
+                        onChange={(e) => setFormData({...formData, awayTeam: e.target.value})}
+                        className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
+                        placeholder="Örn: Rakip Takım"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Rakip Logo</label>
+                      <ImageUpload
+                        onUploadComplete={(url) => setFormData({...formData, awayLogo: url})}
+                        currentImageUrl={formData.awayLogo}
+                        folder="teams"
+                        aspectRatio={1}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Rakip Skor (Opsiyonel)</label>
+                      <input
+                        type="number"
+                        value={formData.awayScore}
+                        onChange={(e) => setFormData({...formData, awayScore: e.target.value})}
+                        className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -432,12 +472,11 @@ const AdminMatches = () => {
                       <Calendar className="w-3 h-3 mr-2 text-[#f97316]" /> Tarih
                     </label>
                     <input
-                      type="text"
+                      type="date"
                       required
                       value={formData.date}
                       onChange={(e) => setFormData({...formData, date: e.target.value})}
                       className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
-                      placeholder="Örn: 15 Nisan 2024"
                     />
                   </div>
                   <div className="space-y-2">
@@ -445,11 +484,10 @@ const AdminMatches = () => {
                       <Clock className="w-3 h-3 mr-2 text-[#f97316]" /> Saat (Opsiyonel)
                     </label>
                     <input
-                      type="text"
+                      type="time"
                       value={formData.time}
                       onChange={(e) => setFormData({...formData, time: e.target.value})}
                       className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
-                      placeholder="Örn: 14:00"
                     />
                   </div>
                 </div>
