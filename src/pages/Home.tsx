@@ -23,6 +23,7 @@ interface NewsItem {
   image: string;
   date: string;
   category: string;
+  isHidden: boolean;
 }
 
 interface MatchItem {
@@ -35,6 +36,7 @@ interface MatchItem {
   time?: string;
   location?: string;
   category: string;
+  isHidden: boolean;
 }
 
 const Home = () => {
@@ -44,26 +46,24 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch latest 3 news
+    // Fetch news
     const qNews = query(
       collection(db, 'news'), 
-      where('isHidden', '==', false), 
-      orderBy('date', 'desc'), 
-      limit(3)
+      orderBy('date', 'desc')
     );
     const unsubscribeNews = onSnapshot(qNews, (snapshot) => {
-      setNews(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as NewsItem[]);
+      const allNews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as NewsItem[];
+      setNews(allNews.filter(item => !item.isHidden).slice(0, 3));
     });
 
-    // Fetch latest 3 matches
+    // Fetch matches
     const qMatches = query(
       collection(db, 'matches'), 
-      where('isHidden', '==', false), 
-      orderBy('order', 'asc'), 
-      limit(3)
+      orderBy('order', 'asc')
     );
     const unsubscribeMatches = onSnapshot(qMatches, (snapshot) => {
-      setMatches(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as MatchItem[]);
+      const allMatches = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as MatchItem[];
+      setMatches(allMatches.filter(item => !item.isHidden).slice(0, 3));
       setLoading(false);
     });
 

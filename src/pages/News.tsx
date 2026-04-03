@@ -11,6 +11,7 @@ interface NewsItem {
   image: string;
   date: string;
   category: string;
+  isHidden: boolean;
 }
 
 const News = () => {
@@ -20,11 +21,11 @@ const News = () => {
   useEffect(() => {
     const q = query(
       collection(db, 'news'), 
-      where('isHidden', '==', false), 
       orderBy('date', 'desc')
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setNews(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as NewsItem[]);
+      const allNews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as NewsItem[];
+      setNews(allNews.filter(item => !item.isHidden));
       setLoading(false);
     });
 

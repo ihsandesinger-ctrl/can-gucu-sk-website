@@ -135,7 +135,7 @@ service cloud.firestore {
 
     // Navigation
     match /navigation/{navId} {
-      allow read: if !isHidden(resource.data) || isAdmin();
+      allow read: if true;
       allow write: if isAdmin();
     }
 

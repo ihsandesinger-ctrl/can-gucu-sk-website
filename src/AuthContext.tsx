@@ -72,7 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [navigation, setNavigation] = useState<NavItem[]>([]);
   const [settings, setSettings] = useState({
     clubName: 'Çangücü SK',
-    clubLogo: 'https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6',
+    clubLogo: '/logo.png',
     email: '',
     phone: '',
     address: '',
@@ -102,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setMaintenanceMode(data.maintenanceMode || false);
         setSettings({
           clubName: data.clubName || 'Çangücü SK',
-          clubLogo: data.clubLogo || 'https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6',
+          clubLogo: data.clubLogo || '/logo.png',
           email: data.email || '',
           phone: data.phone || '',
           address: data.address || '',

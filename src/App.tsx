@@ -30,6 +30,7 @@ import Hakkimizda from './pages/Hakkimizda';
 import Iletisim from './pages/Iletisim';
 import Fixture from './pages/Fixture';
 import LoginPage from './pages/LoginPage';
+import Gallery from './pages/Gallery';
 
 function App() {
   const { loading, maintenanceMode, isAdmin } = useAuth();
@@ -89,7 +90,7 @@ function App() {
                 <Route path="/takim/:teamId" element={<Squads />} />
                 <Route path="/brans/:branchId" element={<BranchDetail />} />
                 <Route path="/fikstur/:teamId" element={<Fixture />} />
-                <Route path="/galeri" element={<div className="min-h-screen bg-[#1a5f6b] flex items-center justify-center text-white text-2xl uppercase tracking-widest">Galeri Sayfası Yakında!</div>} />
+                <Route path="/galeri" element={<Gallery />} />
                 <Route path="/hakkimizda" element={<Hakkimizda />} />
                 <Route path="/iletisim" element={<Iletisim />} />
                 <Route path="/cangucu-login" element={<LoginPage />} />

@@ -24,6 +24,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [isCropping, setIsCropping] = useState(false);
+  const [isPreviewingOriginal, setIsPreviewingOriginal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [isFreeCrop, setIsFreeCrop] = useState(initialFreeCrop);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -36,6 +37,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       reader.addEventListener('load', () => {
         setImage(reader.result as string);
         setIsCropping(true);
+        setIsPreviewingOriginal(false);
       });
       reader.readAsDataURL(file);
     }
@@ -52,6 +54,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       const url = await getDownloadURL(storageRef);
       onUploadComplete(url);
       setIsCropping(false);
+      setIsPreviewingOriginal(false);
       setImage(null);
       setSelectedFile(null);
     } catch (error) {
@@ -165,92 +168,143 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
             <div className="p-8 border-b border-gray-100 flex justify-between items-center">
               <div className="flex items-center space-x-8">
                 <div>
-                  <h3 className="text-2xl font-black text-[#1a5f6b] uppercase tracking-tighter italic">RESMİ KIRP</h3>
-                  <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-1">İstediğiniz alanı seçin</p>
+                  <h3 className="text-2xl font-black text-[#1a5f6b] uppercase tracking-tighter italic">
+                    {isPreviewingOriginal ? 'ORİJİNAL GÖRSEL ÖNİZLEME' : 'RESMİ KIRP'}
+                  </h3>
+                  <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-1">
+                    {isPreviewingOriginal ? 'Görsel olduğu gibi yüklenecektir' : 'İstediğiniz alanı seçin'}
+                  </p>
                 </div>
-                <div className="flex items-center bg-gray-100 p-1 rounded-2xl">
-                  <button
-                    onClick={() => setIsFreeCrop(false)}
-                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!isFreeCrop ? 'bg-white text-[#1a5f6b] shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                  >
-                    SABİT ORAN
-                  </button>
-                  <button
-                    onClick={() => setIsFreeCrop(true)}
-                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isFreeCrop ? 'bg-white text-[#1a5f6b] shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-                  >
-                    SERBEST
-                  </button>
-                </div>
+                {!isPreviewingOriginal && (
+                  <div className="flex items-center bg-gray-100 p-1 rounded-2xl">
+                    <button
+                      onClick={() => setIsFreeCrop(false)}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!isFreeCrop ? 'bg-white text-[#1a5f6b] shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
+                      SABİT ORAN
+                    </button>
+                    <button
+                      onClick={() => setIsFreeCrop(true)}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isFreeCrop ? 'bg-white text-[#1a5f6b] shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
+                      SERBEST
+                    </button>
+                  </div>
+                )}
               </div>
               <button 
-                onClick={() => setIsCropping(false)}
+                onClick={() => {
+                  setIsCropping(false);
+                  setIsPreviewingOriginal(false);
+                }}
                 className="p-3 hover:bg-gray-100 rounded-2xl transition-colors"
               >
                 <X className="w-6 h-6 text-gray-400" />
               </button>
             </div>
 
-            <div className="relative h-[500px] bg-gray-900">
-              <Cropper
-                image={image}
-                crop={crop}
-                zoom={zoom}
-                aspect={isFreeCrop ? undefined : initialAspectRatio}
-                onCropChange={setCrop}
-                onCropComplete={onCropComplete}
-                onZoomChange={setZoom}
-              />
+            <div className="relative h-[500px] bg-gray-900 flex items-center justify-center overflow-hidden">
+              {isPreviewingOriginal ? (
+                <img 
+                  src={image} 
+                  alt="Original Preview" 
+                  className="max-w-full max-h-full object-contain"
+                />
+              ) : (
+                <Cropper
+                  image={image}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={isFreeCrop ? undefined : initialAspectRatio}
+                  onCropChange={setCrop}
+                  onCropComplete={onCropComplete}
+                  onZoomChange={setZoom}
+                />
+              )}
             </div>
 
             <div className="p-8 bg-gray-50 flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="w-full md:w-64 space-y-2">
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Yakınlaştır</p>
-                <input
-                  type="range"
-                  value={zoom}
-                  min={1}
-                  max={3}
-                  step={0.1}
-                  aria-labelledby="Zoom"
-                  onChange={(e) => setZoom(Number(e.target.value))}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#f97316]"
-                />
-              </div>
+              {!isPreviewingOriginal ? (
+                <>
+                  <div className="w-full md:w-64 space-y-2">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Yakınlaştır</p>
+                    <input
+                      type="range"
+                      value={zoom}
+                      min={1}
+                      max={3}
+                      step={0.1}
+                      aria-labelledby="Zoom"
+                      onChange={(e) => setZoom(Number(e.target.value))}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#f97316]"
+                    />
+                  </div>
 
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={() => setIsCropping(false)}
-                  className="px-8 py-4 rounded-2xl text-xs font-black text-gray-400 uppercase tracking-widest hover:bg-gray-100 transition-colors"
-                >
-                  İptal
-                </button>
-                <button
-                  onClick={handleDirectUpload}
-                  disabled={uploading}
-                  className="px-8 py-4 bg-gray-200 text-gray-700 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center space-x-2 hover:bg-gray-300 transition-all disabled:opacity-50"
-                >
-                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                  <span>ORİJİNAL YÜKLE</span>
-                </button>
-                <button
-                  onClick={handleUpload}
-                  disabled={uploading}
-                  className="px-10 py-4 bg-[#1a5f6b] text-white rounded-2xl text-xs font-black uppercase tracking-widest flex items-center space-x-2 hover:bg-[#f97316] transition-all shadow-xl shadow-[#1a5f6b]/20 disabled:opacity-50"
-                >
-                  {uploading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Yükleniyor...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-4 h-4" />
-                      <span>Onayla ve Yükle</span>
-                    </>
-                  )}
-                </button>
-              </div>
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={() => setIsCropping(false)}
+                      className="px-8 py-4 rounded-2xl text-xs font-black text-gray-400 uppercase tracking-widest hover:bg-gray-100 transition-colors"
+                    >
+                      İptal
+                    </button>
+                    <button
+                      onClick={() => setIsPreviewingOriginal(true)}
+                      className="px-8 py-4 bg-gray-200 text-gray-700 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center space-x-2 hover:bg-gray-300 transition-all"
+                    >
+                      <ImageIcon className="h-4 w-4" />
+                      <span>ORİJİNAL ÖNİZLE</span>
+                    </button>
+                    <button
+                      onClick={handleUpload}
+                      disabled={uploading}
+                      className="px-10 py-4 bg-[#1a5f6b] text-white rounded-2xl text-xs font-black uppercase tracking-widest flex items-center space-x-2 hover:bg-[#f97316] transition-all shadow-xl shadow-[#1a5f6b]/20 disabled:opacity-50"
+                    >
+                      {uploading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Yükleniyor...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span>Kırp ve Yükle</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-[#1a5f6b] font-bold text-sm uppercase tracking-widest">
+                    Görsel orijinal haliyle yüklenecek.
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={() => setIsPreviewingOriginal(false)}
+                      className="px-8 py-4 rounded-2xl text-xs font-black text-gray-400 uppercase tracking-widest hover:bg-gray-100 transition-colors"
+                    >
+                      Kırpmaya Dön
+                    </button>
+                    <button
+                      onClick={handleDirectUpload}
+                      disabled={uploading}
+                      className="px-10 py-4 bg-[#f97316] text-white rounded-2xl text-xs font-black uppercase tracking-widest flex items-center space-x-2 hover:bg-[#1a5f6b] transition-all shadow-xl shadow-[#f97316]/20 disabled:opacity-50"
+                    >
+                      {uploading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Yükleniyor...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" />
+                          <span>Orijinal Olarak Yükle</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
