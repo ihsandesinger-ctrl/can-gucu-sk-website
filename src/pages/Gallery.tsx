@@ -7,7 +7,7 @@ import { db } from '../firebase';
 interface GalleryItem {
   id: string;
   title: string;
-  image: string;
+  imageUrl: string;
   category: string;
   isHidden: boolean;
 }
@@ -21,11 +21,11 @@ const Gallery = () => {
   useEffect(() => {
     const q = query(
       collection(db, 'gallery'),
-      where('isHidden', '==', false),
       orderBy('title', 'asc')
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setItems(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as GalleryItem[]);
+      const allItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as GalleryItem[];
+      setItems(allItems.filter(item => !item.isHidden));
       setLoading(false);
     });
 
@@ -90,10 +90,10 @@ const Gallery = () => {
                 transition={{ delay: index * 0.05 }}
                 viewport={{ once: true }}
                 className="relative group cursor-pointer rounded-3xl overflow-hidden shadow-lg bg-white"
-                onClick={() => setSelectedImage(item.image)}
+                onClick={() => setSelectedImage(item.imageUrl)}
               >
                 <img 
-                  src={item.image} 
+                  src={item.imageUrl} 
                   alt={item.title} 
                   className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-110"
                   referrerPolicy="no-referrer"

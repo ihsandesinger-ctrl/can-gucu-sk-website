@@ -27,22 +27,24 @@ const Navbar = () => {
 
   useEffect(() => {
     // Fetch branches
-    const qBranches = query(collection(db, 'branches'), where('isHidden', '==', false), orderBy('name', 'asc'));
+    const qBranches = query(collection(db, 'branches'), orderBy('name', 'asc'));
     const unsubscribeBranches = onSnapshot(qBranches, (snapshot) => {
-      setBranches(snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name })) as Branch[]);
+      const allBranches = snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name, isHidden: doc.data().isHidden })) as (Branch & { isHidden: boolean })[];
+      setBranches(allBranches.filter(b => !b.isHidden || isAdmin));
     });
 
     // Fetch teams
-    const qTeams = query(collection(db, 'teams'), where('isHidden', '==', false), orderBy('name', 'asc'));
+    const qTeams = query(collection(db, 'teams'), orderBy('name', 'asc'));
     const unsubscribeTeams = onSnapshot(qTeams, (snapshot) => {
-      setTeams(snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name, branchId: doc.data().branchId })) as Team[]);
+      const allTeams = snapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name, branchId: doc.data().branchId, isHidden: doc.data().isHidden })) as (Team & { isHidden: boolean })[];
+      setTeams(allTeams.filter(t => !t.isHidden || isAdmin));
     });
 
     return () => {
       unsubscribeBranches();
       unsubscribeTeams();
     };
-  }, []);
+  }, [isAdmin]);
 
   const isActive = (path: string) => location.pathname === path;
 

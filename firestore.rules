@@ -93,43 +93,43 @@ service cloud.firestore {
 
     // News
     match /news/{newsId} {
-      allow read: if !isHidden(resource.data) || isAdmin();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
     // Branches
     match /branches/{branchId} {
-      allow read: if !isHidden(resource.data) || isAdmin();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
     // Teams
     match /teams/{teamId} {
-      allow read: if !isHidden(resource.data) || isAdmin();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
     // Players
     match /players/{playerId} {
-      allow read: if !isHidden(resource.data) || isAdmin();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
     // Staff
     match /staff/{staffId} {
-      allow read: if !isHidden(resource.data) || isAdmin();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
     // Gallery
     match /gallery/{photoId} {
-      allow read: if !isHidden(resource.data) || isAdmin();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
     // Matches
     match /matches/{matchId} {
-      allow read: if !isHidden(resource.data) || isAdmin();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
