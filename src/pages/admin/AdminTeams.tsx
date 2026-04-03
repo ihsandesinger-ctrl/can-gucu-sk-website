@@ -159,7 +159,7 @@ const AdminTeams = () => {
     } else {
       setEditingItem(null);
       setFormData({
-        branchId: branches[0]?.id || '',
+        branchId: '',
         name: '',
         coachName: '',
         logo: '',

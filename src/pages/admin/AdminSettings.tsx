@@ -10,18 +10,22 @@ import {
   Instagram, 
   Facebook, 
   Twitter,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Eye,
+  EyeOff
 } from 'lucide-react';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, writeBatch, collection, getDocs, query } from 'firebase/firestore';
 import { db } from '../../firebase';
 import ImageUpload from '../../components/admin/ImageUpload';
+import { Trash2, AlertTriangle, RefreshCw } from 'lucide-react';
 
 const AdminSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [reseting, setReseting] = useState(false);
   const [formData, setFormData] = useState({
     clubName: 'Çangücü SK',
-    clubLogo: 'https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6',
+    clubLogo: '/logo.png',
     email: 'info@cangucusk.com',
     phone: '+90 555 555 55 55',
     address: 'Çan, Çanakkale',
@@ -36,26 +40,78 @@ const AdminSettings = () => {
     athletesCount: '200+',
     coachesCount: '12',
     newsCount: '150+',
+    showBranchesCount: true,
+    showAthletesCount: true,
+    showCoachesCount: true,
+    showNewsCount: true,
     heroBgImage: 'https://picsum.photos/seed/stadium/1920/1080',
     showHeroButtons: true
   });
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const docRef = doc(db, 'settings', 'global');
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          setFormData(prev => ({ ...prev, ...docSnap.data() }));
-        }
-      } catch (error) {
-        console.error("Error fetching settings:", error);
-      } finally {
-        setLoading(false);
+    const docRef = doc(db, 'settings', 'global');
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setFormData(prev => ({ ...prev, ...docSnap.data() }));
       }
-    };
-    fetchSettings();
+      setLoading(false);
+    }, (error) => {
+      console.error("Error syncing settings:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
+
+  const resetDatabase = async () => {
+    if (!window.confirm("DİKKAT! Tüm haberler, takımlar, oyuncular, branşlar, personel ve galeri verileri KALICI OLARAK SİLİNECEKTİR. Bu işlem geri alınamaz. Devam etmek istiyor musunuz?")) return;
+    
+    setReseting(true);
+    try {
+      const collectionsToClear = ['news', 'teams', 'players', 'branches', 'gallery', 'staff', 'matches'];
+      
+      for (const collName of collectionsToClear) {
+        const q = query(collection(db, collName));
+        const snapshot = await getDocs(q);
+        const batch = writeBatch(db);
+        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+      }
+      
+      alert("Veritabanı başarıyla sıfırlandı. Şimdi yeni verilerinizi ekleyebilirsiniz.");
+    } catch (error: any) {
+      console.error("Error resetting database:", error);
+      alert("Sıfırlama sırasında bir hata oluştu: " + error.message);
+    } finally {
+      setReseting(false);
+    }
+  };
+
+  const resetNavigation = async () => {
+    if (!window.confirm("Menü yapısını varsayılana döndürmek istiyor musunuz?")) return;
+    
+    setSaving(true);
+    try {
+      const navRef = doc(db, 'navigation', 'main');
+      const defaultNav = [
+        { id: '1', title: 'ANA SAYFA', path: '/', isHidden: false, order: 1 },
+        { id: '2', title: 'HABERLER', path: '/haberler', isHidden: false, order: 2 },
+        { id: '3', title: 'BRANŞLARIMIZ', path: '#', isHidden: false, order: 3, isDropdown: true, dropdownType: 'branches' },
+        { id: '4', title: 'TAKIMLARIMIZ', path: '#', isHidden: false, order: 4, isDropdown: true, dropdownType: 'teams' },
+        { id: '5', title: 'FİKSTÜR', path: '#', isHidden: false, order: 5, isDropdown: true, dropdownType: 'fixtures' },
+        { id: '6', title: 'GALERİ', path: '/galeri', isHidden: false, order: 6 },
+        { id: '7', title: 'HAKKIMIZDA', path: '/hakkimizda', isHidden: false, order: 7 },
+        { id: '8', title: 'İLETİŞİM', path: '/iletisim', isHidden: false, order: 8 }
+      ];
+      await setDoc(navRef, { items: defaultNav });
+      alert("Menü yapısı başarıyla sıfırlandı.");
+    } catch (error: any) {
+      console.error("Error resetting navigation:", error);
+      alert("Hata: " + error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,12 +225,25 @@ const AdminSettings = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Ana Sayfa Arka Plan Fotoğrafı</label>
-              <ImageUpload 
-                currentImageUrl={formData.heroBgImage}
-                onUploadComplete={(url) => setFormData({...formData, heroBgImage: url})}
-                folder="hero"
-                aspectRatio={16/9}
-              />
+              <div className="relative">
+                <ImageUpload 
+                  currentImageUrl={formData.heroBgImage}
+                  onUploadComplete={(url) => setFormData({...formData, heroBgImage: url})}
+                  folder="hero"
+                  aspectRatio={16/9}
+                />
+                {formData.heroBgImage && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData({...formData, heroBgImage: ''})}
+                    className="absolute top-4 right-4 bg-red-500 text-white p-3 rounded-2xl shadow-xl hover:bg-red-600 transition-all z-10 flex items-center space-x-2 group"
+                    title="Fotoğrafı Kaldır"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span className="text-[10px] font-black uppercase tracking-widest hidden group-hover:block">FOTOĞRAFI KALDIR</span>
+                  </button>
+                )}
+              </div>
               <p className="text-[10px] text-gray-400 font-bold italic mt-2">Not: Fotoğraf yüklenmezse kulüp renklerinde sade bir geçiş gösterilir.</p>
             </div>
             <div className="space-y-6">
@@ -210,42 +279,82 @@ const AdminSettings = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Branş Sayısı</label>
+              <div className="flex items-center justify-between px-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Branş Sayısı</label>
+                <button 
+                  type="button"
+                  onClick={() => setFormData({...formData, showBranchesCount: !formData.showBranchesCount})}
+                  className={`p-1 rounded-lg transition-colors ${formData.showBranchesCount ? 'text-green-500 hover:bg-green-50' : 'text-gray-300 hover:bg-gray-100'}`}
+                  title={formData.showBranchesCount ? "Sitede Görünür" : "Sitede Gizli"}
+                >
+                  {formData.showBranchesCount ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </button>
+              </div>
               <input
                 type="text"
                 value={formData.branchesCount}
                 onChange={(e) => setFormData({...formData, branchesCount: e.target.value})}
-                className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
+                className={`w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all ${!formData.showBranchesCount && 'opacity-50'}`}
                 placeholder="Örn: 5+"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Sporcu Sayısı</label>
+              <div className="flex items-center justify-between px-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sporcu Sayısı</label>
+                <button 
+                  type="button"
+                  onClick={() => setFormData({...formData, showAthletesCount: !formData.showAthletesCount})}
+                  className={`p-1 rounded-lg transition-colors ${formData.showAthletesCount ? 'text-green-500 hover:bg-green-50' : 'text-gray-300 hover:bg-gray-100'}`}
+                  title={formData.showAthletesCount ? "Sitede Görünür" : "Sitede Gizli"}
+                >
+                  {formData.showAthletesCount ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </button>
+              </div>
               <input
                 type="text"
                 value={formData.athletesCount}
                 onChange={(e) => setFormData({...formData, athletesCount: e.target.value})}
-                className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
+                className={`w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all ${!formData.showAthletesCount && 'opacity-50'}`}
                 placeholder="Örn: 200+"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Antrenör Sayısı</label>
+              <div className="flex items-center justify-between px-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Antrenör Sayısı</label>
+                <button 
+                  type="button"
+                  onClick={() => setFormData({...formData, showCoachesCount: !formData.showCoachesCount})}
+                  className={`p-1 rounded-lg transition-colors ${formData.showCoachesCount ? 'text-green-500 hover:bg-green-50' : 'text-gray-300 hover:bg-gray-100'}`}
+                  title={formData.showCoachesCount ? "Sitede Görünür" : "Sitede Gizli"}
+                >
+                  {formData.showCoachesCount ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </button>
+              </div>
               <input
                 type="text"
                 value={formData.coachesCount}
                 onChange={(e) => setFormData({...formData, coachesCount: e.target.value})}
-                className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
+                className={`w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all ${!formData.showCoachesCount && 'opacity-50'}`}
                 placeholder="Örn: 12"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">Haber Sayısı</label>
+              <div className="flex items-center justify-between px-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Haber Sayısı</label>
+                <button 
+                  type="button"
+                  onClick={() => setFormData({...formData, showNewsCount: !formData.showNewsCount})}
+                  className={`p-1 rounded-lg transition-colors ${formData.showNewsCount ? 'text-green-500 hover:bg-green-50' : 'text-gray-300 hover:bg-gray-100'}`}
+                  title={formData.showNewsCount ? "Sitede Görünür" : "Sitede Gizli"}
+                >
+                  {formData.showNewsCount ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </button>
+              </div>
               <input
                 type="text"
                 value={formData.newsCount}
                 onChange={(e) => setFormData({...formData, newsCount: e.target.value})}
-                className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
+                className={`w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all ${!formData.showNewsCount && 'opacity-50'}`}
                 placeholder="Örn: 150+"
               />
             </div>
@@ -355,7 +464,23 @@ const AdminSettings = () => {
           </div>
         </motion.div>
 
-        <div className="flex justify-end">
+        <div className="flex flex-col md:flex-row justify-end gap-4">
+          <button
+            type="button"
+            onClick={resetNavigation}
+            disabled={saving}
+            className="bg-blue-600 text-white px-8 py-6 rounded-[32px] font-black uppercase tracking-widest text-sm shadow-2xl hover:bg-blue-700 transition-all flex items-center disabled:opacity-50"
+          >
+            <RefreshCw className="w-5 h-5 mr-3" /> MENÜYÜ SIFIRLA
+          </button>
+          <button
+            type="button"
+            onClick={resetDatabase}
+            disabled={reseting}
+            className="bg-red-600 text-white px-8 py-6 rounded-[32px] font-black uppercase tracking-widest text-sm shadow-2xl hover:bg-red-700 transition-all flex items-center disabled:opacity-50"
+          >
+            <Trash2 className="w-5 h-5 mr-3" /> {reseting ? 'SIFIRLANIYOR...' : 'TÜM VERİLERİ SİL'}
+          </button>
           <button
             type="submit"
             disabled={saving}

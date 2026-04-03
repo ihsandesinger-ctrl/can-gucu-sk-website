@@ -57,8 +57,8 @@ const AdminDashboard = () => {
 
       // Sample Teams
       const teams = [
-        { name: "A Takım", category: "Futbol", logo: "https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6", isHidden: false },
-        { name: "U19", category: "Futbol", logo: "https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6", isHidden: false }
+        { name: "A Takım", category: "Futbol", logo: "/logo.png", isHidden: false },
+        { name: "U19", category: "Futbol", logo: "/logo.png", isHidden: false }
       ];
       teams.forEach(t => batch.set(doc(collection(db, 'teams')), t));
 

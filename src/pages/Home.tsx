@@ -79,17 +79,19 @@ const Home = () => {
       <section className="relative h-[90vh] flex items-center justify-center overflow-hidden">
         {/* Dynamic Background */}
         <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-[#1a5f6b]/40 to-[#1a5f6b] z-10"></div>
           {settings.heroBgImage ? (
-            <motion.img 
-              initial={{ scale: 1.2 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 10, repeat: Infinity, repeatType: "reverse" }}
-              src={settings.heroBgImage} 
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-              alt="Stadium Background"
-            />
+            <>
+              <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-[#1a5f6b]/40 to-[#1a5f6b] z-10"></div>
+              <motion.img 
+                initial={{ scale: 1.2 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 10, repeat: Infinity, repeatType: "reverse" }}
+                src={settings.heroBgImage} 
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+                alt="Stadium Background"
+              />
+            </>
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-[#1a5f6b] to-[#0d2f35]"></div>
           )}
@@ -288,11 +290,11 @@ const Home = () => {
       <section className="py-32 px-4">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
           {[
-            { label: 'BRANŞ', value: settings.branchesCount || '5+', icon: Trophy },
-            { label: 'SPORCU', value: settings.athletesCount || '200+', icon: Users },
-            { label: 'ANTRENÖR', value: settings.coachesCount || '12', icon: UserCircle },
-            { label: 'HABER', value: settings.newsCount || '150+', icon: Newspaper }
-          ].map((stat, i) => (
+            { label: 'BRANŞ', value: settings.branchesCount || '5+', icon: Trophy, show: settings.showBranchesCount !== false },
+            { label: 'SPORCU', value: settings.athletesCount || '200+', icon: Users, show: settings.showAthletesCount !== false },
+            { label: 'ANTRENÖR', value: settings.coachesCount || '12', icon: UserCircle, show: settings.showCoachesCount !== false },
+            { label: 'HABER', value: settings.newsCount || '150+', icon: Newspaper, show: settings.showNewsCount !== false }
+          ].filter(s => s.show).map((stat, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, scale: 0.9 }}

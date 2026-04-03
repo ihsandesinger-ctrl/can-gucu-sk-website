@@ -24,7 +24,8 @@ import {
   onSnapshot, 
   query, 
   orderBy,
-  writeBatch
+  writeBatch,
+  setDoc
 } from 'firebase/firestore';
 import { db } from '../../firebase';
 
@@ -55,17 +56,11 @@ const AdminNavigation = () => {
   });
 
   useEffect(() => {
-    const q = query(collection(db, 'navigation'), orderBy('order', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const navData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as NavItem[];
-      setNavigation(navData);
-
-      // If empty, suggest default items
-      if (navData.length === 0) {
-        // We don't auto-add to avoid accidental writes, but we could show a "Restore Defaults" button
+    const navRef = doc(db, 'navigation', 'main');
+    const unsubscribe = onSnapshot(navRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setNavigation(data.items || []);
       }
     });
     return () => unsubscribe();
@@ -75,13 +70,16 @@ const AdminNavigation = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      let newNav = [...navigation];
       if (editingItem) {
-        await updateDoc(doc(db, 'navigation', editingItem.id), formData);
+        newNav = newNav.map(item => item.id === editingItem.id ? { ...item, ...formData } : item);
       } else {
-        // Set order to end of list
         const nextOrder = navigation.length > 0 ? Math.max(...navigation.map(n => n.order)) + 1 : 0;
-        await addDoc(collection(db, 'navigation'), { ...formData, order: nextOrder });
+        const newItem = { id: Date.now().toString(), ...formData, order: nextOrder };
+        newNav.push(newItem);
       }
+      
+      await setDoc(doc(db, 'navigation', 'main'), { items: newNav });
       closeModal();
     } catch (error) {
       console.error("Error saving navigation:", error);
@@ -94,13 +92,14 @@ const AdminNavigation = () => {
   const handleDelete = async (id: string) => {
     if (!window.confirm("Bu menü öğesini silmek istediğinizden emin misiniz?")) return;
     try {
-      await deleteDoc(doc(db, 'navigation', id));
+      const newNav = navigation.filter(item => item.id !== id);
+      await setDoc(doc(db, 'navigation', 'main'), { items: newNav });
     } catch (error) {
       console.error("Error deleting navigation:", error);
     }
   };
 
-  const moveItem = (index: number, direction: 'up' | 'down') => {
+  const moveItem = async (index: number, direction: 'up' | 'down') => {
     const newIndex = direction === 'up' ? index - 1 : index + 1;
     if (newIndex < 0 || newIndex >= navigation.length) return;
 
@@ -119,36 +118,42 @@ const AdminNavigation = () => {
     // Sort by order to keep UI consistent
     newNav.sort((a, b) => a.order - b.order);
 
-    setNavigation(newNav);
-    setHasChanges(true);
-  };
-
-  const toggleVisibility = (item: NavItem) => {
-    const newNav = navigation.map(n => 
-      n.id === item.id ? { ...n, isHidden: !n.isHidden } : n
-    );
-    setNavigation(newNav);
-    setHasChanges(true);
-  };
-
-  const saveAllChanges = async () => {
-    setLoading(true);
     try {
-      const batch = writeBatch(db);
-      navigation.forEach(item => {
-        batch.update(doc(db, 'navigation', item.id), {
-          order: item.order,
-          isHidden: item.isHidden
-        });
-      });
-      await batch.commit();
-      setHasChanges(false);
-      alert("Tüm değişiklikler başarıyla kaydedildi.");
+      await setDoc(doc(db, 'navigation', 'main'), { items: newNav });
     } catch (error) {
-      console.error("Error saving all changes:", error);
-      alert("Değişiklikler kaydedilirken bir hata oluştu.");
-    } finally {
-      setLoading(false);
+      console.error("Error reordering navigation:", error);
+    }
+  };
+
+  const toggleVisibility = async (item: NavItem) => {
+    try {
+      const newNav = navigation.map(n => 
+        n.id === item.id ? { ...n, isHidden: !n.isHidden } : n
+      );
+      await setDoc(doc(db, 'navigation', 'main'), { items: newNav });
+    } catch (error) {
+      console.error("Error toggling visibility:", error);
+    }
+  };
+
+  const restoreDefaults = async () => {
+    if (!window.confirm("Varsayılan menü yapısını geri yüklemek istediğinizden emin misiniz? Mevcut menü silinecektir.")) return;
+    
+    const defaults = [
+      { id: '1', title: 'Ana Sayfa', path: '/', order: 0, isHidden: false, isDropdown: false },
+      { id: '2', title: 'Haberler', path: '/haberler', order: 1, isHidden: false, isDropdown: false },
+      { id: '3', title: 'Branşlarımız', path: '#', order: 2, isHidden: false, isDropdown: true, dropdownType: 'branches' },
+      { id: '4', title: 'Takımlarımız', path: '#', order: 3, isHidden: false, isDropdown: true, dropdownType: 'teams' },
+      { id: '5', title: 'FİKSTÜR', path: '#', order: 4, isHidden: false, isDropdown: true, dropdownType: 'fixtures' },
+      { id: '6', title: 'Galeri', path: '/galeri', order: 5, isHidden: false, isDropdown: false },
+      { id: '7', title: 'Hakkımızda', path: '/hakkimizda', order: 6, isHidden: false, isDropdown: false },
+      { id: '8', title: 'İletişim', path: '/iletisim', order: 7, isHidden: false, isDropdown: false },
+    ];
+
+    try {
+      await setDoc(doc(db, 'navigation', 'main'), { items: defaults });
+    } catch (error) {
+      console.error("Error restoring defaults:", error);
     }
   };
 
@@ -182,38 +187,6 @@ const AdminNavigation = () => {
     setEditingItem(null);
   };
 
-  const restoreDefaults = async () => {
-    if (!window.confirm("Varsayılan menü yapısını geri yüklemek istediğinizden emin misiniz? Mevcut menü silinecektir.")) return;
-    
-    const batch = writeBatch(db);
-    // Delete existing
-    navigation.forEach(item => {
-      batch.delete(doc(db, 'navigation', item.id));
-    });
-
-    const defaults = [
-      { title: 'Ana Sayfa', path: '/', order: 0, isHidden: false, isDropdown: false },
-      { title: 'Haberler', path: '/haberler', order: 1, isHidden: false, isDropdown: false },
-      { title: 'Branşlarımız', path: '#', order: 2, isHidden: false, isDropdown: true, dropdownType: 'branches' },
-      { title: 'Takımlarımız', path: '#', order: 3, isHidden: false, isDropdown: true, dropdownType: 'teams' },
-      { title: 'Fikstür', path: '#', order: 4, isHidden: false, isDropdown: true, dropdownType: 'fixtures' },
-      { title: 'Galeri', path: '/galeri', order: 5, isHidden: false, isDropdown: false },
-      { title: 'Hakkımızda', path: '/hakkimizda', order: 6, isHidden: false, isDropdown: false },
-      { title: 'İletişim', path: '/iletisim', order: 7, isHidden: false, isDropdown: false },
-    ];
-
-    defaults.forEach(item => {
-      const newDoc = doc(collection(db, 'navigation'));
-      batch.set(newDoc, item);
-    });
-
-    try {
-      await batch.commit();
-    } catch (error) {
-      console.error("Error restoring defaults:", error);
-    }
-  };
-
   return (
     <div className="space-y-12">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
@@ -222,15 +195,6 @@ const AdminNavigation = () => {
           <div className="h-2 w-32 bg-[#f97316] mt-4 rounded-full"></div>
         </div>
         <div className="flex gap-4">
-          {hasChanges && (
-            <button
-              onClick={saveAllChanges}
-              disabled={loading}
-              className="bg-green-600 text-white px-8 py-4 rounded-3xl font-black uppercase tracking-widest text-sm flex items-center shadow-2xl shadow-green-600/20 hover:bg-green-700 transition-all duration-300 transform hover:-translate-y-1"
-            >
-              <Save className="w-5 h-5 mr-2" /> {loading ? 'KAYDEDİLİYOR...' : 'DEĞİŞİKLİKLERİ KAYDET'}
-            </button>
-          )}
           <button
             onClick={restoreDefaults}
             className="bg-gray-100 text-gray-500 px-8 py-4 rounded-3xl font-black uppercase tracking-widest text-sm hover:bg-gray-200 transition-all"

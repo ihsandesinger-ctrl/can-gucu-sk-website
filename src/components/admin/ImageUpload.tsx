@@ -26,15 +26,39 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const [isCropping, setIsCropping] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [isFreeCrop, setIsFreeCrop] = useState(initialFreeCrop);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setSelectedFile(file);
       const reader = new FileReader();
       reader.addEventListener('load', () => {
         setImage(reader.result as string);
         setIsCropping(true);
       });
-      reader.readAsDataURL(e.target.files[0]);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDirectUpload = async () => {
+    if (!selectedFile) return;
+    
+    setUploading(true);
+    try {
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}_${selectedFile.name}`;
+      const storageRef = ref(storage, `${folder}/${fileName}`);
+      await uploadBytes(storageRef, selectedFile);
+      const url = await getDownloadURL(storageRef);
+      onUploadComplete(url);
+      setIsCropping(false);
+      setImage(null);
+      setSelectedFile(null);
+    } catch (error) {
+      console.error("Direct upload error:", error);
+      alert("Yükleme sırasında bir hata oluştu.");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -200,6 +224,14 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                   className="px-8 py-4 rounded-2xl text-xs font-black text-gray-400 uppercase tracking-widest hover:bg-gray-100 transition-colors"
                 >
                   İptal
+                </button>
+                <button
+                  onClick={handleDirectUpload}
+                  disabled={uploading}
+                  className="px-8 py-4 bg-gray-200 text-gray-700 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center space-x-2 hover:bg-gray-300 transition-all disabled:opacity-50"
+                >
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  <span>ORİJİNAL YÜKLE</span>
                 </button>
                 <button
                   onClick={handleUpload}

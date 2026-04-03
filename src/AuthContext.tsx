@@ -24,6 +24,10 @@ interface AuthContextType {
     athletesCount?: string;
     coachesCount?: string;
     newsCount?: string;
+    showBranchesCount?: boolean;
+    showAthletesCount?: boolean;
+    showCoachesCount?: boolean;
+    showNewsCount?: boolean;
     heroBgImage?: string;
     showHeroButtons?: boolean;
   };
@@ -47,7 +51,7 @@ const AuthContext = createContext<AuthContextType>({
   maintenanceMode: false,
   settings: {
     clubName: 'Çangücü SK',
-    clubLogo: 'https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6',
+    clubLogo: '/logo.png',
     email: '',
     phone: '',
     address: '',
@@ -112,6 +116,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           athletesCount: data.athletesCount,
           coachesCount: data.coachesCount,
           newsCount: data.newsCount,
+          showBranchesCount: data.showBranchesCount !== false,
+          showAthletesCount: data.showAthletesCount !== false,
+          showCoachesCount: data.showCoachesCount !== false,
+          showNewsCount: data.showNewsCount !== false,
           heroBgImage: data.heroBgImage,
           showHeroButtons: data.showHeroButtons,
         });
@@ -123,13 +131,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     // Listen for navigation
-    const qNav = query(collection(db, 'navigation'), orderBy('order', 'asc'));
-    const unsubscribeNav = onSnapshot(qNav, (snapshot) => {
-      const navData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as NavItem[];
-      setNavigation(navData);
+    const navRef = doc(db, 'navigation', 'main');
+    const unsubscribeNav = onSnapshot(navRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setNavigation(data.items || []);
+      }
     });
 
     return () => {

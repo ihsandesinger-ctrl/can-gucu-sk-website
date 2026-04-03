@@ -39,7 +39,7 @@ const AdminLayout = () => {
     <>
       <div className="p-8 border-b border-white/10 flex items-center space-x-4">
         <img 
-          src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" 
+          src="/logo.png" 
           alt={settings.clubName} 
           className="h-10 w-auto drop-shadow-lg"
           referrerPolicy="no-referrer"
@@ -88,7 +88,7 @@ const AdminLayout = () => {
       <header className="md:hidden bg-[#1a5f6b] text-white p-4 flex items-center justify-between sticky top-0 z-50 shadow-lg">
         <div className="flex items-center space-x-3">
           <img 
-            src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" 
+            src="/logo.png" 
             alt={settings.clubName} 
             className="h-8 w-auto"
             referrerPolicy="no-referrer"
