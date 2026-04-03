@@ -13,6 +13,10 @@ export const storage = getStorage(app);
 if (typeof window !== 'undefined') {
   (window as any).db = db;
   (window as any).auth = auth;
+  console.log("Firebase Configured:", {
+    projectId: firebaseConfig.projectId,
+    databaseId: firebaseConfig.firestoreDatabaseId
+  });
 }
 
 export default app;
