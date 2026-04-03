@@ -112,7 +112,7 @@ const LoginPage = () => {
             onClick={handleGoogleLogin}
             className="w-full bg-white border-2 border-gray-100 text-gray-600 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-gray-50 transition-all duration-300 flex items-center justify-center space-x-3"
           >
-            <img src="https://www.google.com/favicon.ico" className="w-4 h-4" alt="Google" />
+            <ShieldCheck className="w-4 h-4 text-[#f97316]" />
             <span>GOOGLE İLE GİRİŞ</span>
           </button>
         </div>

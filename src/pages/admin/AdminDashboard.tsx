@@ -17,7 +17,7 @@ const AdminDashboard = () => {
   const [maintenanceMode, setMaintenanceMode] = useState(currentMaintenanceMode);
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [dbStatus, setDbStatus] = useState<'checking' | 'connected' | 'error'>('checking');
+  const [dbStatus, setDbStatus] = useState<'checking' | 'connected' | 'error' | 'quota'>('checking');
 
   useEffect(() => {
     setMaintenanceMode(currentMaintenanceMode);
@@ -29,9 +29,13 @@ const AdminDashboard = () => {
         const docRef = doc(db, 'settings', 'global');
         await getDoc(docRef);
         setDbStatus('connected');
-      } catch (error) {
+      } catch (error: any) {
         console.error("Database connection error:", error);
-        setDbStatus('error');
+        if (error.code === 'resource-exhausted' || error.message?.includes('quota')) {
+          setDbStatus('quota');
+        } else {
+          setDbStatus('error');
+        }
       }
     };
     checkConnection();
@@ -173,9 +177,9 @@ const AdminDashboard = () => {
           { label: 'SİSTEM DURUMU', value: 'ÇALIŞIYOR', icon: Activity, color: 'text-green-500' },
           { 
             label: 'VERİTABANI', 
-            value: dbStatus === 'connected' ? 'BAĞLI' : (dbStatus === 'checking' ? 'KONTROL EDİLİYOR' : 'BAĞLANTI HATASI'), 
+            value: dbStatus === 'connected' ? 'BAĞLI' : (dbStatus === 'checking' ? 'KONTROL EDİLİYOR' : (dbStatus === 'quota' ? 'KOTA DOLDU!' : 'BAĞLANTI HATASI')), 
             icon: Database, 
-            color: dbStatus === 'connected' ? 'text-blue-500' : (dbStatus === 'checking' ? 'text-gray-400' : 'text-red-500') 
+            color: dbStatus === 'connected' ? 'text-blue-500' : (dbStatus === 'checking' ? 'text-gray-400' : 'text-red-600') 
           },
           { label: 'GÜVENLİK', value: 'GÜVENLİ', icon: ShieldCheck, color: 'text-[#f97316]' }
         ].map((stat, i) => (
@@ -222,9 +226,15 @@ const AdminDashboard = () => {
       {/* Debug Info - Sadece Teknik Kontrol İçin */}
       <div className="p-6 bg-gray-100 rounded-3xl text-[10px] font-mono text-gray-500 flex flex-col gap-2">
         <p>TEKNİK BİLGİ (BAĞLANTI KONTROLÜ):</p>
-        <p>Database ID: {db.app.options.projectId} / {db.databaseId}</p>
+        <p className="font-bold">
+          Proje ID: {db.app.options.projectId}
+        </p>
         <p>Auth User: {isAdmin ? 'Süper Admin Girişi Yapıldı' : 'Giriş Yapılmadı'}</p>
-        <p className="text-red-500 font-bold italic">ÖNEMLİ: Eğer yukarıdaki Database ID "ai-studio-..." ile başlamıyorsa, config dosyanız hatalıdır.</p>
+        {dbStatus === 'quota' && (
+          <p className="text-red-600 font-black uppercase animate-pulse mt-2">
+            DIKKAT: FIRESTORE KOTASI DOLMUŞ! YENİ VERİ KAYDEDİLEMEZ.
+          </p>
+        )}
       </div>
     </div>
   );

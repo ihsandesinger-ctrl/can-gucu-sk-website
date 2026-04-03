@@ -1,102 +1,148 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: settings
+// Document ID: global
+// Fields:
+//   - maintenanceMode: boolean (required) - Is the site in maintenance mode?
+//   - clubName: string (optional)
+//   - logoUrl: string (optional)
+//
+// Collection: news
+// Document ID: newsId (auto-generated)
+// Fields:
+//   - title: string (required)
+//   - summary: string (optional)
+//   - content: string (optional)
+//   - image: string (optional)
+//   - date: string (required, format: date)
+//   - category: string (optional)
+//   - isHidden: boolean (required)
+//
+// Collection: branches
+// Document ID: branchId (auto-generated)
+// Fields:
+//   - name: string (required)
+//   - description: string (optional)
+//   - coachName: string (optional)
+//   - coachContact: string (optional)
+//   - isHidden: boolean (required)
+//
+// Collection: teams
+// Document ID: teamId (auto-generated)
+// Fields:
+//   - branchId: string (required)
+//   - name: string (required)
+//   - coachName: string (optional)
+//   - isHidden: boolean (required)
+//
+// Collection: players
+// Document ID: playerId (auto-generated)
+// Fields:
+//   - teamId: string (required)
+//   - name: string (required)
+//   - number: string (optional)
+//   - position: string (optional)
+//   - isHidden: boolean (required)
+//
+// Collection: matches
+// Document ID: matchId (auto-generated)
+// Fields:
+//   - homeTeam: string (required)
+//   - awayTeam: string (required)
+//   - date: string (required)
+//   - time: string (optional)
+//   - location: string (optional)
+//   - category: string (optional)
+//   - isHidden: boolean (required)
+//
+// ===============================================================
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // ===============================================================
-    // Assumed Data Model
-    // ===============================================================
-    // Collection: settings
-    // Fields: logo, address, email, phone, socialMedia, maintenanceMode, navigation, globalStyles
-    //
-    // Collection: homepage
-    // Fields: heroImage, heroTitle, heroSubtitle, sections
-    //
-    // Collection: news
-    // Fields: title, summary, content, date, imageUrl
-    //
-    // Collection: teams
-    // Fields: name, slug, heroImage, coach, players
-    //
-    // Collection: fixtures
-    // Fields: teamName, teamSlug, matches
-    //
-    // Collection: gallery
-    // Fields: imageUrl, title
-    //
-    // Collection: staff
-    // Fields: name, role, imageUrl
-    //
-    // Collection: missionVision
-    // Fields: mission, vision
-    // ===============================================================
 
+    // ===============================================================
     // Helper Functions
+    // ===============================================================
+    
     function isAuthenticated() {
       return request.auth != null;
     }
 
     function isAdmin() {
-      return isAuthenticated() &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-         request.auth.token.email.lower() == "ihsandurgut1@gmail.com");
+      return isAuthenticated() && 
+        ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+         (request.auth.token.email == "ihsandurgut1@gmail.com"));
     }
 
-    function hasOnlyAllowedFields(fields) {
-      return request.resource.data.keys().hasOnly(fields);
+    function isHidden(data) {
+      return data.isHidden == true;
     }
 
-    // Default deny
-    match /{document=**} {
-      allow read, write: if false;
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // Settings
+    match /settings/global {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // Publicly readable collections
-    match /settings/{docId} {
-      allow read: if true;
+    // News
+    match /news/{newsId} {
+      allow read: if !isHidden(resource.data) || isAdmin();
       allow write: if isAdmin();
     }
-    match /homepage/{docId} {
-      allow read: if true;
+
+    // Branches
+    match /branches/{branchId} {
+      allow read: if !isHidden(resource.data) || isAdmin();
       allow write: if isAdmin();
     }
-    match /news/{docId} {
-      allow read: if true;
+
+    // Teams
+    match /teams/{teamId} {
+      allow read: if !isHidden(resource.data) || isAdmin();
       allow write: if isAdmin();
     }
-    match /teams/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
-      match /players/{playerId} {
-        allow read: if true;
-        allow write: if isAdmin();
-      }
-    }
-    match /fixtures/{docId} {
-      allow read: if true;
+
+    // Players
+    match /players/{playerId} {
+      allow read: if !isHidden(resource.data) || isAdmin();
       allow write: if isAdmin();
     }
-    match /gallery/{docId} {
-      allow read: if true;
+
+    // Staff
+    match /staff/{staffId} {
+      allow read: if !isHidden(resource.data) || isAdmin();
       allow write: if isAdmin();
     }
-    match /staff/{docId} {
-      allow read: if true;
+
+    // Gallery
+    match /gallery/{photoId} {
+      allow read: if !isHidden(resource.data) || isAdmin();
       allow write: if isAdmin();
     }
-    match /pages/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
-      match /players/{playerId} {
-        allow read: if true;
-        allow write: if isAdmin();
-      }
-    }
-    match /missionVision/{docId} {
-      allow read: if true;
+
+    // Matches
+    match /matches/{matchId} {
+      allow read: if !isHidden(resource.data) || isAdmin();
       allow write: if isAdmin();
     }
+
+    // Navigation
+    match /navigation/{navId} {
+      allow read: if !isHidden(resource.data) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Users (for role management)
     match /users/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      allow write: if isAdmin() || (isAuthenticated() && request.auth.uid == userId && request.auth.token.email.lower() == "ihsandurgut1@gmail.com");
+      allow write: if isAdmin();
     }
   }
 }
