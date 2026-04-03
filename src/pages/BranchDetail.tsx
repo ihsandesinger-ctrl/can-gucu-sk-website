@@ -25,6 +25,7 @@ interface Branch {
   name: string;
   description: string;
   coachName: string;
+  coachImage: string;
   coachContact: string;
   isHidden: boolean;
 }
@@ -33,6 +34,7 @@ interface Team {
   id: string;
   name: string;
   coachName: string;
+  coachImage: string;
 }
 
 interface Player {
@@ -42,7 +44,7 @@ interface Player {
   name: string;
   number: string;
   position: string;
-  photo?: string;
+  image?: string;
 }
 
 interface News {
@@ -166,8 +168,12 @@ const BranchDetail = () => {
             className="bg-white/5 backdrop-blur-xl p-10 rounded-[48px] border border-white/10"
           >
             <div className="flex items-center space-x-6 mb-10">
-              <div className="w-20 h-20 bg-[#f97316] rounded-3xl flex items-center justify-center shadow-2xl shadow-[#f97316]/20">
-                <User className="w-10 h-10 text-white" />
+              <div className="w-20 h-20 bg-[#f97316] rounded-3xl flex items-center justify-center shadow-2xl shadow-[#f97316]/20 overflow-hidden">
+                {branch.coachImage ? (
+                  <img src={branch.coachImage} alt={branch.coachName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                ) : (
+                  <User className="w-10 h-10 text-white" />
+                )}
               </div>
               <div>
                 <h2 className="text-3xl font-black text-white uppercase tracking-tight italic">BAŞ ANTRENÖR</h2>
@@ -247,8 +253,8 @@ const BranchDetail = () => {
               >
                 <div className="relative inline-block mb-6">
                   <div className="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center text-white group-hover:bg-white/20 transition-colors overflow-hidden border-2 border-white/10">
-                    {player.photo ? (
-                      <img src={player.photo} alt={player.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    {player.image ? (
+                      <img src={player.image} alt={player.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
                       <UserCircle className="w-16 h-16" />
                     )}
@@ -288,8 +294,12 @@ const BranchDetail = () => {
                 viewport={{ once: true }}
                 className="bg-white/5 backdrop-blur-xl p-10 rounded-[48px] border border-white/10 text-center group hover:border-[#f97316] transition-all"
               >
-                <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:bg-[#f97316]/20 transition-colors">
-                  <Users className="w-10 h-10 text-[#f97316]" />
+                <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center mx-auto mb-6 group-hover:bg-[#f97316]/20 transition-colors overflow-hidden">
+                  {team.coachImage ? (
+                    <img src={team.coachImage} alt={team.coachName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  ) : (
+                    <Users className="w-10 h-10 text-[#f97316]" />
+                  )}
                 </div>
                 <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-2">{team.name}</h3>
                 <p className="text-gray-400 text-xs font-black uppercase tracking-widest">Antrenör: {team.coachName || 'Atanmamış'}</p>

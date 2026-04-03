@@ -16,6 +16,7 @@ interface Team {
   id: string;
   name: string;
   coachName: string;
+  coachImage: string;
 }
 
 const Squads = () => {
@@ -77,17 +78,26 @@ const Squads = () => {
             animate={{ opacity: 1, x: 0 }}
             className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-xl bg-gray-200 flex items-center justify-center"
           >
-            <img 
-              src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" 
-              alt={team.name} 
-              className="w-24 h-auto object-contain"
-              referrerPolicy="no-referrer"
-            />
+            {team.coachImage ? (
+              <img 
+                src={team.coachImage} 
+                alt={team.coachName} 
+                className="w-full h-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <img 
+                src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" 
+                alt={team.name} 
+                className="w-24 h-auto object-contain opacity-20"
+                referrerPolicy="no-referrer"
+              />
+            )}
           </motion.div>
           <div className="text-center md:text-left">
             <h1 className="text-3xl sm:text-4xl font-bold uppercase tracking-wider mb-2">{team.name}</h1>
             <div className="flex flex-col items-center md:items-start">
-              <p className="text-xl font-medium text-[#f97316]">{team.coachName}</p>
+              <p className="text-xl font-medium text-[#f97316]">{team.coachName || 'Atanmamış'}</p>
               <p className="text-sm text-gray-300 uppercase tracking-widest">Teknik Sorumlu</p>
             </div>
           </div>

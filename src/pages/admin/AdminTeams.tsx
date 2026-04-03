@@ -33,7 +33,7 @@ interface TeamItem {
   branchId: string;
   name: string;
   coachName: string;
-  logo: string;
+  coachImage: string;
   isHidden: boolean;
   order: number;
 }
@@ -54,7 +54,7 @@ const AdminTeams = () => {
     branchId: '',
     name: '',
     coachName: '',
-    logo: '',
+    coachImage: '',
     isHidden: false,
     order: 0
   });
@@ -153,7 +153,7 @@ const AdminTeams = () => {
         branchId: item.branchId,
         name: item.name,
         coachName: item.coachName,
-        logo: item.logo || '',
+        coachImage: item.coachImage || '',
         isHidden: item.isHidden,
         order: item.order || 0
       });
@@ -163,7 +163,7 @@ const AdminTeams = () => {
         branchId: '',
         name: '',
         coachName: '',
-        logo: '',
+        coachImage: '',
         isHidden: false,
         order: teams.length
       });
@@ -226,8 +226,8 @@ const AdminTeams = () => {
                     </button>
                   </div>
                   <div className="w-16 h-16 bg-[#1a5f6b]/10 rounded-2xl flex items-center justify-center text-[#1a5f6b] overflow-hidden border border-gray-100">
-                    {item.logo ? (
-                      <img src={item.logo} alt={item.name} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                    {item.coachImage ? (
+                      <img src={item.coachImage} alt={item.coachName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     ) : (
                       <Users className="w-8 h-8" />
                     )}
@@ -267,7 +267,7 @@ const AdminTeams = () => {
               <div className="pt-6 border-t border-gray-100">
                 <div className="flex items-center text-gray-400">
                   <User className="w-4 h-4 mr-2 text-[#f97316]" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Antrenör: {item.coachName || 'Atanmamış'}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest truncate">Antrenör: {item.coachName || 'Atanmamış'}</span>
                 </div>
               </div>
             </div>
@@ -320,18 +320,6 @@ const AdminTeams = () => {
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
-                    <Users className="w-3 h-3 mr-2 text-[#f97316]" /> Takım Logosu (Opsiyonel)
-                  </label>
-                  <ImageUpload 
-                    currentImageUrl={formData.logo}
-                    onUploadComplete={(url) => setFormData({...formData, logo: url})}
-                    folder="teams"
-                    aspectRatio={1}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
                     <Users className="w-3 h-3 mr-2 text-[#f97316]" /> Takım Adı
                   </label>
                   <input
@@ -346,7 +334,7 @@ const AdminTeams = () => {
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
-                    <User className="w-3 h-3 mr-2 text-[#f97316]" /> Antrenör
+                    <User className="w-3 h-3 mr-2 text-[#f97316]" /> Antrenör Adı
                   </label>
                   <input
                     type="text"
@@ -354,6 +342,18 @@ const AdminTeams = () => {
                     onChange={(e) => setFormData({...formData, coachName: e.target.value})}
                     className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
                     placeholder="Antrenör ismi..."
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
+                    <User className="w-3 h-3 mr-2 text-[#f97316]" /> Antrenör Fotoğrafı (Opsiyonel)
+                  </label>
+                  <ImageUpload 
+                    currentImageUrl={formData.coachImage}
+                    onUploadComplete={(url) => setFormData({...formData, coachImage: url})}
+                    folder="coaches"
+                    aspectRatio={1}
                   />
                 </div>
 

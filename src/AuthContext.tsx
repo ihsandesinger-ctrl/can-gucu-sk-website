@@ -70,13 +70,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [navigation, setNavigation] = useState<NavItem[]>([]);
-  const [settings, setSettings] = useState({
+  const [settings, setSettings] = useState<AuthContextType['settings']>({
     clubName: 'Çangücü SK',
     clubLogo: '/logo.png',
     email: '',
     phone: '',
     address: '',
     aboutText: '',
+    missionText: 'Sporun her dalında etik değerlere bağlı, disiplinli ve başarılı bireyler yetiştirerek Türk sporuna katkı sağlamak.',
+    visionText: 'Çan\'ın ve bölgenin en prestijli, altyapısı en güçlü ve başarılarıyla örnek gösterilen spor kulübü olmak.',
   });
 
   useEffect(() => {

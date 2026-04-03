@@ -276,31 +276,35 @@ const Home = () => {
                 viewport={{ once: true }}
                 className="group cursor-pointer"
               >
-                <div className="relative h-80 rounded-[40px] overflow-hidden mb-6 shadow-2xl">
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-all duration-500 z-10"></div>
-                  <div className="absolute top-6 left-6 z-20">
-                    <span className="bg-[#f97316] text-white text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-widest shadow-xl">
-                      {item.category}
-                    </span>
+                <Link to={`/haber/${item.id}`}>
+                  <div className="relative h-80 rounded-[40px] overflow-hidden mb-6 shadow-2xl">
+                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-all duration-500 z-10"></div>
+                    <div className="absolute top-6 left-6 z-20">
+                      <span className="bg-[#f97316] text-white text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-widest shadow-xl">
+                        {item.category}
+                      </span>
+                    </div>
+                    <img 
+                      src={item.image || 'https://picsum.photos/seed/news/800/600'} 
+                      alt={item.title}
+                      className="w-full h-full object-contain bg-gray-900 group-hover:scale-110 transition-transform duration-700"
+                      referrerPolicy="no-referrer"
+                    />
                   </div>
-                  <img 
-                    src={item.image || 'https://picsum.photos/seed/news/800/600'} 
-                    alt={item.title}
-                    className="w-full h-full object-contain bg-gray-900 group-hover:scale-110 transition-transform duration-700"
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
+                </Link>
                 <div className="px-4">
                   <div className="flex items-center text-[#f97316] text-[10px] font-black uppercase tracking-widest mb-3">
                     <Calendar className="w-3 h-3 mr-2" /> {item.date}
                   </div>
-                  <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-4 group-hover:text-[#f97316] transition-colors line-clamp-2">
-                    {item.title}
-                  </h3>
+                  <Link to={`/haber/${item.id}`}>
+                    <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-4 group-hover:text-[#f97316] transition-colors line-clamp-2">
+                      {item.title}
+                    </h3>
+                  </Link>
                   <p className="text-gray-400 text-sm font-medium line-clamp-2 leading-relaxed mb-6">
                     {item.summary}
                   </p>
-                  <Link to={`/haberler`} className="inline-flex items-center text-white font-black uppercase tracking-widest text-[10px] group-hover:gap-4 transition-all">
+                  <Link to={`/haber/${item.id}`} className="inline-flex items-center text-white font-black uppercase tracking-widest text-[10px] group-hover:gap-4 transition-all">
                     DEVAMINI OKU <ArrowRight className="ml-2 w-4 h-4 text-[#f97316]" />
                   </Link>
                 </div>

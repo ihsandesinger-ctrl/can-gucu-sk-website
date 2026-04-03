@@ -27,12 +27,14 @@ import {
   writeBatch
 } from 'firebase/firestore';
 import { db } from '../../firebase';
+import ImageUpload from '../../components/admin/ImageUpload';
 
 interface BranchItem {
   id: string;
   name: string;
   description: string;
   coachName: string;
+  coachImage: string;
   coachContact: string;
   isHidden: boolean;
   order: number;
@@ -48,6 +50,7 @@ const AdminBranches = () => {
     name: '',
     description: '',
     coachName: '',
+    coachImage: '',
     coachContact: '',
     isHidden: false,
     order: 0
@@ -128,6 +131,7 @@ const AdminBranches = () => {
         name: item.name,
         description: item.description,
         coachName: item.coachName,
+        coachImage: item.coachImage || '',
         coachContact: item.coachContact,
         isHidden: item.isHidden,
         order: item.order || 0
@@ -138,6 +142,7 @@ const AdminBranches = () => {
         name: '',
         description: '',
         coachName: '',
+        coachImage: '',
         coachContact: '',
         isHidden: false,
         order: branches.length
@@ -196,8 +201,12 @@ const AdminBranches = () => {
                       <MoveDown className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="w-16 h-16 bg-[#1a5f6b]/10 rounded-2xl flex items-center justify-center text-[#1a5f6b]">
-                    <Trophy className="w-8 h-8" />
+                  <div className="w-16 h-16 bg-[#1a5f6b]/10 rounded-2xl flex items-center justify-center text-[#1a5f6b] overflow-hidden border border-gray-100">
+                    {item.coachImage ? (
+                      <img src={item.coachImage} alt={item.coachName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <Trophy className="w-8 h-8" />
+                    )}
                   </div>
                 </div>
                 <div className="flex space-x-2">
@@ -232,7 +241,7 @@ const AdminBranches = () => {
               <div className="pt-6 border-t border-gray-100 grid grid-cols-2 gap-4">
                 <div className="flex items-center text-gray-400">
                   <User className="w-4 h-4 mr-2 text-[#f97316]" />
-                  <span className="text-[10px] font-black uppercase tracking-widest truncate">{item.coachName || 'Atanmamış'}</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest truncate">Antrenör: {item.coachName || 'Atanmamış'}</span>
                 </div>
                 <div className="flex items-center text-gray-400">
                   <Phone className="w-4 h-4 mr-2 text-[#f97316]" />
@@ -301,7 +310,7 @@ const AdminBranches = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
-                      <User className="w-3 h-3 mr-2 text-[#f97316]" /> Antrenör
+                      <User className="w-3 h-3 mr-2 text-[#f97316]" /> Antrenör Adı
                     </label>
                     <input
                       type="text"
@@ -323,6 +332,18 @@ const AdminBranches = () => {
                       placeholder="Telefon veya E-posta..."
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
+                    <User className="w-3 h-3 mr-2 text-[#f97316]" /> Antrenör Fotoğrafı (Opsiyonel)
+                  </label>
+                  <ImageUpload 
+                    currentImageUrl={formData.coachImage}
+                    onUploadComplete={(url) => setFormData({...formData, coachImage: url})}
+                    folder="coaches"
+                    aspectRatio={1}
+                  />
                 </div>
 
                 <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-2xl">

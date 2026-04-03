@@ -37,7 +37,7 @@ interface PlayerItem {
   name: string;
   number: string;
   position: string;
-  photo: string;
+  image: string;
   isHidden: boolean;
   order: number;
 }
@@ -67,7 +67,7 @@ const AdminPlayers = () => {
     name: '',
     number: '',
     position: '',
-    photo: '',
+    image: '',
     isHidden: false,
     order: 0
   });
@@ -182,7 +182,7 @@ const AdminPlayers = () => {
         name: item.name,
         number: item.number,
         position: item.position,
-        photo: item.photo || '',
+        image: item.image || '',
         isHidden: item.isHidden,
         order: item.order || 0
       });
@@ -194,7 +194,7 @@ const AdminPlayers = () => {
         name: '',
         number: '',
         position: '',
-        photo: '',
+        image: '',
         isHidden: false,
         order: players.length
       });
@@ -275,8 +275,8 @@ const AdminPlayers = () => {
 
             <div className="relative mb-6">
               <div className="w-24 h-24 bg-[#1a5f6b]/10 rounded-full flex items-center justify-center text-[#1a5f6b] overflow-hidden border-2 border-gray-100">
-                {item.photo ? (
-                  <img src={item.photo} alt={item.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                {item.image ? (
+                  <img src={item.image} alt={item.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 ) : (
                   <UserCircle className="w-12 h-12" />
                 )}
@@ -384,8 +384,8 @@ const AdminPlayers = () => {
                     <UserCircle className="w-3 h-3 mr-2 text-[#f97316]" /> Oyuncu Fotoğrafı
                   </label>
                   <ImageUpload 
-                    currentImageUrl={formData.photo}
-                    onUploadComplete={(url) => setFormData({...formData, photo: url})}
+                    currentImageUrl={formData.image}
+                    onUploadComplete={(url) => setFormData({...formData, image: url})}
                     folder="players"
                     aspectRatio={1}
                   />

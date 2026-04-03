@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { Calendar, ArrowRight } from 'lucide-react';
 import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
@@ -71,35 +72,39 @@ const News = () => {
                 viewport={{ once: true }}
                 className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 group flex flex-col h-full"
               >
-                <div className="relative aspect-video overflow-hidden bg-gray-900 flex items-center justify-center">
-                  <img 
-                    src={item.image || 'https://picsum.photos/seed/news/800/600'} 
-                    alt={item.title} 
-                    className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute top-4 left-4 bg-[#f97316] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
-                    {item.category}
+                <Link to={`/haber/${item.id}`}>
+                  <div className="relative aspect-video overflow-hidden bg-gray-900 flex items-center justify-center">
+                    <img 
+                      src={item.image || 'https://picsum.photos/seed/news/800/600'} 
+                      alt={item.title} 
+                      className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute top-4 left-4 bg-[#f97316] text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
+                      {item.category}
+                    </div>
                   </div>
-                </div>
+                </Link>
 
                 <div className="p-8 flex flex-col flex-grow">
                   <div className="flex items-center text-gray-400 text-xs font-semibold mb-4 uppercase tracking-widest">
                     <Calendar className="h-4 w-4 mr-2 text-[#f97316]" />
                     {item.date}
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-800 mb-4 group-hover:text-[#1a5f6b] transition-colors duration-300 line-clamp-2">
-                    {item.title}
-                  </h2>
+                  <Link to={`/haber/${item.id}`}>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4 group-hover:text-[#1a5f6b] transition-colors duration-300 line-clamp-2">
+                      {item.title}
+                    </h2>
+                  </Link>
                   <p className="text-gray-600 text-sm leading-relaxed mb-8 line-clamp-3">
                     {item.summary}
                   </p>
                   
                   <div className="mt-auto pt-6 border-t border-gray-100">
-                    <button className="flex items-center text-[#f97316] font-bold text-sm uppercase tracking-widest hover:text-[#1a5f6b] transition-colors duration-200 group/btn">
+                    <Link to={`/haber/${item.id}`} className="flex items-center text-[#f97316] font-bold text-sm uppercase tracking-widest hover:text-[#1a5f6b] transition-colors duration-200 group/btn">
                       Devamını Oku 
                       <ArrowRight className="ml-2 h-4 w-4 transform group-hover/btn:translate-x-2 transition-transform duration-300" />
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </motion.div>

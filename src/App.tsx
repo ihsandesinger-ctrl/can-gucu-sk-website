@@ -31,6 +31,7 @@ import Iletisim from './pages/Iletisim';
 import Fixture from './pages/Fixture';
 import LoginPage from './pages/LoginPage';
 import Gallery from './pages/Gallery';
+import NewsDetail from './pages/NewsDetail';
 
 function App() {
   const { loading, maintenanceMode, isAdmin } = useAuth();
@@ -87,6 +88,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/haberler" element={<News />} />
+                <Route path="/haber/:newsId" element={<NewsDetail />} />
                 <Route path="/takim/:teamId" element={<Squads />} />
                 <Route path="/brans/:branchId" element={<BranchDetail />} />
                 <Route path="/fikstur/:teamId" element={<Fixture />} />

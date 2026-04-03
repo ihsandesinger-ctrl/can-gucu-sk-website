@@ -46,13 +46,20 @@ const AdminNavigation = () => {
   const [editingItem, setEditingItem] = useState<NavItem | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    path: string;
+    order: number;
+    isHidden: boolean;
+    isDropdown: boolean;
+    dropdownType: 'static' | 'branches' | 'teams' | 'fixtures';
+  }>({
     title: '',
     path: '',
     order: 0,
     isHidden: false,
     isDropdown: false,
-    dropdownType: 'static' as const
+    dropdownType: 'static'
   });
 
   useEffect(() => {

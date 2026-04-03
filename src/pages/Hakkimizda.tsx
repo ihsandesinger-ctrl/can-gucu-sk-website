@@ -9,7 +9,7 @@ interface Staff {
   id: string;
   name: string;
   role: string;
-  photoUrl: string;
+  image: string;
   isHidden: boolean;
 }
 
@@ -118,9 +118,9 @@ const Hakkimizda = () => {
                   className="bg-white rounded-[40px] overflow-hidden shadow-xl border border-gray-100 group"
                 >
                   <div className="aspect-[4/5] relative overflow-hidden">
-                    {person.photoUrl ? (
+                    {person.image ? (
                       <img 
-                        src={person.photoUrl} 
+                        src={person.image} 
                         alt={person.name}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         referrerPolicy="no-referrer"
