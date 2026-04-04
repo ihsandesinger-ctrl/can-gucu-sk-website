@@ -35,6 +35,7 @@ interface TeamItem {
   coachName: string;
   coachImage: string;
   isHidden: boolean;
+  showInPanel: boolean;
   order: number;
 }
 
@@ -56,6 +57,7 @@ const AdminTeams = () => {
     coachName: '',
     coachImage: '',
     isHidden: false,
+    showInPanel: true,
     order: 0
   });
 
@@ -155,6 +157,7 @@ const AdminTeams = () => {
         coachName: item.coachName,
         coachImage: item.coachImage || '',
         isHidden: item.isHidden,
+        showInPanel: item.showInPanel !== false,
         order: item.order || 0
       });
     } else {
@@ -165,6 +168,7 @@ const AdminTeams = () => {
         coachName: '',
         coachImage: '',
         isHidden: false,
+        showInPanel: true,
         order: teams.length
       });
     }
@@ -357,17 +361,31 @@ const AdminTeams = () => {
                   />
                 </div>
 
-                <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-2xl">
-                  <input
-                    type="checkbox"
-                    id="isHidden"
-                    checked={formData.isHidden}
-                    onChange={(e) => setFormData({...formData, isHidden: e.target.checked})}
-                    className="w-6 h-6 text-[#f97316] border-none rounded-lg focus:ring-0 cursor-pointer"
-                  />
-                  <label htmlFor="isHidden" className="text-sm font-black text-[#1a5f6b] uppercase tracking-widest cursor-pointer">
-                    BU TAKIMI GİZLE
-                  </label>
+                <div className="flex flex-col gap-4 p-4 bg-gray-50 rounded-2xl">
+                  <div className="flex items-center space-x-4">
+                    <input
+                      type="checkbox"
+                      id="isHidden"
+                      checked={formData.isHidden}
+                      onChange={(e) => setFormData({...formData, isHidden: e.target.checked})}
+                      className="w-6 h-6 text-[#f97316] border-none rounded-lg focus:ring-0 cursor-pointer"
+                    />
+                    <label htmlFor="isHidden" className="text-sm font-black text-[#1a5f6b] uppercase tracking-widest cursor-pointer">
+                      BU TAKIMI SİTEDEN GİZLE
+                    </label>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <input
+                      type="checkbox"
+                      id="showInPanel"
+                      checked={formData.showInPanel}
+                      onChange={(e) => setFormData({...formData, showInPanel: e.target.checked})}
+                      className="w-6 h-6 text-[#f97316] border-none rounded-lg focus:ring-0 cursor-pointer"
+                    />
+                    <label htmlFor="showInPanel" className="text-sm font-black text-[#1a5f6b] uppercase tracking-widest cursor-pointer">
+                      MENÜDE GÖSTER
+                    </label>
+                  </div>
                 </div>
 
                 <div className="pt-6 border-t border-gray-100 flex gap-4">

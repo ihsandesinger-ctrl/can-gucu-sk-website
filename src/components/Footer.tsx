@@ -12,16 +12,20 @@ const Footer = () => {
 
   useEffect(() => {
     // Fetch visible teams
-    const teamsQuery = query(collection(db, 'teams'), where('showInPanel', '==', true));
+    const teamsQuery = query(collection(db, 'teams'), where('isHidden', '==', false));
     const unsubscribeTeams = onSnapshot(teamsQuery, (snapshot) => {
-      const teams = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const teams = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() } as any))
+        .filter(data => data.showInPanel !== false);
       setVisibleTeams(teams);
     });
 
     // Fetch visible branches
-    const branchesQuery = query(collection(db, 'branches'), where('showInPanel', '==', true));
+    const branchesQuery = query(collection(db, 'branches'), where('isHidden', '==', false));
     const unsubscribeBranches = onSnapshot(branchesQuery, (snapshot) => {
-      const branches = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const branches = snapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() } as any))
+        .filter(data => data.showInPanel !== false);
       setVisibleBranches(branches);
     });
 
