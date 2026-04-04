@@ -34,7 +34,7 @@ import Gallery from './pages/Gallery';
 import NewsDetail from './pages/NewsDetail';
 
 function App() {
-  const { loading, maintenanceMode, isAdmin } = useAuth();
+  const { loading, maintenanceMode, isAdmin, dbStatus } = useAuth();
 
   if (loading) {
     return (
@@ -51,16 +51,23 @@ function App() {
     );
   }
 
-  // If maintenance mode is ON and user is NOT an admin, show maintenance page
-  if (maintenanceMode && !isAdmin) {
+  // Automatic Maintenance Mode: If DB is down and user is NOT an admin
+  const isDbDown = dbStatus === 'quota' || dbStatus === 'error' || dbStatus === 'offline';
+  
+  if ((maintenanceMode || isDbDown) && !isAdmin) {
     return <Maintenance />;
   }
 
   return (
     <div className="flex flex-col min-h-screen">
-      {maintenanceMode && isAdmin && (
-        <div className="bg-red-600 text-white text-[10px] font-black uppercase tracking-[0.3em] py-2 text-center sticky top-0 z-[60] shadow-lg">
-          BAKIM MODU ŞU ANDA AKTİF - SADECE SİZ GÖREBİLİRSİNİZ
+      {(maintenanceMode || isDbDown) && isAdmin && (
+        <div className="bg-red-600 text-white text-[10px] font-black uppercase tracking-[0.3em] py-2 text-center sticky top-0 z-[60] shadow-lg flex items-center justify-center gap-4">
+          <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+          {isDbDown ? (
+            <span>SİSTEM HATASI: {dbStatus === 'quota' ? 'KOTA DOLDU' : (dbStatus === 'offline' ? 'BAĞLANTI KESİLDİ' : 'VERİTABANI HATASI')} - SADECE SİZ GÖREBİLİRSİNİZ</span>
+          ) : (
+            <span>BAKIM MODU ŞU ANDA AKTİF - SADECE SİZ GÖREBİLİRSİNİZ</span>
+          )}
         </div>
       )}
       

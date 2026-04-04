@@ -33,6 +33,9 @@ const AdminSettings = () => {
     instagram: '',
     facebook: '',
     twitter: '',
+    showInstagram: true,
+    showFacebook: true,
+    showTwitter: true,
     aboutText: 'Çangücü SK, Çan\'ın en köklü spor kulüplerinden biridir.',
     missionText: 'Sporun birleştirici gücüyle, Çan gençliğini sağlıklı, ahlaklı ve başarılı bireyler olarak yetiştirmek.',
     visionText: 'Bölgemizin en başarılı ve örnek spor kulübü olarak, ulusal düzeyde sporcular yetiştiren bir marka haline gelmek.',
@@ -459,37 +462,69 @@ const AdminSettings = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
-                  <Instagram className="w-3 h-3 mr-2" /> Instagram
-                </label>
+                <div className="flex items-center justify-between px-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">
+                    <Instagram className="w-3 h-3 mr-2" /> Instagram
+                  </label>
+                  <button 
+                    type="button"
+                    onClick={() => setFormData({...formData, showInstagram: !formData.showInstagram})}
+                    className={`p-1 rounded-lg transition-colors ${formData.showInstagram ? 'text-green-500 hover:bg-green-50' : 'text-gray-300 hover:bg-gray-100'}`}
+                    title={formData.showInstagram ? "Sitede Görünür" : "Sitede Gizli"}
+                  >
+                    {formData.showInstagram ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={formData.instagram}
                   onChange={(e) => setFormData({...formData, instagram: e.target.value})}
-                  className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
-                  placeholder="@kullaniciadi"
+                  className={`w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all ${!formData.showInstagram && 'opacity-50'}`}
+                  placeholder="https://instagram.com/kullaniciadi"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
-                  <Facebook className="w-3 h-3 mr-2" /> Facebook
-                </label>
+                <div className="flex items-center justify-between px-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">
+                    <Facebook className="w-3 h-3 mr-2" /> Facebook
+                  </label>
+                  <button 
+                    type="button"
+                    onClick={() => setFormData({...formData, showFacebook: !formData.showFacebook})}
+                    className={`p-1 rounded-lg transition-colors ${formData.showFacebook ? 'text-green-500 hover:bg-green-50' : 'text-gray-300 hover:bg-gray-100'}`}
+                    title={formData.showFacebook ? "Sitede Görünür" : "Sitede Gizli"}
+                  >
+                    {formData.showFacebook ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={formData.facebook}
                   onChange={(e) => setFormData({...formData, facebook: e.target.value})}
-                  className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
+                  className={`w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all ${!formData.showFacebook && 'opacity-50'}`}
+                  placeholder="https://facebook.com/sayfalinki"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
-                  <Twitter className="w-3 h-3 mr-2" /> Twitter (X)
-                </label>
+                <div className="flex items-center justify-between px-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center">
+                    <Twitter className="w-3 h-3 mr-2" /> Twitter (X)
+                  </label>
+                  <button 
+                    type="button"
+                    onClick={() => setFormData({...formData, showTwitter: !formData.showTwitter})}
+                    className={`p-1 rounded-lg transition-colors ${formData.showTwitter ? 'text-green-500 hover:bg-green-50' : 'text-gray-300 hover:bg-gray-100'}`}
+                    title={formData.showTwitter ? "Sitede Görünür" : "Sitede Gizli"}
+                  >
+                    {formData.showTwitter ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  </button>
+                </div>
                 <input
                   type="text"
                   value={formData.twitter}
                   onChange={(e) => setFormData({...formData, twitter: e.target.value})}
-                  className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
+                  className={`w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all ${!formData.showTwitter && 'opacity-50'}`}
+                  placeholder="https://twitter.com/kullaniciadi"
                 />
               </div>
             </div>

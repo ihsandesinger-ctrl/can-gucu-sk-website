@@ -50,7 +50,7 @@ const AdminLayout = () => {
         </div>
       </div>
       
-      <nav className="flex-grow p-4 space-y-2 overflow-y-auto">
+      <nav className="flex-grow p-4 space-y-1 overflow-y-auto custom-scrollbar">
         {menuItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
@@ -58,15 +58,15 @@ const AdminLayout = () => {
               key={item.path}
               to={item.path}
               onClick={() => setIsMobileMenuOpen(false)}
-              className={`flex items-center justify-between p-4 rounded-2xl transition-all duration-300 group ${
+              className={`flex items-center justify-between p-3 md:p-4 rounded-2xl transition-all duration-300 group ${
                 isActive 
                   ? 'bg-[#f97316] text-white shadow-lg shadow-[#f97316]/20' 
-                  : 'hover:bg-white/5 text-white/70 hover:text-white'
+                  : 'hover:bg-[#f97316]/10 text-white/70 hover:text-white'
               }`}
             >
               <div className="flex items-center">
-                <item.icon className={`w-5 h-5 mr-3 ${isActive ? 'text-white' : 'text-[#f97316]'}`} />
-                <span className="font-bold text-sm uppercase tracking-wider">{item.label}</span>
+                <item.icon className={`w-5 h-5 mr-3 transition-colors duration-300 ${isActive ? 'text-white' : 'text-[#f97316] group-hover:text-white'}`} />
+                <span className="font-bold text-xs md:text-sm uppercase tracking-wider">{item.label}</span>
               </div>
               <ChevronRight className={`w-4 h-4 transition-transform duration-300 ${isActive ? 'translate-x-0' : '-translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100'}`} />
             </Link>

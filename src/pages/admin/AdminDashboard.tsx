@@ -13,33 +13,31 @@ import { db } from '../../firebase';
 import { useAuth } from '../../AuthContext';
 
 const AdminDashboard = () => {
-  const { maintenanceMode: currentMaintenanceMode, isAdmin, settings } = useAuth();
+  const { maintenanceMode: currentMaintenanceMode, isAdmin, settings, dbStatus } = useAuth();
   const [maintenanceMode, setMaintenanceMode] = useState(currentMaintenanceMode);
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [dbStatus, setDbStatus] = useState<'checking' | 'connected' | 'error' | 'quota'>('checking');
 
   useEffect(() => {
     setMaintenanceMode(currentMaintenanceMode);
   }, [currentMaintenanceMode]);
 
-  useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        const docRef = doc(db, 'settings', 'global');
-        await getDoc(docRef);
-        setDbStatus('connected');
-      } catch (error: any) {
-        console.error("Database connection error:", error);
-        if (error.code === 'resource-exhausted' || error.message?.includes('quota')) {
-          setDbStatus('quota');
-        } else {
-          setDbStatus('error');
-        }
-      }
-    };
-    checkConnection();
-  }, []);
+  const getDbStatusInfo = () => {
+    switch (dbStatus) {
+      case 'connected':
+        return { label: 'BAĞLI', color: 'text-green-500', icon: Database, desc: 'Sistem normal çalışıyor.' };
+      case 'quota':
+        return { label: 'KOTA DOLDU!', color: 'text-red-600', icon: AlertCircle, desc: 'Günlük veri limitine ulaşıldı. Firebase panelinden yükseltme yapmanız gerekebilir.' };
+      case 'offline':
+        return { label: 'BAĞLANTI KESİLDİ', color: 'text-yellow-600', icon: Power, desc: 'İnternet bağlantınızı veya Firebase servislerini kontrol edin.' };
+      case 'error':
+        return { label: 'SİSTEM HATASI', color: 'text-red-700', icon: AlertCircle, desc: 'Veritabanı erişiminde beklenmedik bir hata oluştu.' };
+      default:
+        return { label: 'KONTROL EDİLİYOR', color: 'text-gray-400', icon: Activity, desc: 'Bağlantı durumu kontrol ediliyor...' };
+    }
+  };
+
+  const dbInfo = getDbStatusInfo();
 
   const restoreDefaultData = async () => {
     if (!window.confirm("Tüm mevcut veriler (Haberler, Oyuncular, Takımlar, Galeri) silinebilir veya üzerine yazılabilir. Devam etmek istiyor musunuz?")) return;
@@ -130,6 +128,28 @@ const AdminDashboard = () => {
         </div>
       </div>
 
+      {/* Database Warning Banner */}
+      {dbStatus !== 'connected' && dbStatus !== 'checking' && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-red-600 p-8 rounded-[40px] text-white shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6"
+        >
+          <div className="flex items-center space-x-6">
+            <div className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center">
+              <AlertCircle className="w-10 h-10" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-black uppercase tracking-tight italic">{dbInfo.label}</h3>
+              <p className="text-white/80 font-medium max-w-md">{dbInfo.desc}</p>
+            </div>
+          </div>
+          <div className="bg-white/10 px-6 py-3 rounded-2xl border border-white/20 text-[10px] font-black uppercase tracking-widest">
+            OTOMATİK BAKIM MODU AKTİF
+          </div>
+        </motion.div>
+      )}
+
       {/* Maintenance Mode Card */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
@@ -177,9 +197,9 @@ const AdminDashboard = () => {
           { label: 'SİSTEM DURUMU', value: 'ÇALIŞIYOR', icon: Activity, color: 'text-green-500' },
           { 
             label: 'VERİTABANI', 
-            value: dbStatus === 'connected' ? 'BAĞLI' : (dbStatus === 'checking' ? 'KONTROL EDİLİYOR' : (dbStatus === 'quota' ? 'KOTA DOLDU!' : 'BAĞLANTI HATASI')), 
-            icon: Database, 
-            color: dbStatus === 'connected' ? 'text-blue-500' : (dbStatus === 'checking' ? 'text-gray-400' : 'text-red-600') 
+            value: dbInfo.label, 
+            icon: dbInfo.icon, 
+            color: dbInfo.color 
           },
           { label: 'GÜVENLİK', value: 'GÜVENLİ', icon: ShieldCheck, color: 'text-[#f97316]' }
         ].map((stat, i) => (
@@ -230,9 +250,10 @@ const AdminDashboard = () => {
           Proje ID: {db.app.options.projectId}
         </p>
         <p>Auth User: {isAdmin ? 'Süper Admin Girişi Yapıldı' : 'Giriş Yapılmadı'}</p>
-        {dbStatus === 'quota' && (
+        <p>Bağlantı Durumu: <span className={dbInfo.color}>{dbInfo.label}</span></p>
+        {dbStatus !== 'connected' && (
           <p className="text-red-600 font-black uppercase animate-pulse mt-2">
-            DIKKAT: FIRESTORE KOTASI DOLMUŞ! YENİ VERİ KAYDEDİLEMEZ.
+            DIKKAT: {dbInfo.desc}
           </p>
         )}
       </div>

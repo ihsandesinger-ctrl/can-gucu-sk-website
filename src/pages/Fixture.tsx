@@ -139,72 +139,71 @@ const Fixture = () => {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-[40px] shadow-2xl border border-gray-100 overflow-hidden group hover:border-[#f97316]/30 transition-all duration-500"
+                className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden group hover:border-[#f97316]/30 transition-all duration-500"
               >
-                <div className="p-8 md:p-12">
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-12">
-                    {/* Home Team */}
-                    <div className="flex-1 text-center md:text-right space-y-4">
-                      <div className="w-24 h-24 bg-gray-50 rounded-full mx-auto md:ml-auto flex items-center justify-center border-4 border-white shadow-xl group-hover:scale-110 transition-transform duration-500 overflow-hidden">
-                        {match.homeLogo ? (
-                          <img src={match.homeLogo} alt={match.homeTeam} className="w-full h-full object-contain p-4" referrerPolicy="no-referrer" />
-                        ) : (
-                          <Shield className="w-12 h-12 text-[#1a5f6b]" />
-                        )}
-                      </div>
-                      <h3 className="text-2xl font-black text-[#1a5f6b] uppercase tracking-tight italic">{match.homeTeam}</h3>
+                <div className="p-6 md:p-8">
+                  <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-6 md:gap-4">
+                    {/* Date & Time */}
+                    <div className="md:col-span-3 flex flex-col items-center md:items-start border-b md:border-b-0 md:border-r border-gray-50 pb-4 md:pb-0 md:pr-6">
+                      <span className="text-2xl font-black text-[#1a5f6b] tracking-tighter italic">
+                        {(() => {
+                          if (!match.date) return '';
+                          const dateParts = match.date.split('-');
+                          if (dateParts.length === 3) {
+                            const [year, month, day] = dateParts;
+                            const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+                            return `${day} ${months[parseInt(month) - 1]} ${year}`;
+                          }
+                          return match.date;
+                        })()}
+                      </span>
+                      <span className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center mt-2">
+                        <Clock className="w-3 h-3 mr-2 text-[#f97316]" /> {match.time || '--:--'}
+                      </span>
                     </div>
 
-                    {/* VS / Score / Info */}
-                    <div className="flex flex-col items-center gap-6">
-                      {match.homeScore !== undefined && match.awayScore !== undefined && match.homeScore !== '' && match.awayScore !== '' ? (
-                        <div className="flex items-center gap-4">
-                          <div className="text-5xl font-black text-[#1a5f6b]">{match.homeScore}</div>
-                          <div className="text-2xl font-black text-[#f97316]">-</div>
-                          <div className="text-5xl font-black text-[#1a5f6b]">{match.awayScore}</div>
-                        </div>
-                      ) : (
-                        <div className="bg-[#f97316] text-white px-8 py-3 rounded-2xl font-black italic text-2xl shadow-xl shadow-[#f97316]/30 transform -skew-x-12">
-                          VS
+                    {/* Teams & Score */}
+                    <div className="md:col-span-6 flex items-center justify-center gap-4 px-2">
+                      <div className="flex-1 flex items-center justify-end gap-4">
+                        <span className="text-lg md:text-xl font-black text-[#1a5f6b] uppercase tracking-tight text-right leading-tight">{match.homeTeam}</span>
+                        {match.homeLogo && (
+                          <img src={match.homeLogo} alt={match.homeTeam} className="w-12 h-12 object-contain shrink-0" referrerPolicy="no-referrer" />
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-3 bg-gray-50 px-6 py-3 rounded-2xl border border-gray-100 shadow-inner">
+                        {match.homeScore !== undefined && match.awayScore !== undefined && match.homeScore !== '' && match.awayScore !== '' ? (
+                          <>
+                            <span className="text-3xl font-black text-[#1a5f6b]">{match.homeScore}</span>
+                            <span className="text-[#f97316] font-black text-xl">:</span>
+                            <span className="text-3xl font-black text-[#1a5f6b]">{match.awayScore}</span>
+                          </>
+                        ) : (
+                          <span className="text-sm font-black text-[#f97316] italic tracking-widest">VS</span>
+                        )}
+                      </div>
+
+                      <div className="flex-1 flex items-center justify-start gap-4">
+                        {match.awayLogo && (
+                          <img src={match.awayLogo} alt={match.awayTeam} className="w-12 h-12 object-contain shrink-0" referrerPolicy="no-referrer" />
+                        )}
+                        <span className="text-lg md:text-xl font-black text-[#1a5f6b] uppercase tracking-tight text-left leading-tight">{match.awayTeam}</span>
+                      </div>
+                    </div>
+
+                    {/* Location & Category */}
+                    <div className="md:col-span-3 flex flex-col items-center md:items-end border-t md:border-t-0 md:border-l border-gray-50 pt-4 md:pt-0 md:pl-6 space-y-2">
+                      {match.location && (
+                        <div className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[9px] text-right">
+                          <MapPin className="w-3 h-3 text-[#f97316]" /> {match.location}
                         </div>
                       )}
-                      <div className="flex flex-col items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px]">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-3 h-3 text-[#f97316]" /> {match.date}
+                      {match.category && (
+                        <div className="flex items-center gap-2 text-[#f97316] font-black uppercase tracking-widest text-[9px] text-right">
+                          <Trophy className="w-3 h-3" /> {match.category}
                         </div>
-                        {match.time && (
-                          <div className="flex items-center gap-2">
-                            <Clock className="w-3 h-3 text-[#f97316]" /> {match.time}
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
-
-                    {/* Away Team */}
-                    <div className="flex-1 text-center md:text-left space-y-4">
-                      <div className="w-24 h-24 bg-gray-50 rounded-full mx-auto md:mr-auto flex items-center justify-center border-4 border-white shadow-xl group-hover:scale-110 transition-transform duration-500 overflow-hidden">
-                        {match.awayLogo ? (
-                          <img src={match.awayLogo} alt={match.awayTeam} className="w-full h-full object-contain p-4" referrerPolicy="no-referrer" />
-                        ) : (
-                          <Target className="w-12 h-12 text-[#f97316]" />
-                        )}
-                      </div>
-                      <h3 className="text-2xl font-black text-[#1a5f6b] uppercase tracking-tight italic">{match.awayTeam}</h3>
-                    </div>
-                  </div>
-
-                  {/* Footer Info */}
-                  <div className="mt-12 pt-8 border-t border-gray-50 flex flex-wrap justify-center gap-8">
-                    {match.location && (
-                      <div className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px]">
-                        <MapPin className="w-4 h-4 text-[#f97316]" /> {match.location}
-                      </div>
-                    )}
-                    {match.category && (
-                      <div className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[10px]">
-                        <Trophy className="w-4 h-4 text-[#f97316]" /> {match.category}
-                      </div>
-                    )}
                   </div>
                 </div>
               </motion.div>

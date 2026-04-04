@@ -202,9 +202,9 @@ const Home = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
                 viewport={{ once: true }}
-                className="w-full md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.35rem)] bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 hover:bg-white/10 transition-all duration-500 group"
+                className="w-full md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.35rem)] bg-white/5 backdrop-blur-xl p-6 rounded-[40px] border border-white/10 hover:bg-white/10 transition-all duration-500 group"
               >
-                <div className="flex justify-between items-center mb-8">
+                <div className="flex justify-between items-center mb-6">
                   <span className="bg-[#f97316] text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest">
                     {getTeamName(match.teamId)}
                   </span>
@@ -227,18 +227,30 @@ const Home = () => {
                   </div>
                 </div>
 
-                <div className="space-y-4 pt-6 border-t border-white/10">
-                  <div className="flex items-center text-gray-400 text-xs font-bold uppercase tracking-widest">
-                    <Calendar className="w-4 h-4 mr-3 text-[#f97316]" /> {match.date}
+                <div className="space-y-4 pt-4 border-t border-white/10">
+                  <div className="flex items-center text-gray-300 text-sm font-black uppercase tracking-widest">
+                    {match.time && (
+                      <span className="flex items-center mr-4">
+                        <Clock className="w-4 h-4 mr-2 text-[#f97316]" /> {match.time}
+                      </span>
+                    )}
+                    <span className="flex items-center text-lg">
+                      <Calendar className="w-4 h-4 mr-2 text-[#f97316]" /> 
+                      {(() => {
+                        if (!match.date) return '';
+                        const dateParts = match.date.split('-');
+                        if (dateParts.length === 3) {
+                          const [year, month, day] = dateParts;
+                          const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+                          return `${day} ${months[parseInt(month) - 1]} ${year}`;
+                        }
+                        return match.date;
+                      })()}
+                    </span>
                   </div>
-                  {match.time && (
-                    <div className="flex items-center text-gray-400 text-xs font-bold uppercase tracking-widest">
-                      <Clock className="w-4 h-4 mr-3 text-[#f97316]" /> {match.time}
-                    </div>
-                  )}
                   {match.location && (
-                    <div className="flex items-center text-gray-400 text-xs font-bold uppercase tracking-widest">
-                      <MapPin className="w-4 h-4 mr-3 text-[#f97316]" /> {match.location}
+                    <div className="flex items-center text-gray-400 text-[10px] font-bold uppercase tracking-widest">
+                      <MapPin className="w-3 h-3 mr-2 text-[#f97316]" /> {match.location}
                     </div>
                   )}
                 </div>

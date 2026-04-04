@@ -8,6 +8,7 @@ interface AuthContextType {
   isAdmin: boolean;
   loading: boolean;
   maintenanceMode: boolean;
+  dbStatus: 'checking' | 'connected' | 'error' | 'quota' | 'offline';
   settings: {
     clubName: string;
     clubLogo: string;
@@ -20,6 +21,9 @@ interface AuthContextType {
     instagram?: string;
     facebook?: string;
     twitter?: string;
+    showInstagram?: boolean;
+    showFacebook?: boolean;
+    showTwitter?: boolean;
     branchesCount?: string;
     athletesCount?: string;
     coachesCount?: string;
@@ -49,6 +53,7 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
   loading: true,
   maintenanceMode: false,
+  dbStatus: 'checking',
   settings: {
     clubName: 'Çangücü SK',
     clubLogo: '/logo.png',
@@ -69,6 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [dbStatus, setDbStatus] = useState<AuthContextType['dbStatus']>('checking');
   const [navigation, setNavigation] = useState<NavItem[]>([]);
   const [settings, setSettings] = useState<AuthContextType['settings']>({
     clubName: 'Çangücü SK',
@@ -102,6 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (doc.exists()) {
         const data = doc.data();
         setMaintenanceMode(data.maintenanceMode || false);
+        setDbStatus('connected');
         setSettings({
           clubName: data.clubName || 'Çangücü SK',
           clubLogo: data.clubLogo || '/logo.png',
@@ -114,6 +121,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           instagram: data.instagram,
           facebook: data.facebook,
           twitter: data.twitter,
+          showInstagram: data.showInstagram !== false,
+          showFacebook: data.showFacebook !== false,
+          showTwitter: data.showTwitter !== false,
           branchesCount: data.branchesCount,
           athletesCount: data.athletesCount,
           coachesCount: data.coachesCount,
@@ -126,10 +136,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           showHeroButtons: data.showHeroButtons,
         });
       } else {
+        setDbStatus('connected'); // Connected but doc missing
         console.warn("Firestore'da ayar dökümanı bulunamadı. Varsayılanlar kullanılıyor.");
       }
-    }, (error) => {
+    }, (error: any) => {
       console.error("Ayarlar dinlenirken hata oluştu:", error);
+      if (error.code === 'resource-exhausted' || error.message?.includes('quota')) {
+        setDbStatus('quota');
+      } else if (error.code === 'unavailable' || !window.navigator.onLine) {
+        setDbStatus('offline');
+      } else {
+        setDbStatus('error');
+      }
     });
 
     // Listen for navigation
@@ -149,7 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, loading, maintenanceMode, settings, navigation }}>
+    <AuthContext.Provider value={{ user, isAdmin, loading, maintenanceMode, dbStatus, settings, navigation }}>
       {children}
     </AuthContext.Provider>
   );

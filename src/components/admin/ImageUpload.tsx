@@ -180,13 +180,13 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       {isCropping && image && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="bg-white w-full max-w-4xl rounded-[40px] overflow-hidden shadow-2xl">
-            <div className="p-8 border-b border-gray-100 flex justify-between items-center">
-              <div className="flex items-center space-x-8">
-                <div>
-                  <h3 className="text-2xl font-black text-[#1a5f6b] uppercase tracking-tighter italic">
+            <div className="p-4 md:p-8 border-b border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
+                <div className="text-center md:text-left">
+                  <h3 className="text-lg md:text-2xl font-black text-[#1a5f6b] uppercase tracking-tighter italic">
                     {isPreviewingOriginal ? 'ORİJİNAL GÖRSEL ÖNİZLEME' : 'RESMİ KIRP'}
                   </h3>
-                  <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-1">
+                  <p className="text-gray-400 text-[10px] md:text-xs font-bold uppercase tracking-widest mt-1">
                     {isPreviewingOriginal ? 'Görsel olduğu gibi yüklenecektir' : 'İstediğiniz alanı seçin'}
                   </p>
                 </div>
@@ -197,7 +197,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                         e.preventDefault();
                         setIsFreeCrop(false);
                       }}
-                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${!isFreeCrop ? 'bg-white text-[#1a5f6b] shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                      className={`px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-[8px] md:text-[10px] font-black uppercase tracking-widest transition-all ${!isFreeCrop ? 'bg-white text-[#1a5f6b] shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                     >
                       SABİT ORAN
                     </button>
@@ -206,7 +206,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                         e.preventDefault();
                         setIsFreeCrop(true);
                       }}
-                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isFreeCrop ? 'bg-white text-[#1a5f6b] shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                      className={`px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-[8px] md:text-[10px] font-black uppercase tracking-widest transition-all ${isFreeCrop ? 'bg-white text-[#1a5f6b] shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
                     >
                       SERBEST
                     </button>
@@ -219,13 +219,13 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                   setIsCropping(false);
                   setIsPreviewingOriginal(false);
                 }}
-                className="p-3 hover:bg-gray-100 rounded-2xl transition-colors"
+                className="p-2 md:p-3 hover:bg-gray-100 rounded-2xl transition-colors absolute top-4 right-4 md:relative md:top-0 md:right-0"
               >
-                <X className="w-6 h-6 text-gray-400" />
+                <X className="w-5 h-5 md:w-6 md:h-6 text-gray-400" />
               </button>
             </div>
 
-            <div className="relative h-[600px] bg-gray-900 flex items-center justify-center overflow-hidden">
+            <div className="relative h-[300px] md:h-[600px] bg-gray-900 flex items-center justify-center overflow-hidden">
               {isPreviewingOriginal ? (
                 <div className="w-full h-full flex items-center justify-center p-4">
                   <img 
@@ -249,10 +249,10 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
               )}
             </div>
 
-            <div className="p-8 bg-gray-50 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="p-4 md:p-8 bg-gray-50 flex flex-col md:flex-row items-center justify-between gap-6">
               {!isPreviewingOriginal ? (
                 <>
-                  <div className="flex flex-col md:flex-row items-center gap-6 flex-grow">
+                  <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 flex-grow w-full md:w-auto">
                     <div className="w-full md:w-48 space-y-2">
                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Yakınlaştır</p>
                       <input
@@ -266,21 +266,21 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                         className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#f97316]"
                       />
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 w-full md:w-auto">
                       <button
                         onClick={(e) => {
                           e.preventDefault();
                           setZoom(1);
                           setCrop({ x: 0, y: 0 });
                         }}
-                        className="px-4 py-2 bg-white border border-gray-200 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all"
+                        className="flex-1 md:flex-none px-4 py-2 bg-white border border-gray-200 text-gray-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all"
                       >
                         ORTALA
                       </button>
                       {isFreeCrop && (
                         <button
                           onClick={selectAll}
-                          className="px-4 py-2 bg-white border border-gray-200 text-[#1a5f6b] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all"
+                          className="flex-1 md:flex-none px-4 py-2 bg-white border border-gray-200 text-[#1a5f6b] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all"
                         >
                           TAMAMINI SEÇ
                         </button>
@@ -288,13 +288,13 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-4">
+                  <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4 w-full md:w-auto">
                     <button
                       onClick={(e) => {
                         e.preventDefault();
                         setIsCropping(false);
                       }}
-                      className="px-8 py-4 rounded-2xl text-xs font-black text-gray-400 uppercase tracking-widest hover:bg-gray-100 transition-colors"
+                      className="w-full md:w-auto px-8 py-3 md:py-4 rounded-2xl text-xs font-black text-gray-400 uppercase tracking-widest hover:bg-gray-100 transition-colors"
                     >
                       İptal
                     </button>
@@ -303,7 +303,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                         e.preventDefault();
                         setIsPreviewingOriginal(true);
                       }}
-                      className="px-8 py-4 bg-gray-200 text-gray-700 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center space-x-2 hover:bg-gray-300 transition-all"
+                      className="w-full md:w-auto px-8 py-3 md:py-4 bg-gray-200 text-gray-700 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center space-x-2 hover:bg-gray-300 transition-all"
                     >
                       <ImageIcon className="h-4 w-4" />
                       <span>ORİJİNAL ÖNİZLE</span>
@@ -314,7 +314,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                         handleUpload();
                       }}
                       disabled={uploading}
-                      className="px-10 py-4 bg-[#1a5f6b] text-white rounded-2xl text-xs font-black uppercase tracking-widest flex items-center space-x-2 hover:bg-[#f97316] transition-all shadow-xl shadow-[#1a5f6b]/20 disabled:opacity-50"
+                      className="w-full md:w-auto px-10 py-3 md:py-4 bg-[#1a5f6b] text-white rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center space-x-2 hover:bg-[#f97316] transition-all shadow-xl shadow-[#1a5f6b]/20 disabled:opacity-50"
                     >
                       {uploading ? (
                         <>
@@ -332,16 +332,16 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                 </>
               ) : (
                 <>
-                  <div className="text-[#1a5f6b] font-bold text-sm uppercase tracking-widest">
+                  <div className="text-[#1a5f6b] font-bold text-xs md:text-sm uppercase tracking-widest text-center md:text-left">
                     Görsel orijinal haliyle yüklenecek.
                   </div>
-                  <div className="flex items-center space-x-4">
+                  <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4 w-full md:w-auto">
                     <button
                       onClick={(e) => {
                         e.preventDefault();
                         setIsPreviewingOriginal(false);
                       }}
-                      className="px-8 py-4 rounded-2xl text-xs font-black text-gray-400 uppercase tracking-widest hover:bg-gray-100 transition-colors"
+                      className="w-full md:w-auto px-8 py-3 md:py-4 rounded-2xl text-xs font-black text-gray-400 uppercase tracking-widest hover:bg-gray-100 transition-colors"
                     >
                       Kırpmaya Dön
                     </button>
@@ -351,7 +351,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                         handleDirectUpload();
                       }}
                       disabled={uploading}
-                      className="px-10 py-4 bg-[#f97316] text-white rounded-2xl text-xs font-black uppercase tracking-widest flex items-center space-x-2 hover:bg-[#1a5f6b] transition-all shadow-xl shadow-[#f97316]/20 disabled:opacity-50"
+                      className="w-full md:w-auto px-10 py-3 md:py-4 bg-[#f97316] text-white rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center space-x-2 hover:bg-[#1a5f6b] transition-all shadow-xl shadow-[#f97316]/20 disabled:opacity-50"
                     >
                       {uploading ? (
                         <>

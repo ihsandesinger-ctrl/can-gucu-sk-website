@@ -1,10 +1,35 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from 'lucide-react';
 import { useAuth } from '../AuthContext';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const Footer = () => {
   const { settings } = useAuth();
+  const [visibleTeams, setVisibleTeams] = useState<any[]>([]);
+  const [visibleBranches, setVisibleBranches] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Fetch visible teams
+    const teamsQuery = query(collection(db, 'teams'), where('showInPanel', '==', true));
+    const unsubscribeTeams = onSnapshot(teamsQuery, (snapshot) => {
+      const teams = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setVisibleTeams(teams);
+    });
+
+    // Fetch visible branches
+    const branchesQuery = query(collection(db, 'branches'), where('showInPanel', '==', true));
+    const unsubscribeBranches = onSnapshot(branchesQuery, (snapshot) => {
+      const branches = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setVisibleBranches(branches);
+    });
+
+    return () => {
+      unsubscribeTeams();
+      unsubscribeBranches();
+    };
+  }, []);
 
   return (
     <footer className="bg-[#1a5f6b] text-white pt-20 pb-10 px-4">
@@ -24,17 +49,17 @@ const Footer = () => {
             {settings.aboutText || "Çan'ın gücü, gençlerin enerjisiyle birleşiyor. 2025 yılında kurulan kulübümüz, sporun her dalında başarıyı hedefliyor."}
           </p>
           <div className="flex space-x-4">
-            {settings.facebook && (
+            {settings.facebook && settings.showFacebook && (
               <a href={settings.facebook} target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-[#2a6f7b] rounded-full flex items-center justify-center hover:bg-[#f97316] transition-colors duration-300">
                 <Facebook className="h-5 w-5" />
               </a>
             )}
-            {settings.instagram && (
+            {settings.instagram && settings.showInstagram && (
               <a href={settings.instagram} target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-[#2a6f7b] rounded-full flex items-center justify-center hover:bg-[#f97316] transition-colors duration-300">
                 <Instagram className="h-5 w-5" />
               </a>
             )}
-            {settings.twitter && (
+            {settings.twitter && settings.showTwitter && (
               <a href={settings.twitter} target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-[#2a6f7b] rounded-full flex items-center justify-center hover:bg-[#f97316] transition-colors duration-300">
                 <Twitter className="h-5 w-5" />
               </a>
@@ -54,15 +79,37 @@ const Footer = () => {
           </ul>
         </div>
 
-        {/* Teams */}
-        <div>
-          <h3 className="text-xl font-bold mb-8 uppercase tracking-widest border-l-4 border-[#f97316] pl-4">Takımlarımız</h3>
-          <ul className="space-y-4 text-gray-300 text-sm">
-            <li><Link to="/takim/u-11" className="hover:text-[#f97316] transition-colors duration-200">U-11 Takımı</Link></li>
-            <li><Link to="/takim/u-12" className="hover:text-[#f97316] transition-colors duration-200">U-12 Takımı</Link></li>
-            <li><Link to="/takim/u-13" className="hover:text-[#f97316] transition-colors duration-200">U-13 Takımı</Link></li>
-            <li><Link to="/takim/u-14" className="hover:text-[#f97316] transition-colors duration-200">U-14 Takımı</Link></li>
-          </ul>
+        {/* Teams & Branches */}
+        <div className="space-y-12">
+          {visibleTeams.length > 0 && (
+            <div>
+              <h3 className="text-xl font-bold mb-8 uppercase tracking-widest border-l-4 border-[#f97316] pl-4">Takımlarımız</h3>
+              <ul className="space-y-4 text-gray-300 text-sm">
+                {visibleTeams.map((team) => (
+                  <li key={team.id}>
+                    <Link to={`/takim/${team.id}`} className="hover:text-[#f97316] transition-colors duration-200">
+                      {team.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {visibleBranches.length > 0 && (
+            <div>
+              <h3 className="text-xl font-bold mb-8 uppercase tracking-widest border-l-4 border-[#f97316] pl-4">Branşlarımız</h3>
+              <ul className="space-y-4 text-gray-300 text-sm">
+                {visibleBranches.map((branch) => (
+                  <li key={branch.id}>
+                    <Link to={`/brans/${branch.id}`} className="hover:text-[#f97316] transition-colors duration-200">
+                      {branch.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* Contact Info */}
