@@ -25,6 +25,7 @@ import AdminGallery from './pages/admin/AdminGallery';
 import AdminMatches from './pages/admin/AdminMatches';
 import AdminSettings from './pages/admin/AdminSettings';
 import AdminNavigation from './pages/admin/AdminNavigation';
+import AdminMessages from './pages/admin/AdminMessages';
 import BranchDetail from './pages/BranchDetail';
 import Hakkimizda from './pages/Hakkimizda';
 import Iletisim from './pages/Iletisim';
@@ -84,6 +85,7 @@ function App() {
           <Route path="galeri" element={<AdminGallery />} />
           <Route path="maclar" element={<AdminMatches />} />
           <Route path="menu" element={<AdminNavigation />} />
+          <Route path="mesajlar" element={<AdminMessages />} />
           <Route path="ayarlar" element={<AdminSettings />} />
         </Route>
 

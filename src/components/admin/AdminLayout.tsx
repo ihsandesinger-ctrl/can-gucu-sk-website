@@ -12,6 +12,7 @@ import {
   List,
   Menu,
   X,
+  MessageSquare,
   LogOut
 } from 'lucide-react';
 import { useAuth } from '../../AuthContext';
@@ -31,6 +32,7 @@ const AdminLayout = () => {
     { path: '/cangucu-panel/personel', icon: Users, label: 'Personel' },
     { path: '/cangucu-panel/galeri', icon: LayoutDashboard, label: 'Galeri' },
     { path: '/cangucu-panel/maclar', icon: Calendar, label: 'Maçlar' },
+    { path: '/cangucu-panel/mesajlar', icon: MessageSquare, label: 'Mesajlar' },
     { path: '/cangucu-panel/menu', icon: List, label: 'Menü Yönetimi' },
     { path: '/cangucu-panel/ayarlar', icon: Settings, label: 'Ayarlar' },
   ];

@@ -57,6 +57,15 @@
 //   - category: string (optional)
 //   - isHidden: boolean (required)
 //
+// Collection: messages
+// Document ID: messageId (auto-generated)
+// Fields:
+//   - name: string (required)
+//   - email: string (required, format: email)
+//   - message: string (required)
+//   - createdAt: timestamp (required)
+//   - read: boolean (required)
+//
 // ===============================================================
 
 rules_version = '2';
@@ -79,6 +88,19 @@ service cloud.firestore {
 
     function isHidden(data) {
       return data.isHidden == true;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['name', 'email', 'message', 'createdAt', 'read']) &&
+             data.name is string && data.name.size() > 0 &&
+             isValidEmail(data.email) &&
+             data.message is string && data.message.size() > 0 &&
+             data.createdAt is timestamp &&
+             data.read is bool;
     }
 
     // ===============================================================
@@ -143,6 +165,12 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
       allow write: if isAdmin();
+    }
+
+    // Messages
+    match /messages/{messageId} {
+      allow create: if isValidMessage(request.resource.data);
+      allow read, update, delete: if isAdmin();
     }
   }
 }
