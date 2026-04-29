@@ -27,12 +27,19 @@ const Squads = () => {
 
   useEffect(() => {
     if (!teamId) return;
+    setLoading(true);
 
     // Fetch team details
     const fetchTeam = async () => {
-      const teamDoc = await getDoc(doc(db, 'teams', teamId));
-      if (teamDoc.exists()) {
-        setTeam({ id: teamDoc.id, ...teamDoc.data() } as Team);
+      try {
+        const teamDoc = await getDoc(doc(db, 'teams', teamId));
+        if (teamDoc.exists()) {
+          setTeam({ id: teamDoc.id, ...teamDoc.data() } as Team);
+        } else {
+          setTeam(null);
+        }
+      } catch (err) {
+        console.error("Error fetching team:", err);
       }
     };
 
@@ -45,14 +52,22 @@ const Squads = () => {
       where('isHidden', '==', false)
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const allPlayers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Player[];
-      // Sort by number (as integer)
-      const sortedPlayers = allPlayers.sort((a, b) => {
-        const numA = parseInt(a.number) || 0;
-        const numB = parseInt(b.number) || 0;
-        return numA - numB;
-      });
-      setPlayers(sortedPlayers);
+      try {
+        const allPlayers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Player[];
+        // Sort by number (as integer)
+        const sortedPlayers = allPlayers.sort((a, b) => {
+          const numA = parseInt(a.number) || 0;
+          const numB = parseInt(b.number) || 0;
+          return numA - numB;
+        });
+        setPlayers(sortedPlayers);
+      } catch (err) {
+        console.error("Error mapping players:", err);
+      } finally {
+        setLoading(false);
+      }
+    }, (error) => {
+      console.error("Snapshot error:", error);
       setLoading(false);
     });
 
@@ -119,7 +134,7 @@ const Squads = () => {
           </h2>
         </div>
 
-        <div className="grid grid-cols-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-8">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-8">
           {players.map((player, index) => (
             <motion.div
               key={player.id}

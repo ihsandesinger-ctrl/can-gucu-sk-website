@@ -139,7 +139,7 @@ const Fixture = () => {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden group hover:border-[#f97316]/30 transition-all duration-500"
+                className="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 overflow-hidden group hover:border-[#f97316]/30 transition-all duration-500"
               >
                 <div className="p-6 md:p-8">
                   <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-6 md:gap-4">
@@ -163,36 +163,39 @@ const Fixture = () => {
                     </div>
 
                     {/* Teams & Score */}
-                    <div className="md:col-span-6 flex items-center justify-center gap-4 px-2">
-                      <div className="flex-1 flex items-center justify-end gap-4">
-                        <span className="text-lg md:text-xl font-black text-[#1a5f6b] uppercase tracking-tight text-right leading-tight">{match.homeTeam}</span>
+                    <div className="md:col-span-6 flex flex-col md:flex-row items-center justify-center gap-4 px-2 py-4 md:py-0 border-y md:border-y-0 md:border-x border-gray-50 my-4 md:my-0">
+                      {/* Home Team */}
+                      <div className="flex items-center gap-3 md:gap-4 md:flex-1 md:justify-end w-full">
+                        <span className="text-base md:text-xl font-black text-[#1a5f6b] uppercase tracking-tight text-center md:text-right flex-1 leading-tight">{match.homeTeam}</span>
                         {match.homeLogo && (
-                          <img src={match.homeLogo} alt={match.homeTeam} className="w-12 h-12 object-contain shrink-0" referrerPolicy="no-referrer" />
+                          <img src={match.homeLogo} alt={match.homeTeam} className="w-10 h-10 md:w-12 md:h-12 object-contain shrink-0" referrerPolicy="no-referrer" />
                         )}
                       </div>
                       
-                      <div className="flex items-center gap-3 bg-gray-50 px-6 py-3 rounded-2xl border border-gray-100 shadow-inner">
+                      {/* Score Badge */}
+                      <div className="flex items-center gap-2 md:gap-3 bg-gray-50 px-4 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl border border-gray-100 shadow-inner shrink-0 order-first md:order-none mb-2 md:mb-0">
                         {match.homeScore !== undefined && match.awayScore !== undefined && match.homeScore !== '' && match.awayScore !== '' ? (
                           <>
-                            <span className="text-3xl font-black text-[#1a5f6b]">{match.homeScore}</span>
-                            <span className="text-[#f97316] font-black text-xl">:</span>
-                            <span className="text-3xl font-black text-[#1a5f6b]">{match.awayScore}</span>
+                            <span className="text-2xl md:text-3xl font-black text-[#1a5f6b]">{match.homeScore}</span>
+                            <span className="text-[#f97316] font-black text-lg md:text-xl">:</span>
+                            <span className="text-2xl md:text-3xl font-black text-[#1a5f6b]">{match.awayScore}</span>
                           </>
                         ) : (
-                          <span className="text-sm font-black text-[#f97316] italic tracking-widest">VS</span>
+                          <span className="text-[10px] md:text-sm font-black text-[#f97316] italic tracking-widest whitespace-nowrap px-2">YAKLAŞAN MAÇ</span>
                         )}
                       </div>
 
-                      <div className="flex-1 flex items-center justify-start gap-4">
+                      {/* Away Team */}
+                      <div className="flex items-center gap-3 md:gap-4 md:flex-1 md:justify-start flex-row-reverse md:flex-row w-full">
+                        <span className="text-base md:text-xl font-black text-[#1a5f6b] uppercase tracking-tight text-center md:text-left flex-1 leading-tight">{match.awayTeam}</span>
                         {match.awayLogo && (
-                          <img src={match.awayLogo} alt={match.awayTeam} className="w-12 h-12 object-contain shrink-0" referrerPolicy="no-referrer" />
+                          <img src={match.awayLogo} alt={match.awayTeam} className="w-10 h-10 md:w-12 md:h-12 object-contain shrink-0" referrerPolicy="no-referrer" />
                         )}
-                        <span className="text-lg md:text-xl font-black text-[#1a5f6b] uppercase tracking-tight text-left leading-tight">{match.awayTeam}</span>
                       </div>
                     </div>
 
                     {/* Location & Category */}
-                    <div className="md:col-span-3 flex flex-col items-center md:items-end border-t md:border-t-0 md:border-l border-gray-50 pt-4 md:pt-0 md:pl-6 space-y-2">
+                    <div className="md:col-span-3 flex flex-col items-center md:items-end md:pl-6 space-y-2">
                       {match.location && (
                         <div className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[9px] text-right">
                           <MapPin className="w-3 h-3 text-[#f97316]" /> {match.location}
@@ -209,7 +212,7 @@ const Fixture = () => {
               </motion.div>
             ))
           ) : (
-            <div className="text-center py-32 bg-white rounded-[60px] shadow-2xl border border-gray-100">
+            <div className="text-center py-32 bg-white rounded-3xl shadow-xl border border-gray-100">
               <div className="w-24 h-24 bg-gray-50 rounded-full mx-auto flex items-center justify-center mb-8">
                 <Calendar className="w-12 h-12 text-gray-200" />
               </div>

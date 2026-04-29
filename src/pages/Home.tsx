@@ -77,10 +77,19 @@ const Home = () => {
       const today = new Date();
       const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
       
-      // Filter out past matches and hidden matches, sort by date and then order
+      // Filter out past matches and hidden matches, sort by priority (U-11), then date, then order
       const visibleMatches = allMatches
         .filter(item => !item.isHidden && (item.date >= todayStr))
         .sort((a, b) => {
+          const nameA = getTeamName(a.teamId).toUpperCase();
+          const nameB = getTeamName(b.teamId).toUpperCase();
+          
+          const isU11A = nameA.includes('U-11') || a.category?.toUpperCase() === 'U-11';
+          const isU11B = nameB.includes('U-11') || b.category?.toUpperCase() === 'U-11';
+          
+          if (isU11A && !isU11B) return -1;
+          if (!isU11A && isU11B) return 1;
+
           // Sort by date first
           if (a.date !== b.date) return a.date.localeCompare(b.date);
           // Then by order
@@ -208,7 +217,7 @@ const Home = () => {
             </Link>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
             {matches.map((match, idx) => (
               <motion.div
                 key={match.id}
@@ -216,57 +225,69 @@ const Home = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
                 viewport={{ once: true }}
-                className="w-full md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.35rem)] bg-white/5 backdrop-blur-xl p-6 rounded-[40px] border border-white/10 hover:bg-white/10 transition-all duration-500 group"
+                className="w-full bg-white/5 backdrop-blur-xl p-8 rounded-[48px] border border-white/10 hover:bg-white/10 transition-all duration-500 group relative overflow-hidden"
               >
-                <div className="flex justify-between items-center mb-6">
-                  <span className="bg-[#f97316] text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest">
-                    {getTeamName(match.teamId)}
-                  </span>
-                  <Trophy className="text-white/20 w-6 h-6 group-hover:text-[#f97316] transition-colors" />
-                </div>
-                
-                <div className="flex items-center justify-between gap-4 mb-10">
-                  <div className="text-center flex-1 flex flex-col items-center gap-2">
-                    {match.homeLogo && (
-                      <img src={match.homeLogo} alt={match.homeTeam} className="w-16 h-16 object-contain mb-2" referrerPolicy="no-referrer" />
-                    )}
-                    <p className="text-white font-black uppercase tracking-tight text-lg leading-tight">{match.homeTeam}</p>
-                  </div>
-                  <div className="text-[#f97316] font-black italic text-2xl">VS</div>
-                  <div className="text-center flex-1 flex flex-col items-center gap-2">
-                    {match.awayLogo && (
-                      <img src={match.awayLogo} alt={match.awayTeam} className="w-16 h-16 object-contain mb-2" referrerPolicy="no-referrer" />
-                    )}
-                    <p className="text-white font-black uppercase tracking-tight text-lg leading-tight">{match.awayTeam}</p>
-                  </div>
+                <div className="absolute top-0 right-0 p-8 opacity-5">
+                   <Trophy className="w-32 h-32 text-white group-hover:text-[#f97316] transition-colors" />
                 </div>
 
-                <div className="space-y-4 pt-4 border-t border-white/10">
-                  <div className="flex items-center text-gray-300 text-sm font-black uppercase tracking-widest">
-                    {match.time && (
-                      <span className="flex items-center mr-4">
-                        <Clock className="w-4 h-4 mr-2 text-[#f97316]" /> {match.time}
-                      </span>
-                    )}
-                    <span className="flex items-center text-lg">
-                      <Calendar className="w-4 h-4 mr-2 text-[#f97316]" /> 
-                      {(() => {
-                        if (!match.date) return '';
-                        const dateParts = match.date.split('-');
-                        if (dateParts.length === 3) {
-                          const [year, month, day] = dateParts;
-                          const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-                          return `${day} ${months[parseInt(month) - 1]} ${year}`;
-                        }
-                        return match.date;
-                      })()}
+                <div className="relative z-10">
+                  <div className="flex justify-between items-center mb-10">
+                    <span className="bg-[#f97316] text-white text-[10px] font-black px-5 py-2 rounded-2xl uppercase tracking-[0.2em] shadow-lg shadow-[#f97316]/20">
+                      {getTeamName(match.teamId)}
                     </span>
-                  </div>
-                  {match.location && (
-                    <div className="flex items-center text-gray-400 text-[10px] font-bold uppercase tracking-widest">
-                      <MapPin className="w-3 h-3 mr-2 text-[#f97316]" /> {match.location}
+                    <div className="flex items-center gap-2 text-[#f97316] font-black uppercase tracking-widest text-[9px]">
+                      <Trophy className="w-4 h-4" /> {match.category}
                     </div>
-                  )}
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-8 mb-12">
+                    <div className="text-center sm:text-left flex-1 flex flex-col sm:flex-row items-center gap-4">
+                      {match.homeLogo && (
+                        <img src={match.homeLogo} alt={match.homeTeam} className="w-16 h-16 object-contain" referrerPolicy="no-referrer" />
+                      )}
+                      <p className="text-white font-black uppercase tracking-tight text-xl leading-none">{match.homeTeam}</p>
+                    </div>
+                    
+                    <div className="flex items-center gap-4">
+                       <div className="h-0.5 w-8 bg-white/10 hidden sm:block"></div>
+                       <div className="text-[#f97316] font-black italic text-3xl tracking-tighter">VS</div>
+                       <div className="h-0.5 w-8 bg-white/10 hidden sm:block"></div>
+                    </div>
+
+                    <div className="text-center sm:text-right flex-1 flex flex-col sm:flex-row-reverse items-center gap-4">
+                      {match.awayLogo && (
+                        <img src={match.awayLogo} alt={match.awayTeam} className="w-16 h-16 object-contain" referrerPolicy="no-referrer" />
+                      )}
+                      <p className="text-white font-black uppercase tracking-tight text-xl leading-none">{match.awayTeam}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pt-8 border-t border-white/5">
+                    <div className="flex flex-wrap items-center gap-6">
+                      <div className="flex items-center text-white font-black uppercase tracking-widest text-xs">
+                        <Clock className="w-4 h-4 mr-2 text-[#f97316]" /> {match.time || '--:--'}
+                      </div>
+                      <div className="flex items-center text-white font-black uppercase tracking-widest text-xs">
+                        <Calendar className="w-4 h-4 mr-2 text-[#f97316]" /> 
+                        {(() => {
+                          if (!match.date) return '';
+                          const dateParts = match.date.split('-');
+                          if (dateParts.length === 3) {
+                            const [year, month, day] = dateParts;
+                            const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+                            return `${day} ${months[parseInt(month) - 1]} ${year}`;
+                          }
+                          return match.date;
+                        })()}
+                      </div>
+                    </div>
+                    {match.location && (
+                      <div className="flex items-center text-white/40 text-[9px] font-black uppercase tracking-[0.2em] bg-white/5 px-4 py-2 rounded-xl">
+                        <MapPin className="w-3 h-3 mr-2 text-[#f97316]" /> {match.location}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             ))}

@@ -103,6 +103,19 @@ service cloud.firestore {
              data.read is bool;
     }
 
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['name', 'email', 'message', 'createdAt', 'read']) &&
+             data.name is string && data.name.size() > 0 &&
+             isValidEmail(data.email) &&
+             data.message is string && data.message.size() > 0 &&
+             data.createdAt is timestamp &&
+             data.read is bool;
+    }
+
     // ===============================================================
     // Collection Rules
     // ===============================================================
