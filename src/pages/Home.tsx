@@ -73,9 +73,19 @@ const Home = () => {
     const unsubscribeMatches = onSnapshot(qMatches, (snapshot) => {
       const allMatches = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as MatchItem[];
       
-      // Group by team and pick the first one (based on order or date if possible)
-      // For now, we use the 'order' field as the primary sort, then filter one per team
-      const visibleMatches = allMatches.filter(item => !item.isHidden).sort((a, b) => (a.order || 0) - (b.order || 0));
+      // Get today's date in YYYY-MM-DD format for filtering
+      const today = new Date();
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      
+      // Filter out past matches and hidden matches, sort by date and then order
+      const visibleMatches = allMatches
+        .filter(item => !item.isHidden && (item.date >= todayStr))
+        .sort((a, b) => {
+          // Sort by date first
+          if (a.date !== b.date) return a.date.localeCompare(b.date);
+          // Then by order
+          return (a.order || 0) - (b.order || 0);
+        });
       
       const onePerTeam: MatchItem[] = [];
       const seenTeams = new Set();
@@ -87,7 +97,11 @@ const Home = () => {
         }
       }
 
-      setMatches(onePerTeam.slice(0, 6)); // Show up to 6 matches (one per team)
+      // If we have less than 6 matches, maybe we can add past matches as well?
+      // But the user specifically asked for "upcoming" matches. 
+      // If there are no upcoming matches, we show nothing (or we could show most recent past)
+      // I'll stick to upcoming as requested.
+      setMatches(onePerTeam.slice(0, 6)); 
       setLoading(false);
     });
 

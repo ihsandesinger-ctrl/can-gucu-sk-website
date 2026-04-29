@@ -45,7 +45,14 @@ const Squads = () => {
       where('isHidden', '==', false)
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setPlayers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Player[]);
+      const allPlayers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Player[];
+      // Sort by number (as integer)
+      const sortedPlayers = allPlayers.sort((a, b) => {
+        const numA = parseInt(a.number) || 0;
+        const numB = parseInt(b.number) || 0;
+        return numA - numB;
+      });
+      setPlayers(sortedPlayers);
       setLoading(false);
     });
 
@@ -112,7 +119,7 @@ const Squads = () => {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        <div className="grid grid-cols-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-8">
           {players.map((player, index) => (
             <motion.div
               key={player.id}
@@ -120,7 +127,7 @@ const Squads = () => {
               whileInView={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.05 }}
               viewport={{ once: true }}
-              className="relative group bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2"
+              className="relative group bg-white rounded-lg sm:rounded-2xl overflow-hidden shadow-sm sm:shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2"
             >
               <div className="aspect-[4/5] overflow-hidden bg-gray-100">
                 <img 
@@ -133,15 +140,15 @@ const Squads = () => {
               </div>
 
               {/* Player Number Badge */}
-              <div className="absolute top-4 right-4 w-10 h-10 bg-[#f97316] text-white rounded-full flex items-center justify-center font-bold text-lg shadow-lg z-10">
+              <div className="absolute top-1 right-1 sm:top-4 sm:right-4 w-5 h-5 sm:w-10 sm:h-10 bg-[#f97316] text-white rounded-full flex items-center justify-center font-bold text-[8px] sm:text-lg shadow-lg z-10">
                 {player.number}
               </div>
 
-              <div className="absolute bottom-0 left-0 right-0 p-6 z-10">
-                <p className="text-white font-bold text-xl mb-1 group-hover:text-[#f97316] transition-colors duration-300">
+              <div className="absolute bottom-0 left-0 right-0 p-1 sm:p-6 z-10">
+                <p className="text-white font-bold text-[8px] sm:text-xl mb-0 sm:mb-1 group-hover:text-[#f97316] transition-colors duration-300 truncate">
                   {player.name}
                 </p>
-                <p className="text-gray-300 text-sm font-medium uppercase tracking-widest">
+                <p className="text-gray-300 text-[6px] sm:text-sm font-medium uppercase tracking-widest truncate">
                   {player.position}
                 </p>
               </div>

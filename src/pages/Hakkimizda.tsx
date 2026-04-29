@@ -110,12 +110,12 @@ const Hakkimizda = () => {
           </div>
 
           {staff.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-4 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-8">
               {staff.map((person) => (
                 <motion.div
                   key={person.id}
                   whileHover={{ y: -10 }}
-                  className="bg-white rounded-[40px] overflow-hidden shadow-xl border border-gray-100 group"
+                  className="bg-white rounded-2xl sm:rounded-[40px] overflow-hidden shadow-sm sm:shadow-xl border border-gray-100 group"
                 >
                   <div className="aspect-[4/5] relative overflow-hidden">
                     {person.image ? (
@@ -127,14 +127,14 @@ const Hakkimizda = () => {
                       />
                     ) : (
                       <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                        <User className="w-20 h-20 text-gray-300" />
+                        <User className="w-6 h-6 sm:w-20 sm:h-20 text-gray-300" />
                       </div>
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#1a5f6b]/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
-                  <div className="p-8 text-center">
-                    <h3 className="text-xl font-black text-[#1a5f6b] uppercase tracking-tight mb-1">{person.name}</h3>
-                    <p className="text-[#f97316] font-bold text-xs uppercase tracking-[0.2em]">{person.role}</p>
+                  <div className="p-1 sm:p-8 text-center bg-white">
+                    <h3 className="text-[8px] sm:text-xl font-black text-[#1a5f6b] uppercase tracking-tight mb-0 sm:mb-1 truncate px-1">{person.name}</h3>
+                    <p className="text-[#f97316] font-bold text-[6px] sm:text-xs uppercase tracking-[0.2em] truncate px-1">{person.role}</p>
                   </div>
                 </motion.div>
               ))}
