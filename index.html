@@ -7,7 +7,50 @@
     <title>ÇANGÜCÜ SK</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <style>
+        .initial-loader {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background-color: #1a5f6b;
+          z-index: 9999;
+          transition: opacity 0.5s ease-out;
+        }
+        .loader-logo {
+          width: 120px;
+          height: 120px;
+          margin-bottom: 24px;
+          animation: pulse 2s infinite ease-in-out;
+        }
+        .loader-spinner {
+          width: 40px;
+          height: 40px;
+          border: 3px solid rgba(255, 255, 255, 0.1);
+          border-top: 3px solid #f97316;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); opacity: 0.8; }
+          50% { transform: scale(1.05); opacity: 1; }
+        }
+      </style>
+      <div class="initial-loader">
+        <img src="/logo.png" class="loader-logo" alt="Logo" />
+        <div class="loader-spinner"></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
