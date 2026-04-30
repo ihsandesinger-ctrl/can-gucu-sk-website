@@ -202,7 +202,7 @@ const Home = () => {
 
       {/* Next Matches Section */}
       <section className="py-24 px-4 relative">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center mb-16 gap-6">
             <div className="text-center md:text-left">
               <h2 className="text-5xl font-black text-white uppercase tracking-tighter italic">SIRADAKİ MAÇLAR</h2>
@@ -213,84 +213,80 @@ const Home = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+          <div className="space-y-4">
             {matches.map((match, idx) => (
               <motion.div
                 key={match.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.1 }}
                 viewport={{ once: true }}
-                className="w-full bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 hover:bg-white/10 transition-all duration-500 group relative overflow-hidden"
+                className="group relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-[24px] sm:rounded-full px-6 py-4 sm:py-3 hover:bg-white/10 transition-all duration-300"
               >
-                <div className="absolute top-0 right-0 p-8 opacity-5">
-                   <Trophy className="w-40 h-40 text-white group-hover:text-[#f97316] transition-colors" />
-                </div>
-
-                <div className="relative z-10">
-                  <div className="flex justify-between items-center mb-8">
-                    <span className="bg-[#f97316] text-white text-[10px] font-black px-5 py-2 rounded-2xl uppercase tracking-[0.2em] shadow-lg shadow-[#f97316]/20">
-                      {getTeamName(match.teamId)}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-4">
+                  {/* Category & Date */}
+                  <div className="flex items-center gap-6 sm:w-1/4">
+                    <span className="bg-[#f97316] text-white text-[9px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shrink-0">
+                      {match.category}
                     </span>
-                    <div className="flex items-center gap-2 text-[#f97316] font-black uppercase tracking-widest text-[9px]">
-                      <Trophy className="w-4 h-4" /> {match.category}
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-10">
-                    <div className="text-center sm:text-left flex-1 flex flex-col sm:flex-row items-center gap-4">
-                      <div className="w-16 h-16 bg-white/5 rounded-2xl p-3 flex items-center justify-center border border-white/5 shadow-inner">
-                        {match.homeLogo && (
-                          <img src={match.homeLogo} alt={match.homeTeam} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
-                        )}
-                      </div>
-                      <p className="text-white font-black uppercase tracking-tight text-xl leading-none truncate max-w-[150px]">{match.homeTeam}</p>
-                    </div>
-                    
-                    <div className="flex items-center gap-4 py-2 px-4 rounded-2xl bg-white/5">
-                       <div className="text-[#f97316] font-black italic text-4xl tracking-tighter">VS</div>
-                    </div>
-
-                    <div className="text-center sm:text-right flex-1 flex flex-col sm:flex-row-reverse items-center gap-4">
-                      <div className="w-16 h-16 bg-white/5 rounded-2xl p-3 flex items-center justify-center border border-white/5 shadow-inner">
-                        {match.awayLogo && (
-                          <img src={match.awayLogo} alt={match.awayTeam} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
-                        )}
-                      </div>
-                      <p className="text-white font-black uppercase tracking-tight text-xl leading-none truncate max-w-[150px]">{match.awayTeam}</p>
+                    <div className="flex flex-col">
+                      <span className="text-white font-black text-sm tabular-nums leading-none">
+                        {match.date ? match.date.split('-').reverse().slice(0, 2).join('.') : '--.--'}
+                      </span>
+                      <span className="text-white/40 text-[9px] font-bold uppercase tracking-wider">{match.time || '--:--'}</span>
                     </div>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pt-8 border-t border-white/5">
-                    <div className="flex flex-wrap items-center gap-6">
-                      <div className="flex items-center text-white/80 font-black uppercase tracking-widest text-[10px]">
-                        <Clock className="w-4 h-4 mr-2 text-[#f97316]" /> {match.time || '--:--'}
-                      </div>
-                      <div className="flex items-center text-white/80 font-black uppercase tracking-widest text-[10px]">
-                        <Calendar className="w-4 h-4 mr-2 text-[#f97316]" /> 
-                        {(() => {
-                          if (!match.date) return '';
-                          const dateParts = match.date.split('-');
-                          if (dateParts.length === 3) {
-                            const [year, month, day] = dateParts;
-                            const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-                            return `${day} ${months[parseInt(month) - 1]} ${year}`;
-                          }
-                          return match.date;
-                        })()}
-                      </div>
+                  {/* Match Info */}
+                  <div className="flex-1 flex items-center justify-center gap-4 sm:gap-8 w-full sm:w-auto">
+                    {/* Home Team */}
+                    <div className="flex-1 flex items-center justify-end gap-3 sm:gap-4">
+                      <span className="text-white font-black uppercase tracking-tight text-right text-sm sm:text-lg line-clamp-1">
+                        {match.homeTeam}
+                      </span>
+                      {match.homeLogo && (
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/5 rounded-xl sm:rounded-2xl p-1.5 border border-white/5 shrink-0 flex items-center justify-center">
+                          <img src={match.homeLogo} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                        </div>
+                      )}
                     </div>
-                    {match.location && (
-                      <div className="flex items-center text-white/40 text-[9px] font-black uppercase tracking-[0.2em] bg-white/5 px-4 py-2 rounded-xl border border-white/5">
-                        <MapPin className="w-3 h-3 mr-2 text-[#f97316]" /> {match.location}
+
+                    {/* VS Badge */}
+                    <div className="bg-[#f97316]/10 px-4 py-2 rounded-xl border border-[#f97316]/20">
+                      <span className="text-[#f97316] font-black italic text-sm sm:text-base tracking-tighter">VS</span>
+                    </div>
+
+                    {/* Away Team */}
+                    <div className="flex-1 flex items-center justify-start gap-3 sm:gap-4">
+                      {match.awayLogo && (
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/5 rounded-xl sm:rounded-2xl p-1.5 border border-white/5 shrink-0 flex items-center justify-center">
+                          <img src={match.awayLogo} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                        </div>
+                      )}
+                      <span className="text-white font-black uppercase tracking-tight text-left text-sm sm:text-lg line-clamp-1">
+                        {match.awayTeam}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Place/Action */}
+                  <div className="flex items-center justify-center sm:justify-end sm:w-1/4">
+                    {match.location ? (
+                      <div className="hidden lg:flex items-center text-white/30 text-[9px] font-black uppercase tracking-[0.2em] bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+                        <MapPin className="w-3 h-3 mr-2 text-[#f97316]" /> {match.location.split(' ')[0]}
                       </div>
+                    ) : (
+                      <div className="w-32 h-1 bg-white/5 rounded-full hidden sm:block"></div>
                     )}
+                    <div className="sm:hidden flex items-center text-white/40 text-[9px] font-black uppercase tracking-widest gap-2">
+                       <MapPin className="w-3 h-3 text-[#f97316]" /> {match.location || 'Stadyum'}
+                    </div>
                   </div>
                 </div>
               </motion.div>
             ))}
             {matches.length === 0 && !loading && (
-              <div className="col-span-full py-20 text-center text-white/20 font-black uppercase tracking-[0.5em]">
+              <div className="py-20 text-center text-white/20 font-black uppercase tracking-[0.5em]">
                 HENÜZ MAÇ PROGRAMI YOK
               </div>
             )}
