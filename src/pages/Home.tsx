@@ -240,10 +240,9 @@ const Home = () => {
                       {match.category}
                     </span>
                     <div className="flex flex-col">
-                      <span className="text-white font-black text-sm tabular-nums leading-none">
-                        {match.isDateNotSet ? 'BELİRSİZ' : (match.date ? match.date.split('-').reverse().slice(0, 2).join('.') : '--.--')}
+                      <span className="text-white font-black text-sm sm:text-base tabular-nums leading-none">
+                        {match.isDateNotSet ? 'BELİRSİZ' : (match.date ? match.date.split('-').reverse().join('.') : '--.--.----')}
                       </span>
-                      <span className="text-white/40 text-[9px] font-bold uppercase tracking-wider">{match.isDateNotSet ? '--:--' : (match.time || '--:--')}</span>
                     </div>
                   </div>
 
@@ -261,9 +260,11 @@ const Home = () => {
                       )}
                     </div>
 
-                    {/* VS Badge */}
-                    <div className="bg-[#f97316]/10 px-4 py-2 rounded-xl border border-[#f97316]/20">
-                      <span className="text-[#f97316] font-black italic text-sm sm:text-base tracking-tighter">VS</span>
+                    {/* Time/VS Badge */}
+                    <div className="bg-[#f97316]/10 px-4 py-2 rounded-xl border border-[#f97316]/20 min-w-[60px] flex justify-center">
+                      <span className="text-[#f97316] font-black italic text-sm sm:text-base tracking-tighter tabular-nums uppercase">
+                        {(!match.isDateNotSet && match.time) ? match.time : 'VS'}
+                      </span>
                     </div>
 
                     {/* Away Team */}

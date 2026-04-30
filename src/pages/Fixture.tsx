@@ -178,7 +178,7 @@ const Fixture = () => {
                     <div className="hidden md:grid grid-cols-12 gap-4 items-center px-10 py-8">
                        <div className="col-span-2">
                          <div className="text-gray-900 font-black text-base tabular-nums">
-                            {match.isDateNotSet ? 'BELİRTİLMEDİ' : (match.date ? match.date.split('-').reverse().slice(0, 2).join('/') : '--/--')}
+                            {match.isDateNotSet ? 'BELİRTİLMEDİ' : (match.date ? match.date.split('-').reverse().join('/') : '--/--')}
                          </div>
                          <div className="text-gray-400 font-bold text-[10px] uppercase tracking-wider">{match.isDateNotSet ? '--:--' : (match.time || '--:--')}</div>
                        </div>
