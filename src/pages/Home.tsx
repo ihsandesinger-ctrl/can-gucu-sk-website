@@ -44,6 +44,8 @@ interface MatchItem {
   category: string;
   isHidden: boolean;
   order: number;
+  isDateNotSet?: boolean;
+  createdAt?: string;
 }
 
 const Home = () => {
@@ -77,9 +79,9 @@ const Home = () => {
       const today = new Date();
       const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
       
-      // Filter out past matches and hidden matches, sort by priority (U-11), then date, then order
+      // Filter out past matches and hidden matches, handle no-date matches
       const visibleMatches = allMatches
-        .filter(item => !item.isHidden && (item.date >= todayStr))
+        .filter(item => !item.isHidden && (item.isDateNotSet || item.date >= todayStr))
         .sort((a, b) => {
           const nameA = getTeamName(a.teamId).toUpperCase();
           const nameB = getTeamName(b.teamId).toUpperCase();
@@ -90,10 +92,18 @@ const Home = () => {
           if (isU11A && !isU11B) return -1;
           if (!isU11A && isU11B) return 1;
 
-          // Sort by date first
-          if (a.date !== b.date) return a.date.localeCompare(b.date);
-          // Then by order
-          return (a.order || 0) - (b.order || 0);
+          // If both have dates
+          if (!a.isDateNotSet && !b.isDateNotSet) {
+             if (a.date !== b.date) return a.date.localeCompare(b.date);
+             return (a.order || 0) - (b.order || 0);
+          }
+
+          // Dates first, then "not set"
+          if (!a.isDateNotSet && b.isDateNotSet) return -1;
+          if (a.isDateNotSet && !b.isDateNotSet) return 1;
+
+          // Both not set, order by createdAt (newest at bottom)
+          return (a.createdAt || '').localeCompare(b.createdAt || '');
         });
       
       const onePerTeam: MatchItem[] = [];
@@ -231,9 +241,9 @@ const Home = () => {
                     </span>
                     <div className="flex flex-col">
                       <span className="text-white font-black text-sm tabular-nums leading-none">
-                        {match.date ? match.date.split('-').reverse().slice(0, 2).join('.') : '--.--'}
+                        {match.isDateNotSet ? 'BELİRSİZ' : (match.date ? match.date.split('-').reverse().slice(0, 2).join('.') : '--.--')}
                       </span>
-                      <span className="text-white/40 text-[9px] font-bold uppercase tracking-wider">{match.time || '--:--'}</span>
+                      <span className="text-white/40 text-[9px] font-bold uppercase tracking-wider">{match.isDateNotSet ? '--:--' : (match.time || '--:--')}</span>
                     </div>
                   </div>
 

@@ -28,6 +28,8 @@ interface MatchItem {
   category?: string;
   isHidden: boolean;
   order: number;
+  isDateNotSet?: boolean;
+  createdAt?: string;
 }
 
 interface Team {
@@ -83,7 +85,24 @@ const Fixture = () => {
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const teamMatches = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as MatchItem[];
-      setMatches(teamMatches);
+      
+      // Client-side sorting as requested
+      const sortedMatches = [...teamMatches].sort((a, b) => {
+        // If both have dates, sort by date
+        if (!a.isDateNotSet && !b.isDateNotSet) {
+          if (a.date !== b.date) return a.date.localeCompare(b.date);
+          return (a.order || 0) - (b.order || 0);
+        }
+        
+        // If one is not set, it goes after those with dates
+        if (!a.isDateNotSet && b.isDateNotSet) return -1;
+        if (a.isDateNotSet && !b.isDateNotSet) return 1;
+        
+        // Both not set, sort by createdAt (latest at bottom as requested: "en son eklenen maç en sonda")
+        return (a.createdAt || '').localeCompare(b.createdAt || '');
+      });
+
+      setMatches(sortedMatches);
       setLoading(false);
     }, (error) => {
       console.error("Error fetching matches:", error);
@@ -159,14 +178,14 @@ const Fixture = () => {
                     <div className="hidden md:grid grid-cols-12 gap-4 items-center px-10 py-8">
                        <div className="col-span-2">
                          <div className="text-gray-900 font-black text-base tabular-nums">
-                            {match.date ? match.date.split('-').reverse().slice(0, 2).join('/') : '--/--'}
+                            {match.isDateNotSet ? 'BELİRTİLMEDİ' : (match.date ? match.date.split('-').reverse().slice(0, 2).join('/') : '--/--')}
                          </div>
-                         <div className="text-gray-400 font-bold text-[10px] uppercase tracking-wider">{match.time || '--:--'}</div>
+                         <div className="text-gray-400 font-bold text-[10px] uppercase tracking-wider">{match.isDateNotSet ? '--:--' : (match.time || '--:--')}</div>
                        </div>
 
                        <div className="col-span-10 flex items-center justify-center gap-8 relative">
                           <div className="flex-1 flex items-center justify-end gap-6">
-                            <span className={`text-xl font-black uppercase tracking-tight text-right ${isFinished && parseInt(String(match.homeScore)) < parseInt(String(match.awayScore)) ? 'text-gray-300' : 'text-gray-900'}`}>
+                            <span className="text-xl font-black uppercase tracking-tight text-right text-gray-900">
                               {match.homeTeam}
                             </span>
                             {match.homeLogo && (
@@ -190,7 +209,7 @@ const Fixture = () => {
                                  <img src={match.awayLogo} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
                               </div>
                             )}
-                            <span className={`text-xl font-black uppercase tracking-tight text-left ${isFinished && parseInt(String(match.awayScore)) < parseInt(String(match.homeScore)) ? 'text-gray-300' : 'text-gray-900'}`}>
+                            <span className="text-xl font-black uppercase tracking-tight text-left text-gray-900">
                               {match.awayTeam}
                             </span>
                           </div>
@@ -200,8 +219,8 @@ const Fixture = () => {
                     {/* Mobile View */}
                     <div className="md:hidden p-8 space-y-6">
                        <div className="flex justify-between items-center text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
-                          <span className="flex items-center gap-2"><Calendar className="w-3 h-3" /> {match.date?.split('-').reverse().join('.')}</span>
-                          <span className="flex items-center gap-2"><Clock className="w-3 h-3" /> {match.time || '--:--'}</span>
+                          <span className="flex items-center gap-2"><Calendar className="w-3 h-3" /> {match.isDateNotSet ? 'BELİRTİLMEDİ' : (match.date?.split('-').reverse().join('.'))}</span>
+                          <span className="flex items-center gap-2"><Clock className="w-3 h-3" /> {match.isDateNotSet ? '--:--' : (match.time || '--:--')}</span>
                        </div>
 
                        <div className="flex items-center justify-between gap-4">
@@ -211,7 +230,7 @@ const Fixture = () => {
                                  <img src={match.homeLogo} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
                                </div>
                              )}
-                             <span className={`text-[11px] font-black uppercase tracking-tight text-center leading-tight ${isFinished && parseInt(String(match.homeScore)) < parseInt(String(match.awayScore)) ? 'text-gray-300' : 'text-gray-900'}`}>
+                             <span className="text-[11px] font-black uppercase tracking-tight text-center leading-tight text-gray-900">
                                {match.homeTeam}
                              </span>
                           </div>
@@ -230,7 +249,7 @@ const Fixture = () => {
                                  <img src={match.awayLogo} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" />
                                </div>
                              )}
-                             <span className={`text-[11px] font-black uppercase tracking-tight text-center leading-tight ${isFinished && parseInt(String(match.awayScore)) < parseInt(String(match.homeScore)) ? 'text-gray-300' : 'text-gray-900'}`}>
+                             <span className="text-[11px] font-black uppercase tracking-tight text-center leading-tight text-gray-900">
                                {match.awayTeam}
                              </span>
                           </div>

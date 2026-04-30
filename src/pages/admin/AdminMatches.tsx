@@ -45,6 +45,8 @@ interface MatchItem {
   category: string;
   isHidden: boolean;
   order: number;
+  isDateNotSet?: boolean;
+  createdAt?: any;
 }
 
 interface TeamItem {
@@ -73,7 +75,8 @@ const AdminMatches = () => {
     location: '',
     category: '',
     isHidden: false,
-    order: 0
+    order: 0,
+    isDateNotSet: false
   });
 
   useEffect(() => {
@@ -119,7 +122,11 @@ const AdminMatches = () => {
         await updateDoc(doc(db, 'matches', editingItem.id), formData);
       } else {
         const nextOrder = matches.length > 0 ? Math.max(...matches.map(m => m.order || 0)) + 1 : 0;
-        await addDoc(collection(db, 'matches'), { ...formData, order: nextOrder });
+        await addDoc(collection(db, 'matches'), { 
+          ...formData, 
+          order: nextOrder,
+          createdAt: new Date().toISOString()
+        });
       }
       closeModal();
     } catch (error) {
@@ -183,7 +190,8 @@ const AdminMatches = () => {
         location: item.location || '',
         category: item.category || '',
         isHidden: item.isHidden,
-        order: item.order || 0
+        order: item.order || 0,
+        isDateNotSet: item.isDateNotSet || false
       });
     } else {
       setEditingItem(null);
@@ -200,7 +208,8 @@ const AdminMatches = () => {
         location: '',
         category: '',
         isHidden: false,
-        order: matches.length
+        order: matches.length,
+        isDateNotSet: false
       });
     }
     setIsModalOpen(true);
@@ -281,11 +290,11 @@ const AdminMatches = () => {
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{getTeamName(item.teamId)}</p>
                 <div className="flex items-center justify-center gap-2 text-[#1a5f6b]">
                   <Calendar className="w-3 h-3" />
-                  <span className="text-xs font-bold">{item.date}</span>
+                  <span className="text-xs font-bold">{item.isDateNotSet ? 'Belli Değil' : item.date}</span>
                 </div>
                 <div className="flex items-center justify-center gap-2 text-gray-400 mt-1">
                   <Clock className="w-3 h-3" />
-                  <span className="text-xs font-bold">{item.time}</span>
+                  <span className="text-xs font-bold">{item.isDateNotSet ? '--:--' : item.time}</span>
                 </div>
               </div>
             </div>
@@ -467,17 +476,33 @@ const AdminMatches = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
-                      <Calendar className="w-3 h-3 mr-2 text-[#f97316]" /> Tarih
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      value={formData.date}
-                      onChange={(e) => setFormData({...formData, date: e.target.value})}
-                      className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
-                    />
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
+                        <Calendar className="w-3 h-3 mr-2 text-[#f97316]" /> Tarih
+                      </label>
+                      <div className="flex items-center space-x-4 mb-2">
+                        <input
+                          type="checkbox"
+                          id="isDateNotSet"
+                          checked={formData.isDateNotSet}
+                          onChange={(e) => setFormData({...formData, isDateNotSet: e.target.checked, date: e.target.checked ? '' : new Date().toISOString().split('T')[0]})}
+                          className="w-5 h-5 text-[#f97316] border-none rounded focus:ring-0 cursor-pointer"
+                        />
+                        <label htmlFor="isDateNotSet" className="text-[10px] font-black text-[#1a5f6b] uppercase tracking-widest cursor-pointer">
+                          TARİH HENÜZ BELLİ DEĞİL
+                        </label>
+                      </div>
+                      {!formData.isDateNotSet && (
+                        <input
+                          type="date"
+                          required
+                          value={formData.date}
+                          onChange={(e) => setFormData({...formData, date: e.target.value})}
+                          className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
+                        />
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2 flex items-center">
@@ -485,9 +510,10 @@ const AdminMatches = () => {
                     </label>
                     <input
                       type="time"
+                      disabled={formData.isDateNotSet}
                       value={formData.time}
                       onChange={(e) => setFormData({...formData, time: e.target.value})}
-                      className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all"
+                      className="w-full bg-gray-50 border-none rounded-2xl p-4 font-bold text-[#1a5f6b] focus:ring-2 focus:ring-[#f97316] transition-all disabled:opacity-50"
                     />
                   </div>
                 </div>
