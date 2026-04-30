@@ -102,124 +102,145 @@ const Fixture = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#0f1115]">
       {/* Header */}
-      <div className="bg-[#1a5f6b] text-white py-24 px-4 text-center relative overflow-hidden">
+      <div className="bg-[#1a5f6b] text-white pt-32 pb-24 px-4 text-center relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 z-0" style={{ backgroundImage: 'radial-gradient(#f97316 0.5px, transparent 0.5px)', backgroundSize: '20px 20px' }}></div>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-[#f97316]/20 rounded-full blur-[100px] translate-x-1/2 -translate-y-1/2"></div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="relative z-10"
         >
-          <p className="text-[#f97316] font-black uppercase tracking-[0.3em] text-xs mb-4">TAKIM FİKSTÜRÜ</p>
-          <h1 className="text-5xl sm:text-7xl font-black uppercase tracking-tighter italic mb-8">{team?.name || 'FİKSTÜR'}</h1>
+          <p className="text-[#f97316] font-black uppercase tracking-[0.4em] text-xs mb-4">TAKIM FİKSTÜRÜ</p>
+          <h1 className="text-6xl sm:text-8xl font-black uppercase tracking-tighter italic mb-12">{team?.name || 'FİKSTÜR'}</h1>
           
           {/* Team Selector */}
-          <div className="max-w-xs mx-auto bg-white/10 backdrop-blur-md rounded-2xl p-2 border border-white/20">
+          <div className="max-w-md mx-auto bg-white/5 backdrop-blur-md rounded-[32px] p-2 border border-white/10 shadow-2xl">
             <select
               value={selectedTeamId}
               onChange={(e) => setSelectedTeamId(e.target.value)}
-              className="w-full bg-transparent border-none text-white font-black uppercase tracking-widest text-xs focus:ring-0 cursor-pointer text-center"
+              className="w-full bg-transparent border-none text-white font-black uppercase tracking-widest text-sm focus:ring-0 cursor-pointer text-center py-2"
             >
               {teams.map(t => (
-                <option key={t.id} value={t.id} className="text-[#1a5f6b]">{t.name}</option>
+                <option key={t.id} value={t.id} className="text-gray-900">{t.name}</option>
               ))}
             </select>
           </div>
         </motion.div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-24">
-        <div className="space-y-8">
-          {matches.length > 0 ? (
-            matches.map((match, index) => (
-              <motion.div
-                key={match.id}
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-xl md:rounded-2xl shadow-lg border border-gray-100 overflow-hidden group hover:border-[#f97316]/30 transition-all duration-500"
-              >
-                <div className="p-6 md:p-8">
-                  <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-6 md:gap-4">
-                    {/* Date & Time */}
-                    <div className="md:col-span-3 flex flex-col items-center md:items-start border-b md:border-b-0 md:border-r border-gray-50 pb-4 md:pb-0 md:pr-6">
-                      <span className="text-2xl font-black text-[#1a5f6b] tracking-tighter italic">
-                        {(() => {
-                          if (!match.date) return '';
-                          const dateParts = match.date.split('-');
-                          if (dateParts.length === 3) {
-                            const [year, month, day] = dateParts;
-                            const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-                            return `${day} ${months[parseInt(month) - 1]} ${year}`;
-                          }
-                          return match.date;
-                        })()}
-                      </span>
-                      <span className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] flex items-center mt-2">
-                        <Clock className="w-3 h-3 mr-2 text-[#f97316]" /> {match.time || '--:--'}
-                      </span>
-                    </div>
+      <div className="max-w-5xl mx-auto px-4 -mt-10 pb-32 relative z-20">
+        <div className="bg-[#1a1a1a] rounded-[40px] shadow-2xl border border-white/5 overflow-hidden">
+           {/* Row Header - Desktop */}
+           <div className="hidden md:grid grid-cols-12 gap-4 px-10 py-6 border-b border-white/5 bg-white/[0.02] text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">
+             <div className="col-span-2">TARİH</div>
+             <div className="col-span-10 text-center">MAÇ DETAYI</div>
+           </div>
 
-                    {/* Teams & Score */}
-                    <div className="md:col-span-6 flex flex-col md:flex-row items-center justify-center gap-4 px-2 py-4 md:py-0 border-y md:border-y-0 md:border-x border-gray-50 my-4 md:my-0">
-                      {/* Home Team */}
-                      <div className="flex items-center gap-3 md:gap-4 md:flex-1 md:justify-end w-full">
-                        <span className="text-base md:text-xl font-black text-[#1a5f6b] uppercase tracking-tight text-center md:text-right flex-1 leading-tight">{match.homeTeam}</span>
-                        {match.homeLogo && (
-                          <img src={match.homeLogo} alt={match.homeTeam} className="w-10 h-10 md:w-12 md:h-12 object-contain shrink-0" referrerPolicy="no-referrer" />
-                        )}
-                      </div>
-                      
-                      {/* Score Badge */}
-                      <div className="flex items-center gap-2 md:gap-3 bg-gray-50 px-4 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl border border-gray-100 shadow-inner shrink-0 order-first md:order-none mb-2 md:mb-0">
-                        {match.homeScore !== undefined && match.awayScore !== undefined && match.homeScore !== '' && match.awayScore !== '' ? (
-                          <>
-                            <span className="text-2xl md:text-3xl font-black text-[#1a5f6b]">{match.homeScore}</span>
-                            <span className="text-[#f97316] font-black text-lg md:text-xl">:</span>
-                            <span className="text-2xl md:text-3xl font-black text-[#1a5f6b]">{match.awayScore}</span>
-                          </>
-                        ) : (
-                          <span className="text-[10px] md:text-sm font-black text-[#f97316] italic tracking-widest whitespace-nowrap px-2">YAKLAŞAN MAÇ</span>
-                        )}
-                      </div>
-
-                      {/* Away Team */}
-                      <div className="flex items-center gap-3 md:gap-4 md:flex-1 md:justify-start flex-row-reverse md:flex-row w-full">
-                        <span className="text-base md:text-xl font-black text-[#1a5f6b] uppercase tracking-tight text-center md:text-left flex-1 leading-tight">{match.awayTeam}</span>
-                        {match.awayLogo && (
-                          <img src={match.awayLogo} alt={match.awayTeam} className="w-10 h-10 md:w-12 md:h-12 object-contain shrink-0" referrerPolicy="no-referrer" />
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Location & Category */}
-                    <div className="md:col-span-3 flex flex-col items-center md:items-end md:pl-6 space-y-2">
-                      {match.location && (
-                        <div className="flex items-center gap-2 text-gray-400 font-black uppercase tracking-widest text-[9px] text-right">
-                          <MapPin className="w-3 h-3 text-[#f97316]" /> {match.location}
-                        </div>
-                      )}
-                      {match.category && (
-                        <div className="flex items-center gap-2 text-[#f97316] font-black uppercase tracking-widest text-[9px] text-right">
-                          <Trophy className="w-3 h-3" /> {match.category}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))
-          ) : (
-            <div className="text-center py-32 bg-white rounded-3xl shadow-xl border border-gray-100">
-              <div className="w-24 h-24 bg-gray-50 rounded-full mx-auto flex items-center justify-center mb-8">
-                <Calendar className="w-12 h-12 text-gray-200" />
+           <div className="divide-y divide-white/5">
+            {loading ? (
+              <div className="py-32 flex justify-center">
+                <div className="w-12 h-12 border-4 border-[#f97316] border-t-transparent rounded-full animate-spin"></div>
               </div>
-              <h3 className="text-2xl font-black text-[#1a5f6b] uppercase tracking-tight italic mb-4">HENÜZ MAÇ BULUNMUYOR</h3>
-              <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Bu takım için planlanmış bir maç bulunmamaktadır.</p>
-            </div>
-          )}
+            ) : matches.length > 0 ? (
+              matches.map((match, index) => {
+                const isFinished = match.homeScore !== undefined && match.awayScore !== undefined && match.homeScore !== '' && match.awayScore !== '';
+                return (
+                  <motion.div
+                    key={match.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.05 }}
+                    className="group hover:bg-white/[0.03] transition-all"
+                  >
+                    {/* Desktop View */}
+                    <div className="hidden md:grid grid-cols-12 gap-4 items-center px-10 py-8">
+                       <div className="col-span-2">
+                         <div className="text-white font-black text-base tabular-nums">
+                            {match.date ? match.date.split('-').reverse().slice(0, 2).join('/') : '--/--'}
+                         </div>
+                         <div className="text-gray-500 font-bold text-[10px] uppercase tracking-wider">{match.time || '--:--'}</div>
+                       </div>
+
+                       <div className="col-span-10 flex items-center justify-center gap-8 relative">
+                          <div className="flex-1 flex items-center justify-end gap-6">
+                            <span className={`text-xl font-black uppercase tracking-tight text-right ${isFinished && parseInt(String(match.homeScore)) < parseInt(String(match.awayScore)) ? 'text-gray-600' : 'text-white'}`}>
+                              {match.homeTeam}
+                            </span>
+                            <div className="w-14 h-14 bg-white/5 rounded-2xl p-2.5 border border-white/5 group-hover:border-white/10 transition-colors flex items-center justify-center shrink-0">
+                               {match.homeLogo && <img src={match.homeLogo} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" />}
+                            </div>
+                          </div>
+
+                          <div className={`px-8 py-3 rounded-2xl border font-black text-2xl min-w-[130px] text-center tabular-nums transition-all ${
+                            isFinished 
+                              ? 'bg-white/5 border-white/10 text-white shadow-inner' 
+                              : 'bg-[#f97316]/10 border-[#f97316]/20 text-[#f97316]'
+                          }`}>
+                            {isFinished ? `${match.homeScore} - ${match.awayScore}` : match.time || 'VS'}
+                          </div>
+
+                          <div className="flex-1 flex items-center justify-start gap-6">
+                            <div className="w-14 h-14 bg-white/5 rounded-2xl p-2.5 border border-white/5 group-hover:border-white/10 transition-colors flex items-center justify-center shrink-0">
+                               {match.awayLogo && <img src={match.awayLogo} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" />}
+                            </div>
+                            <span className={`text-xl font-black uppercase tracking-tight text-left ${isFinished && parseInt(String(match.awayScore)) < parseInt(String(match.homeScore)) ? 'text-gray-600' : 'text-white'}`}>
+                              {match.awayTeam}
+                            </span>
+                          </div>
+                       </div>
+                    </div>
+
+                    {/* Mobile View */}
+                    <div className="md:hidden p-8 space-y-6">
+                       <div className="flex justify-between items-center text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">
+                          <span className="flex items-center gap-2"><Calendar className="w-3 h-3" /> {match.date?.split('-').reverse().join('.')}</span>
+                          <span className="flex items-center gap-2"><Clock className="w-3 h-3" /> {match.time || '--:--'}</span>
+                       </div>
+
+                       <div className="flex items-center justify-between gap-4">
+                          <div className="flex-1 flex flex-col items-center gap-3">
+                             <div className="w-14 h-14 bg-white/5 rounded-2xl p-3 border border-white/5 flex items-center justify-center">
+                               {match.homeLogo && <img src={match.homeLogo} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" />}
+                             </div>
+                             <span className={`text-[11px] font-black uppercase tracking-tight text-center leading-tight ${isFinished && parseInt(String(match.homeScore)) < parseInt(String(match.awayScore)) ? 'text-gray-600' : 'text-white'}`}>
+                               {match.homeTeam}
+                             </span>
+                          </div>
+
+                          <div className={`px-4 py-3 rounded-xl border font-black text-xl min-w-[80px] text-center tabular-nums ${
+                            isFinished 
+                              ? 'bg-white/5 border-white/10 text-white' 
+                              : 'bg-[#f97316]/10 border-[#f97316]/20 text-[#f97316] text-xs px-2'
+                          }`}>
+                            {isFinished ? `${match.homeScore}-${match.awayScore}` : 'VS'}
+                          </div>
+
+                          <div className="flex-1 flex flex-col items-center gap-3">
+                             <div className="w-14 h-14 bg-white/5 rounded-2xl p-3 border border-white/5 flex items-center justify-center">
+                               {match.awayLogo && <img src={match.awayLogo} alt="" className="w-full h-full object-contain" referrerPolicy="no-referrer" />}
+                             </div>
+                             <span className={`text-[11px] font-black uppercase tracking-tight text-center leading-tight ${isFinished && parseInt(String(match.awayScore)) < parseInt(String(match.homeScore)) ? 'text-gray-600' : 'text-white'}`}>
+                               {match.awayTeam}
+                             </span>
+                          </div>
+                       </div>
+                    </div>
+                  </motion.div>
+                );
+              })
+            ) : (
+              <div className="text-center py-32 px-10">
+                <div className="w-20 h-20 bg-white/5 rounded-full mx-auto flex items-center justify-center mb-8">
+                  <Calendar className="w-10 h-10 text-white/20" />
+                </div>
+                <h3 className="text-2xl font-black text-white uppercase tracking-tight italic mb-3">MATERYAL BULUNAMADI</h3>
+                <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px]">Bu takım için henüz maç programı girilmemiş.</p>
+              </div>
+            )}
+           </div>
         </div>
       </div>
     </div>

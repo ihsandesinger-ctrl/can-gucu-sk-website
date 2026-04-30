@@ -106,11 +106,7 @@ const Home = () => {
         }
       }
 
-      // If we have less than 6 matches, maybe we can add past matches as well?
-      // But the user specifically asked for "upcoming" matches. 
-      // If there are no upcoming matches, we show nothing (or we could show most recent past)
-      // I'll stick to upcoming as requested.
-      setMatches(onePerTeam.slice(0, 6)); 
+      setMatches(onePerTeam.slice(0, 4)); 
       setLoading(false);
     });
 
@@ -119,7 +115,7 @@ const Home = () => {
       unsubscribeTeams();
       unsubscribeMatches();
     };
-  }, []);
+  }, [teams]); // Fixed dependency
 
   const getTeamName = (teamId: string) => {
     return teams.find(t => t.id === teamId)?.name || 'Bilinmeyen Takım';
@@ -217,7 +213,7 @@ const Home = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
             {matches.map((match, idx) => (
               <motion.div
                 key={match.id}
@@ -225,14 +221,14 @@ const Home = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
                 viewport={{ once: true }}
-                className="w-full bg-white/5 backdrop-blur-xl p-8 rounded-[48px] border border-white/10 hover:bg-white/10 transition-all duration-500 group relative overflow-hidden"
+                className="w-full bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 hover:bg-white/10 transition-all duration-500 group relative overflow-hidden"
               >
                 <div className="absolute top-0 right-0 p-8 opacity-5">
-                   <Trophy className="w-32 h-32 text-white group-hover:text-[#f97316] transition-colors" />
+                   <Trophy className="w-40 h-40 text-white group-hover:text-[#f97316] transition-colors" />
                 </div>
 
                 <div className="relative z-10">
-                  <div className="flex justify-between items-center mb-10">
+                  <div className="flex justify-between items-center mb-8">
                     <span className="bg-[#f97316] text-white text-[10px] font-black px-5 py-2 rounded-2xl uppercase tracking-[0.2em] shadow-lg shadow-[#f97316]/20">
                       {getTeamName(match.teamId)}
                     </span>
@@ -241,34 +237,36 @@ const Home = () => {
                     </div>
                   </div>
                   
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-8 mb-12">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-10">
                     <div className="text-center sm:text-left flex-1 flex flex-col sm:flex-row items-center gap-4">
-                      {match.homeLogo && (
-                        <img src={match.homeLogo} alt={match.homeTeam} className="w-16 h-16 object-contain" referrerPolicy="no-referrer" />
-                      )}
-                      <p className="text-white font-black uppercase tracking-tight text-xl leading-none">{match.homeTeam}</p>
+                      <div className="w-16 h-16 bg-white/5 rounded-2xl p-3 flex items-center justify-center border border-white/5 shadow-inner">
+                        {match.homeLogo && (
+                          <img src={match.homeLogo} alt={match.homeTeam} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                        )}
+                      </div>
+                      <p className="text-white font-black uppercase tracking-tight text-xl leading-none truncate max-w-[150px]">{match.homeTeam}</p>
                     </div>
                     
-                    <div className="flex items-center gap-4">
-                       <div className="h-0.5 w-8 bg-white/10 hidden sm:block"></div>
-                       <div className="text-[#f97316] font-black italic text-3xl tracking-tighter">VS</div>
-                       <div className="h-0.5 w-8 bg-white/10 hidden sm:block"></div>
+                    <div className="flex items-center gap-4 py-2 px-4 rounded-2xl bg-white/5">
+                       <div className="text-[#f97316] font-black italic text-4xl tracking-tighter">VS</div>
                     </div>
 
                     <div className="text-center sm:text-right flex-1 flex flex-col sm:flex-row-reverse items-center gap-4">
-                      {match.awayLogo && (
-                        <img src={match.awayLogo} alt={match.awayTeam} className="w-16 h-16 object-contain" referrerPolicy="no-referrer" />
-                      )}
-                      <p className="text-white font-black uppercase tracking-tight text-xl leading-none">{match.awayTeam}</p>
+                      <div className="w-16 h-16 bg-white/5 rounded-2xl p-3 flex items-center justify-center border border-white/5 shadow-inner">
+                        {match.awayLogo && (
+                          <img src={match.awayLogo} alt={match.awayTeam} className="w-full h-full object-contain" referrerPolicy="no-referrer" />
+                        )}
+                      </div>
+                      <p className="text-white font-black uppercase tracking-tight text-xl leading-none truncate max-w-[150px]">{match.awayTeam}</p>
                     </div>
                   </div>
 
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pt-8 border-t border-white/5">
                     <div className="flex flex-wrap items-center gap-6">
-                      <div className="flex items-center text-white font-black uppercase tracking-widest text-xs">
+                      <div className="flex items-center text-white/80 font-black uppercase tracking-widest text-[10px]">
                         <Clock className="w-4 h-4 mr-2 text-[#f97316]" /> {match.time || '--:--'}
                       </div>
-                      <div className="flex items-center text-white font-black uppercase tracking-widest text-xs">
+                      <div className="flex items-center text-white/80 font-black uppercase tracking-widest text-[10px]">
                         <Calendar className="w-4 h-4 mr-2 text-[#f97316]" /> 
                         {(() => {
                           if (!match.date) return '';
@@ -283,7 +281,7 @@ const Home = () => {
                       </div>
                     </div>
                     {match.location && (
-                      <div className="flex items-center text-white/40 text-[9px] font-black uppercase tracking-[0.2em] bg-white/5 px-4 py-2 rounded-xl">
+                      <div className="flex items-center text-white/40 text-[9px] font-black uppercase tracking-[0.2em] bg-white/5 px-4 py-2 rounded-xl border border-white/5">
                         <MapPin className="w-3 h-3 mr-2 text-[#f97316]" /> {match.location}
                       </div>
                     )}
